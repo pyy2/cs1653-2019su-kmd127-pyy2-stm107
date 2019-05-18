@@ -38,17 +38,19 @@ Consistency states that the file must go from one valid state to another. The fi
 
 **Property 5:** **DURABILITY**
 
-Durability states that after a transaction successfully completes, changes to data persist and are not undone, even in the event of a system failure. If file f is shared with members of group g, and a member of group g modifies and saves the file, the new file should persist.
+Durability states that after a transaction successfully completes, changes to data persist and are not undone, even in the event of a system failure. If file f is shared with members of group g, and a member of group g modifies and saves the file, the saved should persist so that other members of group g will see the modifications.
 
 ** **
 
-**Property 6:** **PERFORMANCE**
+**Property 6:** **TURNAROUND TIME**
 
-Performance denotes that if user X is trying to access a file, the file should be available within a reasonable timeframe. 
+Turnaround time states that the system should respond to user requests within a reasonable timeframe. Turnaround time relates to all transactions in the system for example, if user X tries to access and edit a file, the file should take no longer than 1-2 seconds to open.
 
 ** **
 
-**Property 7:**
+**Property 7:** **AVAILABILITY**
+
+Availability states that the system should be available to authorized users when the user needs it. Otherwise the purpose of a shared file system is less beneficial than locally storing the file. 
 
 ** **
 
