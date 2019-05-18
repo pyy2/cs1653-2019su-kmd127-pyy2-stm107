@@ -1,4 +1,5 @@
 # Applied Cryptography and Network Security
+##Specifications/Threat Modeling
 
 &nbsp;
 
@@ -50,7 +51,7 @@ Turnaround time states that the system should respond to user requests within a 
 
 **Property 7:** **AVAILABILITY**
 
-Availability states that the system should be available to authorized users when the user needs it. Otherwise the purpose of a shared file system is less beneficial than locally storing the file. 
+Availability states that the system should be available to authorized users when the user needs it. Otherwise the purpose of a shared file system is less beneficial than locally storing the file.
 
 ** **
 
