@@ -1,5 +1,5 @@
 # Applied Cryptography and Network Security
-##Specifications/Threat Modeling
+## Specifications/Threat Modeling
 
 &nbsp;
 
@@ -119,6 +119,8 @@ Correctness states that if file f is shared with members of group g, then only m
 
 ## 3. **References**
 
-https://www.ibm.com/support/knowledgecenter/en/SSGMCP_5.4.0/product-overview/acid.html
-https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture15_SecurityTesting.pdf
-https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture11_12_PerformanceTesting.pdf
+[IBM ACID Transactions](https://www.ibm.com/support/knowledgecenter/en/SSGMCP_5.4.0/product-overview/acid.html)
+
+[CS1632 SoftwareQA - Security Testing](https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture15_SecurityTesting.pdf)
+
+[CS1632 SoftwareQA - Testing](https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture11_12_PerformanceTesting.pdf)
