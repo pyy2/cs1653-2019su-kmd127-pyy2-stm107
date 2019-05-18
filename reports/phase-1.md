@@ -44,7 +44,7 @@ Durability states that after a transaction successfully completes, changes to da
 
 **Property 6:** **TURNAROUND TIME**
 
-Turnaround time states that the system should respond to user requests within a reasonable timeframe. Turnaround time relates to all transactions in the system for example, if user X tries to access and edit a file, the file should take no longer than 1-2 seconds to open.
+Turnaround time states that the system should respond to user requests within a reasonable timeframe. Turnaround time relates to all transactions in the system. For example, if user X tries to access and edit a file, the file should take no longer than 1-2 seconds to open.
 
 ** **
 
@@ -119,4 +119,5 @@ Correctness states that if file f is shared with members of group g, then only m
 ## 3. **References**
 
 https://www.ibm.com/support/knowledgecenter/en/SSGMCP_5.4.0/product-overview/acid.html
-
+https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture15_SecurityTesting.pdf
+https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture11_12_PerformanceTesting.pdf
