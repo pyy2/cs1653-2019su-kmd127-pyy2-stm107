@@ -93,3 +93,17 @@ Correctness states that if file f is shared with members of group g, then only m
 ** **
 
 **Property 20:**
+
+&nbsp;
+
+## 2. **Threat Models**
+
+**Threat Model 1:** **CORRECTNESS**
+
+Correctness states that if file f is shared with members of group g, then only members of group g should be able to read, modify, delete, or see the existence of f. Without this requirement, any user could access any file, which is contrary to the notion of group-based file sharing
+
+** **
+
+&nbsp;
+
+## 3. **References**
