@@ -1,9 +1,10 @@
 # Applied Cryptography and Network Security
+
+### CS1653: Phase 1
+
+
 ## Specifications/Threat Modeling
-
-&nbsp;
-
-## **Group:**
+### **Group:**
 
 | **Team Member** | **Email**       | **Github**  |
 | --------------- |-----------------| ------------|
@@ -116,17 +117,60 @@ Filesystem hierarchy states that there will be a hierarchical system structure w
 
 ## 2. **Threat Models**
 
-**Threat Model 1:** **CORRECTNESS**
+### **Threat Model 1:** **(Small) HOME NETWORK ATTACHED STORAGE**
 
-Correctness states that if file f is shared with members of group g, then only members of group g should be able to read, modify, delete, or see the existence of f. Without this requirement, any user could access any file, which is contrary to the notion of group-based file sharing
+**Scenario:**
+
+This filesystem will be deployed on the local NAS device within a small family home (~5 people) so that family members can share files and multimedia to free up local storage space. A variety of devices will be able to access the medium ie. mobile, desktop, laptop, etc. once connected to the network. 
+
+**Assumptions:**
+
+The filesystem be accessible and public once connected to the home network via LAN or WIFI. Since it is a shared family storage it is assumed there will be little to no sensitive information stored on the device. For ease of use, the device will not be encrypted or protected beyond the basic router network protections from the outernet.
+
+**Relevant Properties:**
+
+  * Correctness
+  * Atomicity
+  * Consistency
+  * Durability
+  * Unique Naming Scheme
+  * Filesystem Hierarchy
 
 ** **
+
+**Threat Model 2:** **(Medium) SMALL BUSINESS NETWORK ATTACHED STORAGE**
+
+**Scenario:**
+
+This filesystem will be deployed within a small-to-medium sized office environment (~50-200 people). The NAS device will only be available to authenticated computers directly connected to the network via LAN. There will be one admin and a single filesystem that the company will use. The filesystem will contain sensitive documents pertaining to business operations that need to be protected or encrypted for use in the system. 
+  
+**Assumptions:**
+
+
+**Relevant Properties:**
+
+  * Correctness
+  * Atomicity
+  * Consistency
+  * Durability
+  * Unique Naming Scheme
+  * Filesystem Hierarchy
+  
+** **
+
+**Threat Model 3:** **(Large) **
+
+**Scenario:**
+
+**Assumptions:**
+
+**Relevant Properties:**
 
 &nbsp;
 
 ## 3. **References**
 
-[IBM ACID Transactions](https://www.ibm.com/support/knowledgecenter/en/SSGMCP_5.4.0/product-overview/acid.html)
+[ACID properties of transactions](https://www.ibm.com/support/knowledgecenter/en/SSGMCP_5.4.0/product-overview/acid.html)
 
 [CS1632 SoftwareQA - Security Testing](https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture15_SecurityTesting.pdf)
 
