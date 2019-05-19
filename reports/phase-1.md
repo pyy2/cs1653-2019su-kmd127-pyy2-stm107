@@ -23,7 +23,7 @@ Correctness states that if file f is shared with members of group g, then only m
 
 **Property 2:** **ATOMICITY**
 
-Atomicity states that all transactions in the system whether it is modifying an access control list or editing a file will be performed as a single operation in an all-or-nothing fashion. This requirement is needed so that data will not be left in an intermediate state where the system is potentially corrupted.
+Atomicity states that all transactions in the system whether it is modifying an access control list or editing a file will be performed as a single operation in an all-or-nothing fashion. This requirement is needed so that data will not be left in an intermediate state where the system or data in the system is potentially corrupted.
 
 ** **
 
@@ -33,13 +33,15 @@ Consistency states that the file must go from one valid state to another. The fi
 
 ** **
 
-**Property 4:** **ISOLATION**
+**Property 4:** **LOCATION TRANSPARENCY**
+
+Location independence states that a file on a shared filesystem will not reveal the file's physical storage location. The filename will continue to denote a specific set of physical blocks
 
 ** **
 
 **Property 5:** **DURABILITY**
 
-Durability states that after a transaction successfully completes, changes to data persist and are not undone, even in the event of a system failure. If file f is shared with members of group g, and a member of group g modifies and saves the file, the saved should persist so that other members of group g will see the modifications.
+Durability states that after a transaction successfully completes, changes to data persist and are not undone, even in the event of a system failure. If file f is shared with members of group g, and a member of group g modifies and saves the file, the saved should persist so that other members of group g will see the modifications even after a system crash.
 
 ** **
 
@@ -55,11 +57,16 @@ Availability states that the system should be available to authorized users when
 
 ** **
 
-**Property 8:**
+**Property 8:** **UNIQUE NAMING SCHEME**
+
+File / Directories will respectively be uniquely named in the filesystem. This is important so that duplicate names are not used for differing files or differing directories.
+
 
 ** **
 
-**Property 9:**
+**Property 9:** **FILESYSTEM HIERARCHY**
+
+Filesystem hierarchy states that there will be a hierarchical system structure with directories and files at the bottom. This will allow files to move physical storage locations in memory while keeping the same name. It will follow a tree structure that separates naming hierachy from storage hierarchy. 
 
 ** **
 
@@ -124,3 +131,5 @@ Correctness states that if file f is shared with members of group g, then only m
 [CS1632 SoftwareQA - Security Testing](https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture15_SecurityTesting.pdf)
 
 [CS1632 SoftwareQA - Testing](https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture11_12_PerformanceTesting.pdf)
+
+[NFS: Network File System Protocol Specification](https://tools.ietf.org/html/rfc1094)
