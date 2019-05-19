@@ -138,7 +138,7 @@ The filesystem be accessible and public once connected to the home network via L
 
 ** **
 
-**Threat Model 2:** **(Medium) SMALL BUSINESS NETWORK ATTACHED STORAGE**
+### **Threat Model 2:** **(Medium) SMALL BUSINESS NETWORK ATTACHED STORAGE**
 
 **Scenario:**
 
@@ -158,7 +158,7 @@ This filesystem will be deployed within a small-to-medium sized office environme
   
 ** **
 
-**Threat Model 3:** **(Large) **
+### **Threat Model 3:** **(Large)**
 
 **Scenario:**
 
