@@ -174,6 +174,6 @@ This filesystem will be deployed within a small-to-medium sized office environme
 
 [CS1632 SoftwareQA - Security Testing](https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture15_SecurityTesting.pdf)
 
-[CS1632 SoftwareQA - Testing](https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture11_12_PerformanceTesting.pdf)
+[CS1632 SoftwareQA - Performance Testing](https://github.com/laboon/CS1632_Fall2018/blob/master/lectures/CS1632_Lecture11_12_PerformanceTesting.pdf)
 
 [NFS: Network File System Protocol Specification](https://tools.ietf.org/html/rfc1094)
