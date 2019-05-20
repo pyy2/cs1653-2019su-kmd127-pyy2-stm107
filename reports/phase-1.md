@@ -8,7 +8,7 @@
 
 | **Team Member** | **Email**       | **Github**  |
 | --------------- |-----------------| ------------|
-| Karyn Drombosky | kdm127@pitt.edu | kdrombosky  |
+| Karyn Drombosky | kmd127@pitt.edu | kdrombosky  |
 | Paul Yu         | pyy2@pitt.edu   | pyy2        |
 | Sean Mizerski   | stm107@pitt.edu | stm107      |
 
