@@ -67,7 +67,7 @@ File / Directories will respectively be uniquely named in the filesystem. This i
 
 **Property 9:** **FILESYSTEM HIERARCHY**
 
-Filesystem hierarchy states that there will be a hierarchical system structure with directories and files at the bottom. This will allow files to move physical storage locations in memory while keeping the same name. It will follow a tree structure that separates naming hierachy from storage hierarchy. 
+Filesystem hierarchy states that there will be a hierarchical system structure with directories and files at the bottom. This will allow files to move physical storage locations in memory while keeping the same name. It will follow a tree structure that separates naming hierachy from storage hierarchy.
 
 ** **
 
@@ -79,7 +79,7 @@ Users will be identified uniquely in the user authentication system. Each user s
 
 **Property 11:** **USER CREATION RESTRICTIONS**
 
-Users will only be permitted to create other users of equivalent or lower permission levels. This is important because it prevents a user from creating a user with greater access and using that newly created user to gain access to parts of the system previously not permitted. 
+Users will only be permitted to create other users of equivalent or lower permission levels. This is important because it prevents a user from creating a user with greater access and using that newly created user to gain access to parts of the system previously not permitted.
 
 ** **
 
@@ -109,23 +109,31 @@ Password Complexity states that all user passwords must meet some predetermined 
 
 **Property 16:** **USER SESSION EXPIRATION**
 
-User Session Expiration states that a session object will be created when a user is authenticated with the user authentication server. That session object will have a reasonable time out. This prevents users from staying logged in to the system indefinitely, leaving access with their credentials vulnerable to the adversary. 
+User Session Expiration states that a session object will be created when a user is authenticated with the user authentication server. That session object will have a reasonable time out. This prevents users from staying logged in to the system indefinitely, leaving access with their credentials vulnerable to the adversary.
 
 ** **
 
-**Property 17:**
+**Property 17:** **SYSTEM ELEMENT ANONYMITY**
+
+System Element Anonymity states that the client will not reveal the existence of any files, users, or other system elements to anyone who could not legally access them. This can occur by using appropriately vague error messages when authentication fails. I.e., an adversary attempting to log in to the system by guessing a username would receive a 403 response without any text indicating whether the username or the password was incorrect.
 
 ** **
 
-**Property 18:**
+**Property 18:** **SECURE CONNECTION**
+
+The client provides secure connection to the authentication server and the file server. This prevents adversarial snooping.
 
 ** **
 
-**Property 19:**
+**Property 19:** **CLIENT USABILITY**
+
+Client Usability states that the client software interface is sufficiently user-friendly. This prevents users from looking for alternative potentially less secure methods of accessing the user authentication server and the file server.
 
 ** **
 
-**Property 20:**
+**Property 20:** **NECESSITY OF AUTHENTICATION**
+
+Necessity of authentication states that no access is permitted to the file server without first receiving authentication from the user authentication server and creation of a session object. This is important because it prevents access of the file system by any adversary without appropriate permissions. 
 
 &nbsp;
 
@@ -135,7 +143,7 @@ User Session Expiration states that a session object will be created when a user
 
 **Scenario:**
 
-This filesystem will be deployed on the local NAS device within a small family home (~5 people) so that family members can share files and multimedia to free up local storage space. A variety of devices will be able to access the medium ie. mobile, desktop, laptop, etc. once connected to the network. 
+This filesystem will be deployed on the local NAS device within a small family home (~5 people) so that family members can share files and multimedia to free up local storage space. A variety of devices will be able to access the medium ie. mobile, desktop, laptop, etc. once connected to the network.
 
 **Assumptions:**
 
@@ -156,8 +164,8 @@ The filesystem be accessible and public once connected to the home network via L
 
 **Scenario:**
 
-This filesystem will be deployed within a small-to-medium sized office environment (~50-200 people). The NAS device will only be available to authenticated computers directly connected to the network via LAN. There will be one admin and a single filesystem that the company will use. The filesystem will contain sensitive documents pertaining to business operations that need to be protected or encrypted for use in the system. 
-  
+This filesystem will be deployed within a small-to-medium sized office environment (~50-200 people). The NAS device will only be available to authenticated computers directly connected to the network via LAN. There will be one admin and a single filesystem that the company will use. The filesystem will contain sensitive documents pertaining to business operations that need to be protected or encrypted for use in the system.
+
 **Assumptions:**
 
 
@@ -169,7 +177,7 @@ This filesystem will be deployed within a small-to-medium sized office environme
   * Durability
   * Unique Naming Scheme
   * Filesystem Hierarchy
-  
+
 ** **
 
 ### **Threat Model 3:** **(Large)**
