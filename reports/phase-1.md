@@ -71,31 +71,45 @@ Filesystem hierarchy states that there will be a hierarchical system structure w
 
 ** **
 
-**Property 10:**
+**Property 10:** **UNIQUE USER IDENTIFICATION**
+
+Users will be identified uniquely in the user authentication system. Each user should have a unique username and uuid. This is important so that duplicate user ids cannot allow access where access should be prohibited.
 
 ** **
 
-**Property 11:**
+**Property 11:** **USER CREATION RESTRICTIONS**
+
+Users will only be permitted to create other users of equivalent or lower permission levels. This is important because it prevents a user from creating a user with greater access and using that newly created user to gain access to parts of the system previously not permitted. 
 
 ** **
 
-**Property 12:**
+**Property 12:** **LEAST PRIVILEGE**
+
+Users are only given permission to perform actions that are necessary for their individual mandates. This prevents users from accessing parts of the system that are not necessary for their functions and could lead to data being corrupted or exposed.
 
 ** **
 
-**Property 13:**
+**Property 13:** **USER PERMISSION PROTECTION**
+
+User permission protection states that a user will not be permitted to alter their own permission level. This is important because it preserves the previous tenet of Least Privilege and prevents users from allowing themselves to access parts of the system not intended for them.
 
 ** **
 
-**Property 14:**
+**Property 14:** **SYSTEM ADMINISTRATOR PRIVILEGE SEPARATION**
+
+System Administrator Privilege Separation states that a system administrator role will exist in the system. This role and only this role will have the ability to change any given user's permission level. This prevents users of any other level from altering the permission level of other users and potentially violating Least Privilege.
 
 ** **
 
-**Property 15:**
+**Property 15:** **PASSWORD COMPLEXITY**
+
+Password Complexity states that all user passwords must meet some predetermined level of complexity that is both reasonably sercure and usable. This prevents users from using easily guessable passwords or leaving passwords empty.
 
 ** **
 
-**Property 16:**
+**Property 16:** **USER SESSION EXPIRATION**
+
+User Session Expiration states that a session object will be created when a user is authenticated with the user authentication server. That session object will have a reasonable time out. This prevents users from staying logged in to the system indefinitely, leaving access with their credentials vulnerable to the adversary. 
 
 ** **
 
