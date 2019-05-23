@@ -149,7 +149,10 @@ This filesystem will be deployed on the local NAS device within a small family h
 
 The filesystem will be accessible and public once connected to the home network via LAN or WIFI. Since it is a shared family storage it is assumed there will be little to no sensitive information stored on the device. For ease of use, the device will not be encrypted or protected beyond the basic router network protections from the outernet. It is assumed that the file server is in a physically safe place to the standards of a private home.
 
-It is assumed that the client will be available as an application on a personal computer or mobile device, but that the client cannot connect to the file server from the greater internet. It is assumed that the client will not connect to the file server unless valid user credentials are supplied and that only trustworthy endusers can supply valid user credentials. It is assumed that connections between the client application, the user authorization server, and the file server are secure. It is assumed that users are created by a single system administrator and cannot be made by other users.
+It is assumed that the client will be available as an application on a personal computer or mobile device, but that the client cannot connect to the file server from the greater internet. It is assumed that the client will not connect to the file server unless valid user credentials are supplied and that only trustworthy endusers can supply valid user credentials. It is assumed that connections between the client application, the user authorization server, and the file server are secure. 
+
+It is assumed that the user authentication server exists on the local network and is guarded by the same physical security as the file server. This means that it cannot be accessed on the outside internet. It is also assumed that the user authentication server contains accurate username/password hashes for accurate authentication. It is assumed that all users exhibit least privilege, that users are created by a single system administrator, and users cannot be made by other users.
+
 
 **Relevant Properties:**
 
@@ -164,6 +167,7 @@ It is assumed that the client will be available as an application on a personal 
   * User Permission Protection
   * Secure Connection
   * Necessity of Authentication
+  * Least Privilege
 
 
 ** **
@@ -172,10 +176,13 @@ It is assumed that the client will be available as an application on a personal 
 
 **Scenario:**
 
-This filesystem will be deployed within a small-to-medium sized office environment (~50-200 people). The NAS device will only be available to authenticated computers directly connected to the network via LAN. There will be one admin and a single filesystem that the company will use. The filesystem will contain sensitive documents pertaining to business operations that need to be protected or encrypted for use in the system.
+This filesystem will be deployed within a small-to-medium sized office environment (~50-200 people). The NAS device will only be available to authenticated computers directly connected to the network via LAN. There will be a small number of admins and a single filesystem that the company will use. The filesystem will contain sensitive documents pertaining to business operations that need to be protected or encrypted for use in the system.
 
 **Assumptions:**
 
+The filesystem will only be accessible to systems connected to the LAN via a corporate VPN. It is assumed that, since sentsitive information relating to business matters will be held on the server, that the server will be held in a reasonable physically secure location and that any necessary redundency will also be held in a separate physically sercure location. It is assumed that This system is not accessible from the outside internet. It is assumed that wires and switches are trustworthy and not compromised. It is assumed that every element accesible in the file system has some reference of minimum user privilege for read, write, and execute operations.
+
+It is assumed that the user authentication server is also guarded by the same level of physical security and also contains secure redundency for availability. It is also assumed that a minimum password complexity is set by the system administration. It is assumed that user's exhibit least privilege, can only be created by system admins, and cannot change their own permission levels. It is assumed that usernames and uuids are unique and that username/password hashes stored on the user authentication server are secure. It is assumed that user session expire in a reasonable amount of time with no activity (i.e. 30 minutes).
 
 **Relevant Properties:**
 
@@ -185,6 +192,14 @@ This filesystem will be deployed within a small-to-medium sized office environme
   * Durability
   * Unique Naming Scheme
   * Filesystem Hierarchy
+  * Unique User Identification
+  * User Creation Restrictions
+  * User Permission Protection
+  * Secure Connection
+  * Necessity of Authentication
+  * Least Privilege
+  
+
 
 ** **
 
