@@ -133,7 +133,7 @@ Client Usability states that the client software interface is sufficiently user-
 
 **Property 20:** **NECESSITY OF AUTHENTICATION**
 
-Necessity of authentication states that no access is permitted to the file server without first receiving authentication from the user authentication server and creation of a session object. This is important because it prevents access of the file system by any adversary without appropriate permissions. 
+Necessity of authentication states that no access is permitted to the file server without first receiving authentication from the user authentication server and creation of a session object. This is important because it prevents access of the file system by any adversary without appropriate permissions.
 
 &nbsp;
 
@@ -147,7 +147,9 @@ This filesystem will be deployed on the local NAS device within a small family h
 
 **Assumptions:**
 
-The filesystem be accessible and public once connected to the home network via LAN or WIFI. Since it is a shared family storage it is assumed there will be little to no sensitive information stored on the device. For ease of use, the device will not be encrypted or protected beyond the basic router network protections from the outernet.
+The filesystem will be accessible and public once connected to the home network via LAN or WIFI. Since it is a shared family storage it is assumed there will be little to no sensitive information stored on the device. For ease of use, the device will not be encrypted or protected beyond the basic router network protections from the outernet. It is assumed that the file server is in a physically safe place to the standards of a private home.
+
+It is assumed that the client will be available as an application on a personal computer or mobile device, but that the client cannot connect to the file server from the greater internet. It is assumed that the client will not connect to the file server unless valid user credentials are supplied and that only trustworthy endusers can supply valid user credentials. It is assumed that connections between the client application, the user authorization server, and the file server are secure. It is assumed that users are created by a single system administrator and cannot be made by other users.
 
 **Relevant Properties:**
 
@@ -157,6 +159,12 @@ The filesystem be accessible and public once connected to the home network via L
   * Durability
   * Unique Naming Scheme
   * Filesystem Hierarchy
+  * Unique User Identification
+  * User Creation Restrictions
+  * User Permission Protection
+  * Secure Connection
+  * Necessity of Authentication
+
 
 ** **
 
