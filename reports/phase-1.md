@@ -162,13 +162,13 @@ It is assumed that the user authentication server exists on the local network an
   * Durability
   * Unique Naming Scheme
   * Filesystem Hierarchy
-  * Unique User Identification
-  * User Creation Restrictions
-  * User Permission Protection
-  * Secure Connection
-  * Necessity of Authentication
-  * Least Privilege
-  * System Administrator Separation of Privilege
+  * Unique User Identification: This identifies each unique user. This is important because it prevents privileges from being assigned to the wrong user. 
+  * User Creation Restrictions: This prevents a user from creating other users if they are not authorized to do so; this also prevents a user from creating a user of higher privilege in order to gain the additional access. 
+  * User Permission Protection: This prevents the user from altering (elevating) their own level of privilege.
+  * Secure Connection: This prevents the adversary from snooping.
+  * Necessity of Authentication: Only users that have an authorized username and password can access the system.  
+  * Least Privilege: This grants users access to only the files that they need to access. In the family scenario, mom and dad can have their own files that kids can't access.
+  * System Administrator Separation of Privilege: One user is responsible for all user administration.
 
 
 ** **
