@@ -73,13 +73,13 @@ Filesystem hierarchy states that there will be a hierarchical system structure w
 
 **Property 10:** **UNIQUE USER IDENTIFICATION**
 
-Users will be identified uniquely in the user authentication system. Each user should have a unique username and uuid. This is important so that duplicate user ids cannot allow access where access should be prohibited.
+Users and groups will be identified uniquely in the user authentication system. Each user should have a unique username and uuid, and each group should have a unique group name and uuid. This is important so that duplicate user ids cannot allow access where access should be prohibited and duplicate group ids cannot allow elevated privileges to unauthorized users.
 
 ** **
 
 **Property 11:** **USER CREATION RESTRICTIONS**
 
-Users will only be permitted to create other users of equivalent or lower permission levels. This is important because it prevents a user from creating a user with greater access and using that newly created user to gain access to parts of the system previously not permitted.
+Users will only be permitted to create other users of equivalent or lower permission levels. Standard users will not be permitted to create, edit, or delete groups. This is important because it prevents a user from creating a user with greater access and using that newly created user to gain access to parts of the system previously not permitted.
 
 ** **
 
@@ -91,19 +91,19 @@ Users are only given permission to perform actions that are necessary for their 
 
 **Property 13:** **USER PERMISSION PROTECTION**
 
-User permission protection states that a user will not be permitted to alter their own permission level. This is important because it preserves the previous tenet of Least Privilege and prevents users from allowing themselves to access parts of the system not intended for them.
+User permission protection states that a user will not be permitted to alter their own permission level, including at the group level. This is important because it preserves the previous tenet of Least Privilege and prevents users from allowing themselves to access parts of the system not intended for them.
 
 ** **
 
 **Property 14:** **SYSTEM ADMINISTRATOR PRIVILEGE SEPARATION**
 
-System Administrator Privilege Separation states that a system administrator role will exist in the system. This role and only this role will have the ability to change any given user's permission level. This prevents users of any other level from altering the permission level of other users and potentially violating Least Privilege.
+System Administrator Privilege Separation states that a system administrator role will exist in the system. This role and only this role will have the ability to change any given user's permission level and a group's permission level. This prevents users of any other level from altering the permission level of other users and potentially violating Least Privilege.
 
 ** **
 
 **Property 15:** **PASSWORD COMPLEXITY**
 
-Password Complexity states that all user passwords must meet some predetermined level of complexity that is both reasonably sercure and usable. This prevents users from using easily guessable passwords or leaving passwords empty.
+Password Complexity states that all user passwords must meet some predetermined level of complexity that is both reasonably secure and usable. This can be set on a system-wide or group based level. This prevents users from using easily guessable passwords or leaving passwords empty.
 
 ** **
 
@@ -197,17 +197,17 @@ It is assumed that the user authentication server is also guarded by the same le
   * Location Independence
   * Unique Naming Scheme
   * Filesystem Hierarchy
-  * Unique User Identification
-  * User Creation Restrictions
-  * User Permission Protection
-  * Secure Connection
-  * Necessity of Authentication
-  * Least Privilege
-  * Password Complexity
-  * Client Usability
-  * System Element Anonymity
-  * User Session Expiration
-  * System Administrator Separation of Privilege
+  * Unique User Identification: This is important so that each user has their own separate login info and definite privileges.
+  * User Creation Restrictions: This prevents non-system admins from creating super users to access confidential information.
+  * User Permission Protection: This prevents users from giving themselves elevated privileges without system admin approval.
+  * Secure Connection: A secure connection prevents snooping on the network.
+  * Necessity of Authentication: This is important so that only authorized users can access the system. It is also important so that a user's privilege level can be verified.
+  * Least Privilege: This prevents users from accessing anything that they don't need.
+  * Password Complexity: This helps, in some small part, to make brute force password hacking more difficult.
+  * Client Usability: This helps to ensure that the authentication process is followed because it is usable and easy!
+  * System Element Anonymity: This prevents hackers from gaining information about the existence of users and file on the system that can be used in further attacks.
+  * User Session Expiration: This prevents a careless employee from compromising the system by forgetting to log out.
+  * System Administrator Separation of Privilege: This ensures that only a select group of humans have the ability to make privilege changes in the system. If someone goes rogue, the set of suspects is smaller :). 
 
 
 
