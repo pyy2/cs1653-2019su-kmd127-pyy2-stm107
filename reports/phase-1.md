@@ -34,7 +34,7 @@ Consistency states that the file must go from one valid state to another. The fi
 
 ** **
 
-**Property 4:** **LOCATION TRANSPARENCY**
+**Property 4:** **LOCATION INDEPENDENCE**
 
 Location independence states that a file on a shared filesystem will not reveal the file's physical storage location. The filename will continue to denote a specific set of physical blocks
 
@@ -67,7 +67,7 @@ File / Directories will respectively be uniquely named in the filesystem. This i
 
 **Property 9:** **FILESYSTEM HIERARCHY**
 
-Filesystem hierarchy states that there will be a hierarchical system structure with directories and files at the bottom. This will allow files to move physical storage locations in memory while keeping the same name. It will follow a tree structure that separates naming hierachy from storage hierarchy.
+Filesystem hierarchy states that there will be a hierarchical system structure with directories and files at the bottom. This will allow files to move physical storage locations in memory while keeping the same name. It will follow a tree structure that separates naming hierarchy from storage hierarchy.
 
 ** **
 
@@ -149,7 +149,7 @@ This filesystem will be deployed on the local NAS device within a small family h
 
 The filesystem will be accessible and public once connected to the home network via LAN or WIFI. Since it is a shared family storage it is assumed there will be little to no sensitive information stored on the device. For ease of use, the device will not be encrypted or protected beyond the basic router network protections from the outernet. It is assumed that the file server is in a physically safe place to the standards of a private home.
 
-It is assumed that the client will be available as an application on a personal computer or mobile device, but that the client cannot connect to the file server from the greater internet. It is assumed that the client will not connect to the file server unless valid user credentials are supplied and that only trustworthy endusers can supply valid user credentials. It is assumed that connections between the client application, the user authorization server, and the file server are secure. 
+It is assumed that the client will be available as an application on a personal computer or mobile device, but that the client cannot connect to the file server from the greater internet. It is assumed that the client will not connect to the file server unless valid user credentials are supplied and that only trustworthy endusers can supply valid user credentials. It is assumed that connections between the client application, the user authorization server, and the file server are secure.
 
 It is assumed that the user authentication server exists on the local network and is guarded by the same physical security as the file server. This means that it cannot be accessed on the outside internet. It is also assumed that the user authentication server contains accurate username/password hashes for accurate authentication. It is assumed that all users exhibit least privilege, that users are created by a single system administrator, and users cannot be made by other users.
 
@@ -168,6 +168,7 @@ It is assumed that the user authentication server exists on the local network an
   * Secure Connection
   * Necessity of Authentication
   * Least Privilege
+  * System Administrator Separation of Privilege
 
 
 ** **
@@ -180,9 +181,11 @@ This filesystem will be deployed within a small-to-medium sized office environme
 
 **Assumptions:**
 
-The filesystem will only be accessible to systems connected to the LAN via a corporate VPN. It is assumed that, since sentsitive information relating to business matters will be held on the server, that the server will be held in a reasonable physically secure location and that any necessary redundency will also be held in a separate physically sercure location. It is assumed that This system is not accessible from the outside internet. It is assumed that wires and switches are trustworthy and not compromised. It is assumed that every element accesible in the file system has some reference of minimum user privilege for read, write, and execute operations.
+The filesystem will only be accessible to systems connected to the LAN via a corporate VPN. It is assumed that, since sensitive information relating to business matters will be held on the server, that the server will be held in a reasonable physically secure location and that any necessary redundancy will also be held in a separate physically secure location. It is assumed that This system is not accessible from the outside internet. It is assumed that wires and switches are trustworthy and not compromised. It is assumed that every element accessible in the file system has some reference of minimum user privilege for read, write, and execute operations.
 
-It is assumed that the user authentication server is also guarded by the same level of physical security and also contains secure redundency for availability. It is also assumed that a minimum password complexity is set by the system administration. It is assumed that user's exhibit least privilege, can only be created by system admins, and cannot change their own permission levels. It is assumed that usernames and uuids are unique and that username/password hashes stored on the user authentication server are secure. It is assumed that user session expire in a reasonable amount of time with no activity (i.e. 30 minutes).
+It is assumed that client interface can be installed on any corporate computer or mobile device, but that it cannot connect to the file system or user authentication system without being on the corporate network and signed in through the VPN. It is assumed that the client interface is usable, and that password complexity requirements are reasonable. It is assumed that the client software cannot connect to the file server without first authenticating with the user server. It is also assumed that the endusers (i.e. employees) are trustworthy and will not share their login credentials or confidential files to any unauthorized users. It is assumed that the existence of users and files will not be revealed in error messages form the client. It is finally assumed that the connections between the client, the user authentication server, and the file server are secure and trustworthy.
+
+It is assumed that the user authentication server is also guarded by the same level of physical security and also contains secure redundancy for availability. It is also assumed that a minimum password complexity is set by the system administration. It is assumed that user's exhibit least privilege, can only be created by system admins, and cannot change their own permission levels. It is assumed that usernames and uuids are unique and that username/password hashes stored on the user authentication server are secure. It is assumed that user session expire in a reasonable amount of time with no activity (i.e. 30 minutes).
 
 **Relevant Properties:**
 
@@ -190,6 +193,8 @@ It is assumed that the user authentication server is also guarded by the same le
   * Atomicity
   * Consistency
   * Durability
+  * Availability
+  * Location Independence
   * Unique Naming Scheme
   * Filesystem Hierarchy
   * Unique User Identification
@@ -198,21 +203,15 @@ It is assumed that the user authentication server is also guarded by the same le
   * Secure Connection
   * Necessity of Authentication
   * Least Privilege
-  
+  * Password Complexity
+  * Client Usability
+  * System Element Anonymity
+  * User Session Expiration
+  * System Administrator Separation of Privilege
+
 
 
 ** **
-
-### **Threat Model 3:** **(Large)**
-
-**Scenario:**
-
-**Assumptions:**
-
-**Relevant Properties:**
-
-&nbsp;
-
 ## 3. **References**
 
 [ACID properties of transactions](https://www.ibm.com/support/knowledgecenter/en/SSGMCP_5.4.0/product-overview/acid.html)
