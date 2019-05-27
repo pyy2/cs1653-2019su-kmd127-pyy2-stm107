@@ -147,7 +147,7 @@ This filesystem will be deployed on the local NAS device within a small family h
 
 **Assumptions:**
 
-The filesystem will be accessible and public once connected to the home network via LAN or WIFI. Since it is a shared family storage it is assumed there will be little to no sensitive information stored on the device. For ease of use, the device will not be encrypted or protected beyond the basic router network protections from the outernet. It is assumed that the file server is in a physically safe place to the standards of a private home.
+The filesystem will be accessible and public once connected to the home network via LAN or WIFI. Since it is a shared family storage it is assumed there will be little to no sensitive information stored on the device. For ease of use, the device will not be encrypted or protected beyond the basic router network protections from the broader network. It is assumed that the file server is in a physically safe place to the standards of a private home.
 
 It is assumed that the client will be available as an application on a personal computer or mobile device, but that the client cannot connect to the file server from the greater internet. It is assumed that the client will not connect to the file server unless valid user credentials are supplied and that only trustworthy endusers can supply valid user credentials. It is assumed that connections between the client application, the user authorization server, and the file server are secure.
 
@@ -156,12 +156,12 @@ It is assumed that the user authentication server exists on the local network an
 
 **Relevant Properties:**
 
-  * Correctness
-  * Atomicity
-  * Consistency
-  * Durability
-  * Unique Naming Scheme
-  * Filesystem Hierarchy
+  * Correctness: Files should not be available to everyone. Only authenticated users on the network should be able to access the files.
+  * Atomicity: Transactions on the device should be done in an all or nothing fashion. ie. In the event of a system crash, if a file is in the midst of saving, the save should be undone and the changes reverted so that the file is not in a corrupted state.
+  * Consistency: Files should go from one valid state to another. Similar to atomicity, consistency avoids having a file in a potentially corrupted state.
+  * Durability: If files are saved, the data should persist on the device even through a system crash.
+  * Unique Naming Scheme: Files / Directories should have different names. This will allow a separation of directory and file names and avoid overwriting names that are the same.
+  * Filesystem Hierarchy: Directories should be at the top in a tree structure with files at the bottom level in a tree structure. 
   * Unique User Identification: This identifies each unique user. This is important because it prevents privileges from being assigned to the wrong user. 
   * User Creation Restrictions: This prevents a user from creating other users if they are not authorized to do so; this also prevents a user from creating a user of higher privilege in order to gain the additional access. 
   * User Permission Protection: This prevents the user from altering (elevating) their own level of privilege.
@@ -173,7 +173,7 @@ It is assumed that the user authentication server exists on the local network an
 
 ** **
 
-### **Threat Model 2:** **(Medium) SMALL BUSINESS NETWORK ATTACHED STORAGE**
+### **Threat Model 2:** **(Medium) SMALL BUSINESS PROTECTED SUBNET**
 
 **Scenario:**
 
@@ -189,14 +189,15 @@ It is assumed that the user authentication server is also guarded by the same le
 
 **Relevant Properties:**
 
-  * Correctness
-  * Atomicity
-  * Consistency
-  * Durability
-  * Availability
-  * Location Independence
-  * Unique Naming Scheme
-  * Filesystem Hierarchy
+
+  * Correctness: Files should not be available to everyone. Only authenticated users on the network should be able to access the files.
+  * Atomicity: Transactions on the device should be done in an all or nothing fashion. ie. In the event of a system crash, if a file is in the midst of saving, the save should be undone and the changes reverted so that the file is not in a corrupted state.
+  * Consistency: Files should go from one valid state to another. Similar to atomicity, consistency avoids having a file in a potentially corrupted state.
+  * Durability: If files are saved, the data should persist on the device even through a system crash.
+  * Unique Naming Scheme: Files / Directories should have different names. This will allow a separation of directory and file names and avoid overwriting names that are the same.
+  * Filesystem Hierarchy: Directories should be at the top in a tree structure with files at the bottom level in a tree structure. 
+  * Availability: The filesystem should be available when the business needs it for it to be useful. That means an uptime around 99%.
+  * Turnaround Time: The filesystem should be responsive to user requests with a reasonable turnaround time such that the system is useable in daily activities. 
   * Unique User Identification: This is important so that each user has their own separate login info and definite privileges.
   * User Creation Restrictions: This prevents non-system admins from creating super users to access confidential information.
   * User Permission Protection: This prevents users from giving themselves elevated privileges without system admin approval.
