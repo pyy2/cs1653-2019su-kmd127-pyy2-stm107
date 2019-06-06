@@ -24,8 +24,8 @@ public abstract class Client {
 		try {
 			System.out.println("attempting to connect");
 			this.sock = new Socket(server, port); // create Stream socket then connect to named host @ port #
-			this.input = new DataInputStream(System.in); // get input from terminal
-			this.out = new DataOutputStream(sock.getOutputStream()); // send output to socket
+			this.input = new ObjectInputStream(System.in); // get input from terminal
+			this.output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket
 		} catch (UnknownHostException e) {
 			System.err.println(e);
 			e.printStackTrace();
