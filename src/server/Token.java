@@ -1,5 +1,3 @@
-package server; // getting error stating "declared package does not match the expected package" w/out package name
-
 import java.util.List;
 
 /**
@@ -11,6 +9,21 @@ import java.util.List;
  *
  */
 public class Token implements UserToken {
+
+    // GroupThread.java line 157 -- Constructor implementation
+    // UserToken yourToken = new Token(my_gs.name, username,
+    // my_gs.userList.getUserGroups(username));
+
+    private String issuer;
+    private String subject;
+    private List<String> groups;
+
+    public Token(String _issuer, String _subject, List<String> _groups) {
+        issuer = _issuer;
+        subject = _subject;
+        groups = _groups;
+    }
+
     /**
      * This method should return a string describing the issuer of this token. This
      * string identifies the group server that created this token. For instance, if
@@ -20,7 +33,9 @@ public class Token implements UserToken {
      * @return The issuer of this token
      *
      */
-    public String getIssuer();
+    public String getIssuer() {
+        return issuer;
+    }
 
     /**
      * This method should return a string indicating the name of the subject of the
@@ -30,7 +45,9 @@ public class Token implements UserToken {
      * @return The subject of this token
      *
      */
-    public String getSubject();
+    public String getSubject() {
+        return subject;
+    }
 
     /**
      * This method extracts the list of groups that the owner of this token has
@@ -40,6 +57,8 @@ public class Token implements UserToken {
      * @return The list of group memberships encoded in this token
      *
      */
-    public List<String> getGroups();
+    public List<String> getGroups() {
+        return groups;
+    }
 
 } // -- end interface UserToken
