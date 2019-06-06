@@ -1,41 +1,60 @@
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public abstract class Client {
 
-	/* protected keyword is like private but subclasses have access
-	 * Socket and input/output streams
+	/*
+	 * protected keyword is like private but subclasses have access Socket and
+	 * input/output streams
 	 */
 	protected Socket sock;
 	protected ObjectOutputStream output;
 	protected ObjectInputStream input;
 
 	public boolean connect(final String server, final int port) {
-		System.out.println("attempting to connect");
 
-		/* TODO: Write this method */
+		// Check if socket is in use
+		if (isConnected())
+			disconnect();
 
+		// Try to create new socket connection
+		try {
+			System.out.println("attempting to connect");
+			this.sock = new Socket(server, port); // create Stream socket then connect to named host @ port #
+			this.input = new DataInputStream(System.in); // get input from terminal
+			this.out = new DataOutputStream(sock.getOutputStream()); // send output to socket
+		} catch (UnknownHostException e) {
+			System.err.println(e);
+			e.printStackTrace();
+		} catch (IOException e1) {
+			System.err.println(e1);
+			e1.printStackTrace();
+		} catch (IllegalArgumentException e2) {
+			System.out.println("Invalid Port #");
+			System.err.println(e2);
+			e2.printStackTrace();
+		}
+
+		return isConnected();
 	}
 
 	public boolean isConnected() {
 		if (sock == null || !sock.isConnected()) {
 			return false;
-		}
-		else {
+		} else {
 			return true;
 		}
 	}
 
-	public void disconnect()	 {
+	public void disconnect() {
 		if (isConnected()) {
-			try
-			{
+			try {
 				Envelope message = new Envelope("DISCONNECT");
 				output.writeObject(message);
-			}
-			catch(Exception e)
-			{
+			} catch (Exception e) {
 				System.err.println("Error: " + e.getMessage());
 				e.printStackTrace(System.err);
 			}
