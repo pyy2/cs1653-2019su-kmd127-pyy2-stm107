@@ -260,5 +260,20 @@ public class GroupThread extends Thread
 			return false; //requester does not exist
 		}
 	}
-	
+
+	private boolean createGroup(String groupName, UserToken token)
+	{
+		String requester = token.getSubject();
+		if (my_gs.userList.checkUser(requester))
+		{
+			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
+			if (temp.contains("ADMIN")) 
+			{
+				// using a set no need to check for dupes, false if contains dupes
+				return my_gs.userList.createGroup(groupName);			
+			}
+			else return false;
+		}
+		else return false;
+	}	
 }

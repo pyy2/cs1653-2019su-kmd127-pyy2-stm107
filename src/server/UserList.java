@@ -9,7 +9,12 @@ import java.util.*;
 		 */
 		private static final long serialVersionUID = 7600343803563417992L;
 		private Hashtable<String, User> list = new Hashtable<String, User>();
-		
+		protected Set groupSet = new HashSet();
+		// used a set to ensure no dupes returns false if group already exists
+		public synchronized boolean createGroup(String group)
+		{
+			return groupSet.add(group);
+		}
 		public synchronized void addUser(String username)
 		{
 			User newUser = new User();
@@ -122,5 +127,4 @@ import java.util.*;
 		}
 		
 	}
-	
 }	
