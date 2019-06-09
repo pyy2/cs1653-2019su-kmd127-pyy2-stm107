@@ -110,11 +110,54 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("CGROUP")) //Client wants to create a group
 				{
-				    /* TODO:  Write this handler */
+				    if(message.getObjContents().size() < 2)
+					{
+						response = new Envelope("FAIL");
+					}
+					else
+					{
+						response = new Envelope("FAIL");
+						if(message.getObjContents().get(0) != null)
+						{
+							if(message.getObjContents().get(1) != null)
+							{
+								String groupName = (String)message.getObjContents().get(0); //Extract the groupname
+								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+								
+								if(createGroup(groupName, yourToken))
+								{
+									response = new Envelope("OK"); //Success
+								}
+							}
+						}	
+					}
+					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DGROUP")) //Client wants to delete a group
 				{
-				    /* TODO:  Write this handler */
+					if(message.getObjContents().size() < 2)
+					{
+						response = new Envelope("FAIL");
+					}
+					else
+					{
+						response = new Envelope("FAIL");
+						
+						if(message.getObjContents().get(0) != null)
+						{
+							if(message.getObjContents().get(1) != null)
+							{
+								String groupName = (String)message.getObjContents().get(0); //Extract the groupname
+								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+								
+								if(deleteGroup(groupName, yourToken))
+								{
+									response = new Envelope("OK"); //Success
+								}
+							}
+						}
+					}
+					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("LMEMBERS")) //Client wants a list of members in a group
 				{
@@ -276,4 +319,30 @@ public class GroupThread extends Thread
 		}
 		else return false;
 	}	
+
+	private boolean deleteGroup(String groupName, UserToken token)
+	{
+		String requester = token.getSubject();
+		if (my_gs.userList.checkUser(requester))
+		{
+			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
+			if (temp.contains("ADMIN"))
+			{
+				// remove group from all users that are a member of the group
+				Set<String> allUsers = my_gs.userList.list.keySet();
+				for (String user: allUsers)
+				{
+					my_gs.userList.removeGroup(user, groupName);
+				}
+				return my_gs.userList.deleteGroup(groupName);
+			}
+			else return false;
+		}
+		else return false;
+	}
+
+	// private ArrayList<String> getAllUsers()
+	// {
+
+	// }
 }

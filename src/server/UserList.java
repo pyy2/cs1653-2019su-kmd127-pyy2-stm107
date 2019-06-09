@@ -8,13 +8,22 @@ import java.util.*;
 		 * 
 		 */
 		private static final long serialVersionUID = 7600343803563417992L;
-		private Hashtable<String, User> list = new Hashtable<String, User>();
-		protected Set groupSet = new HashSet();
+		// changed to protected in oreder to be able to check all users' groups.
+		protected Hashtable<String, User> list = new Hashtable<String, User>();
+		protected Set<String> groupSet = new HashSet<String>();
+
 		// used a set to ensure no dupes returns false if group already exists
 		public synchronized boolean createGroup(String group)
 		{
 			return groupSet.add(group);
 		}
+
+		// set returns false is group doesnt exist
+		public synchronized boolean deleteGroup(String group)
+		{
+			return groupSet.remove(group);
+		}
+
 		public synchronized void addUser(String username)
 		{
 			User newUser = new User();
