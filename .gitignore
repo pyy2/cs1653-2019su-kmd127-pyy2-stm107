@@ -1,3 +1,9 @@
+# Shared file directory
+/src/**/shared_files/*
+
+# Binary files
+*.bin
+
 # Compiled class file
 *.class
 
