@@ -161,7 +161,31 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("LMEMBERS")) //Client wants a list of members in a group
 				{
-				    /* TODO:  Write this handler */
+					if(message.getObjContents().size() < 2)
+					{
+						response = new Envelope("FAIL");
+					}
+					else
+					{
+						response = new Envelope("FAIL");
+						if(message.getObjContents().get(0) != null)
+						{
+							if(message.getObjContents().get(1) != null)
+							{
+								String groupName = (String)message.getObjContents().get(0); //Extract the groupname
+								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+								
+								ArrayList<String> memList = listUsers(groupName, yourToken);
+								if (memList == null) response = new Envelope("FAIL"); // fail
+								else
+								{
+									response = new Envelope("OK"); //Success
+									response.addObject(memList);
+								}
+							}
+						}	
+					}
+					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP")) //Client wants to add user to a group
 				{
@@ -309,13 +333,12 @@ public class GroupThread extends Thread
 		String requester = token.getSubject();
 		if (my_gs.userList.checkUser(requester))
 		{
-			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
-			if (temp.contains("ADMIN")) 
-			{
-				// using a set no need to check for dupes, false if contains dupes
-				return my_gs.userList.createGroup(groupName);			
-			}
-			else return false;
+			// no need to check permission because any user can create a group
+			// using a set no need to check for dupes, false if contains dupes
+			// user who creates group owns group but creator is not added to group by default
+			boolean success = my_gs.userList.createGroup(groupName);			
+			my_gs.userList.addOwnership(requester, groupName);
+			return success;
 		}
 		else return false;
 	}	
@@ -325,8 +348,9 @@ public class GroupThread extends Thread
 		String requester = token.getSubject();
 		if (my_gs.userList.checkUser(requester))
 		{
-			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
-			if (temp.contains("ADMIN"))
+			ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
+			// only the owner(ceator) of group can delete the group
+			if (temp.contains(groupName))
 			{
 				// remove group from all users that are a member of the group
 				Set<String> allUsers = my_gs.userList.list.keySet();
@@ -340,9 +364,18 @@ public class GroupThread extends Thread
 		}
 		else return false;
 	}
-
-	// private ArrayList<String> getAllUsers()
-	// {
-
-	// }
+	private ArrayList<String> listUsers(String groupName, UserToken token)
+	{
+		String requester = token.getSubject();
+		if (my_gs.userList.checkUser(requester))
+		{
+			ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
+			if (temp.contains(groupName))
+			{
+				return my_gs.userList.getGroupMembers(groupName);
+			}
+			else return null;
+ 		}
+ 		else return null;
+	} 
 }

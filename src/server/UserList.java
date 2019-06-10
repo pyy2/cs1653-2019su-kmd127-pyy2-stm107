@@ -24,6 +24,20 @@ import java.util.*;
 			return groupSet.remove(group);
 		}
 
+		// gets all users that belong to the given group
+		public synchronized ArrayList<String> getGroupMembers(String group)
+		{
+			ArrayList<String> memList = new ArrayList<String>();
+			for(String user: list.keySet())
+			{
+				if (list.get(user).getGroups().contains(group))
+				{
+					memList.add(user);
+				}
+			}
+			return memList;
+		}
+
 		public synchronized void addUser(String username)
 		{
 			User newUser = new User();
