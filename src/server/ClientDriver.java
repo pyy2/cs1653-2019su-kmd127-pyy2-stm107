@@ -2,6 +2,8 @@ import java.util.*;
 
 public class ClientDriver{
   public static Scanner kb;
+  public static UserToken utkn = null;
+
   public static void main(String args[]){
     kb = new Scanner(System.in);
     String g_ip;
@@ -61,29 +63,80 @@ public class ClientDriver{
         case "1":
           System.out.println("\nLog in\n");
           System.out.print("Please enter your username: ");
-          UserToken utkn = gcli.getToken(kb.nextLine());
+          utkn = gcli.getToken(kb.nextLine());
           System.out.println("Logged in as " + utkn.getSubject() + "\n");
           break;
         case "2":
           System.out.println("\nCreate a new user\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the new user's username: ");
+          String newName = kb.nextLine();
+          boolean create = gcli.createUser(newName, utkn);
+          if(!create) System.out.println("An error occurred creating user " + newName + "\n");
+          else System.out.println("User " + newName + " created successfully!\n");
           break;
         case "3":
           System.out.println("\nDelete a user\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the username to delete: ");
+          String delName = kb.nextLine();
+          boolean delete = gcli.deleteUser(delName, utkn);
+          if(!delete) System.out.println("An error occurred deleting user " + delName + "\n");
+          else System.out.println("User " + delName + " deleted successfully!\n");
           break;
         case "4":
           System.out.println("\nCreate a group\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the new group's name: ");
+          String newGName = kb.nextLine();
+          boolean Gcreate = gcli.createGroup(newGName, utkn);
+          if(!Gcreate) System.out.println("An error occurred creating group " + newGName + "\n");
+          else System.out.println("Group " + newGName + " created successfully!\n");
           break;
         case "5":
           System.out.println("\nDelete a group\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the group to delete: ");
+          String delGName = kb.nextLine();
+          boolean Gdelete = gcli.deleteGroup(delGName, utkn);
+          if(!Gdelete) System.out.println("An error occurred deleting group " + delGName + "\n");
+          else System.out.println("Group " + delGName + " deleted successfully!\n");
           break;
         case "6":
           System.out.println("\nAdd a user to a group\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the user to add: ");
+          String addgName = kb.nextLine();
+          System.out.print("Please enter the group to add " + addgName + " to: ");
+          String addToGName = kb.nextLine();
+          boolean addToG = gcli.addUserToGroup(addgName, addToGName, utkn);
+          if(!addToG) System.out.println("An error occurred adding user " + addgName + " to group " + addToGName + "\n");
+          else System.out.println("User " + addgName + " successfully added to " + addToGName + "!\n");
           break;
         case "7":
           System.out.println("\nDelete a user form a group\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the user to delete: ");
+          String delgName = kb.nextLine();
+          System.out.print("Please enter the group to delete from " + delgName);
+          String delToGName = kb.nextLine();
+          boolean delToG = gcli.addUserToGroup(delgName, delToGName, utkn);
+          if(!delToG) System.out.println("An error occurred deleting user " + delgName + " from group " + delToGName + "\n");
+          else System.out.println("User " + delgName + " successfully deleted from " + delToGName + "!\n");
           break;
         case "8":
           System.out.println("\nList all members of a group\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the group name: ");
+          String GCheck = kb.nextLine();
+          List<String> mems  = gcli.listMembers(GCheck, utkn);
+          if(mems == null) System.out.println("An error occurred getting users from " + GCheck + ".\n");
+          else {
+            System.out.println("Members in Group " + GCheck + ": ");
+            for(String mem: mems){
+              System.out.println(mem);
+            }
+          }
           break;
         case "9":
           System.out.println("\nList files\n");
@@ -107,5 +160,13 @@ public class ClientDriver{
           System.out.println("\nI'm sorry, I didn't understand your input. Let's try again.\n");
       }
     }
+  }
+
+  private static boolean checkLogInStatus(){
+    if(utkn == null){
+      System.out.println("\nNo user session found. Please log in with option 1.\n");
+      return false;
+    }
+    return true;
   }
 }
