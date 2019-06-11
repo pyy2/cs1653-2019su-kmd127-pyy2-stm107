@@ -23,11 +23,13 @@ public abstract class Client {
 		// Try to create new socket connection
 		try {
 			System.out.println("Attempting to connect");
-			this.sock = new Socket(server, port); // create Stream socket then connect to named host @ port #
+			sock = new Socket(server, port); // create Stream socket then connect to named host @ port #
 			System.out.println("Connected to " + server + " on port " + port);
 
-			this.input = new ObjectInputStream(sock.getInputStream()); // get input from socket
-			this.output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket
+			// If we instantiae input before output, we get into a weird infinite loop situation. :shrug:
+			output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket\			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
+			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
+
 		} catch (UnknownHostException e) {
 			System.err.println(e);
 			e.printStackTrace();
@@ -39,8 +41,6 @@ public abstract class Client {
 			System.err.println(e2);
 			e2.printStackTrace();
 		}
-
-		// Return connection status
 		return isConnected();
 	}
 

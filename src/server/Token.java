@@ -8,12 +8,12 @@ import java.util.List;
  * code can interface with the tokens created by your group server.
  *
  */
-public class Token implements UserToken {
+public class Token implements UserToken, java.io.Serializable {
 
     // GroupThread.java line 157 -- Constructor implementation
     // UserToken yourToken = new Token(my_gs.name, username,
     // my_gs.userList.getUserGroups(username));
-
+    private static final long serialVersionUID = -8911161283900260245L;
     private String issuer;
     private String subject;
     private List<String> groups;
