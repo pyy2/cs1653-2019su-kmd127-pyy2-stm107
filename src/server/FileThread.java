@@ -3,6 +3,7 @@
 import java.lang.Thread;
 import java.net.Socket;
 import java.util.List;
+import java.util.ArrayList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -40,7 +41,9 @@ public class FileThread extends Thread
 						// JUST FOR CLIENT TESTING
 						response = new Envelope("OK");
 						String test = "THIS IS A TEST";
-						response.addObject(test);
+						List<String> testList = new ArrayList<String>();
+						testList.add(test);
+						response.addObject(testList);
 						output.writeObject(response);
 
 				}

@@ -148,6 +148,7 @@ public class ClientDriver{
           for(String f: files){
             System.out.println(f);
           }
+          System.out.println();
           break;
         case "10":
           System.out.println("\nUpload a file\n");
