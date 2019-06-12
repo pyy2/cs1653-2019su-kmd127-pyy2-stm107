@@ -217,8 +217,33 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP")) //Client wants to remove user from a group
 				{
-				    /* TODO:  Write this handler */
+					if(message.getObjContents().size() < 3)
+					{
+						response = new Envelope("FAIL");
+					}
+					else
+					{
+						response = new Envelope("FAIL");
+						if(message.getObjContents().get(0) != null)
+						{
+							if(message.getObjContents().get(1) != null)
+							{
+								if(message.getObjContents().get(2) != null)
+								{
+									String userName = (String)message.getObjContents().get(0); // extract the username
+									String groupName = (String)message.getObjContents().get(1); //Extract the groupname
+									UserToken yourToken = (UserToken)message.getObjContents().get(2); //Extract the token
+									if (deleteUserFromGroup(userName, groupName, yourToken))
+									{
+										response = new Envelope("OK"); // success
+									} 
+								}	
+							}
+						}	
+					}
+					output.writeObject(response);
 				}
+				
 				else if(message.getMessage().equals("DISCONNECT")) //Client wants to disconnect
 				{
 					socket.close(); //Close the socket
@@ -416,5 +441,27 @@ public class GroupThread extends Thread
 			else return false;	
 		}
 		else return false;
+	}
+	private boolean deleteUserFromGroup(String user, String groupName, UserToken token)
+	{
+		String requester = token.getSubject();
+		if (my_gs.userList.checkUser(requester))
+		{
+			ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
+			// check to see if the requestor is the group owner
+			if (temp.contains(groupName))
+			{
+				ArrayList<String> userGroups = my_gs.userList.getUserGroups(user);
+				// check to see if the user(to be romoved) is a member of the group
+				if (userGroups.contains(user))
+				{
+					my_gs.userList.removeGroup(user, groupName);
+					return true;
+				}
+				else return false;
+			}
+			else return false;
+		}
+		else return false;	
 	}
 }
