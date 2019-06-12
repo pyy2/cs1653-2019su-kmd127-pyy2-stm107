@@ -118,9 +118,9 @@ public class ClientDriver{
           if(!checkLogInStatus()) break;
           System.out.print("Please enter the user to delete: ");
           String delgName = kb.nextLine();
-          System.out.print("Please enter the group to delete from " + delgName);
+          System.out.print("Please enter the group to delete from " + delgName + ": ");
           String delToGName = kb.nextLine();
-          boolean delToG = gcli.addUserToGroup(delgName, delToGName, utkn);
+          boolean delToG = gcli.deleteUserFromGroup(delgName, delToGName, utkn);
           if(!delToG) System.out.println("An error occurred deleting user " + delgName + " from group " + delToGName + "\n");
           else System.out.println("User " + delgName + " successfully deleted from " + delToGName + "!\n");
           break;
@@ -136,6 +136,7 @@ public class ClientDriver{
             for(String mem: mems){
               System.out.println(mem);
             }
+            System.out.println();
           }
           break;
         case "9":

@@ -35,3 +35,9 @@ The file server will create a shared_files inside the working directory if one d
 To reset the Group Server, delete the file `UserList.bin`
 
 To reset the File Server, delete the `FileList.bin` file and the `shared_files/` directory.
+
+## Running the Client
+
+To start the Client:
+ - Enter the directory containing `ClientDriver.class`
+ - Type `java ClientDriver`

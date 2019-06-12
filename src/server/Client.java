@@ -26,8 +26,8 @@ public abstract class Client {
 			sock = new Socket(server, port); // create Stream socket then connect to named host @ port #
 			System.out.println("Connected to " + server + " on port " + port);
 
-			// If we instantiae input before output, we get into a weird infinite loop situation. :shrug:
-			output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket\			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
+			// If we instantiate input before output, we get into a weird infinite loop situation. :shrug:
+			output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket
 			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
 
 		} catch (UnknownHostException e) {
