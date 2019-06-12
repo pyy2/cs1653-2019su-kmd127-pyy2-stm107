@@ -37,6 +37,12 @@ public class FileThread extends Thread
 				if(e.getMessage().equals("LFILES"))
 				{
 				    /* TODO: Write this handler */
+						// JUST FOR CLIENT TESTING
+						response = new Envelope("OK");
+						String test = "THIS IS A TEST";
+						response.addObject(test);
+						output.writeObject(response);
+
 				}
 				if(e.getMessage().equals("UPLOADF"))
 				{

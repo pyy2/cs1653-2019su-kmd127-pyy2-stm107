@@ -141,15 +141,43 @@ public class ClientDriver{
           break;
         case "9":
           System.out.println("\nList files\n");
+          if(!checkLogInStatus()) break;
+          // FileThread should check the user's groups from the token
+          List<String> files  = fcli.listFiles(utkn);
+          System.out.println("The files that user " + utkn.getSubject() + "can access are: ");
+          for(String f: files){
+            System.out.println(f);
+          }
           break;
         case "10":
           System.out.println("\nUpload a file\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the path for the file you wish to upload: ");
+          String upSrc = kb.nextLine();
+          System.out.print("Please enter the name for the destination: ");
+          String upDest = kb.nextLine();
+          System.out.print("Please enter the group to which you want to upload the file: ");
+          String upGroup = kb.nextLine();
+          if(!fcli.upload(upSrc, upDest, upGroup, utkn)) System.out.println("Error uploading file to file server.\n");
+          else System.out.println("File successfully uploaded to file server!\n");
           break;
         case "11":
           System.out.println("\nDownload a file\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the name of the file you wish to download: ");
+          String downSrc = kb.nextLine();
+          System.out.print("Please enter the name for the destination: ");
+          String downDest = kb.nextLine();
+          if(!fcli.download(downSrc, downDest, utkn)) System.out.println("Error downloading file.\n");
+          else System.out.println("File successfully downloaded!\n");
           break;
         case "12":
           System.out.println("\nDelete a file\n");
+          if(!checkLogInStatus()) break;
+          System.out.print("Please enter the name of the file you wish to delete: ");
+          String delSrc = kb.nextLine();
+          if(!fcli.delete(delSrc, utkn)) System.out.println("Error deleting file from file server.\n");
+          else System.out.println("File successfully deleted from file server!\n");
           break;
         case "13":
           System.out.println("\nDisconnecting from servers...\n");
