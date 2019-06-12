@@ -3,6 +3,8 @@ import java.util.*;
 public class ClientDriver{
   public static Scanner kb;
   public static UserToken utkn = null;
+  public static GroupClient gcli = new GroupClient();
+  public static FileClient fcli = new FileClient();
 
   public static void main(String args[]){
     kb = new Scanner(System.in);
@@ -31,10 +33,7 @@ public class ClientDriver{
     }
     System.out.println("Connecting to group client at " + g_ip + ":" + g_port + " and file client at " + f_ip + ":" + f_port);
 
-    // Create and connect
-    GroupClient gcli = new GroupClient();
-    FileClient fcli = new FileClient();
-
+    // connect to servers
     gcli.connect(g_ip, g_port);
     fcli.connect(f_ip, f_port);
 
@@ -61,142 +60,193 @@ public class ClientDriver{
 
       switch(command){
         case "1":
-          System.out.println("\nLog in\n");
-          System.out.print("Please enter your username: ");
-          utkn = gcli.getToken(kb.nextLine());
-          System.out.println("Logged in as " + utkn.getSubject() + "\n");
+          login();
           break;
         case "2":
-          System.out.println("\nCreate a new user\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the new user's username: ");
-          String newName = kb.nextLine();
-          boolean create = gcli.createUser(newName, utkn);
-          if(!create) System.out.println("An error occurred creating user " + newName + "\n");
-          else System.out.println("User " + newName + " created successfully!\n");
+          createUser();
           break;
         case "3":
-          System.out.println("\nDelete a user\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the username to delete: ");
-          String delName = kb.nextLine();
-          boolean delete = gcli.deleteUser(delName, utkn);
-          if(!delete) System.out.println("An error occurred deleting user " + delName + "\n");
-          else System.out.println("User " + delName + " deleted successfully!\n");
+          deleteUser();
           break;
         case "4":
-          System.out.println("\nCreate a group\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the new group's name: ");
-          String newGName = kb.nextLine();
-          boolean Gcreate = gcli.createGroup(newGName, utkn);
-          if(!Gcreate) System.out.println("An error occurred creating group " + newGName + "\n");
-          else System.out.println("Group " + newGName + " created successfully!\n");
+          createGroup();
           break;
         case "5":
-          System.out.println("\nDelete a group\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the group to delete: ");
-          String delGName = kb.nextLine();
-          boolean Gdelete = gcli.deleteGroup(delGName, utkn);
-          if(!Gdelete) System.out.println("An error occurred deleting group " + delGName + "\n");
-          else System.out.println("Group " + delGName + " deleted successfully!\n");
+          deleteGroup();
           break;
         case "6":
-          System.out.println("\nAdd a user to a group\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the user to add: ");
-          String addgName = kb.nextLine();
-          System.out.print("Please enter the group to add " + addgName + " to: ");
-          String addToGName = kb.nextLine();
-          boolean addToG = gcli.addUserToGroup(addgName, addToGName, utkn);
-          if(!addToG) System.out.println("An error occurred adding user " + addgName + " to group " + addToGName + "\n");
-          else System.out.println("User " + addgName + " successfully added to " + addToGName + "!\n");
+          addUserToGroup();
           break;
         case "7":
-          System.out.println("\nDelete a user form a group\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the user to delete: ");
-          String delgName = kb.nextLine();
-          System.out.print("Please enter the group to delete from " + delgName + ": ");
-          String delToGName = kb.nextLine();
-          boolean delToG = gcli.deleteUserFromGroup(delgName, delToGName, utkn);
-          if(!delToG) System.out.println("An error occurred deleting user " + delgName + " from group " + delToGName + "\n");
-          else System.out.println("User " + delgName + " successfully deleted from " + delToGName + "!\n");
+          deleteUserFromGroup();
           break;
         case "8":
-          System.out.println("\nList all members of a group\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the group name: ");
-          String GCheck = kb.nextLine();
-          List<String> mems  = gcli.listMembers(GCheck, utkn);
-          if(mems == null) System.out.println("An error occurred getting users from " + GCheck + ".\n");
-          else {
-            System.out.println("Members in Group " + GCheck + ": ");
-            for(String mem: mems){
-              System.out.println(mem);
-            }
-            System.out.println();
-          }
+          listGroupMembers();
           break;
         case "9":
-          System.out.println("\nList files\n");
-          if(!checkLogInStatus()) break;
-          // FileThread should check the user's groups from the token
-          List<String> files  = fcli.listFiles(utkn);
-          System.out.println("The files that user " + utkn.getSubject() + "can access are: ");
-          for(String f: files){
-            System.out.println(f);
-          }
-          System.out.println();
+          listFiles();
           break;
         case "10":
-          System.out.println("\nUpload a file\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the path for the file you wish to upload: ");
-          String upSrc = kb.nextLine();
-          System.out.print("Please enter the name for the destination: ");
-          String upDest = kb.nextLine();
-          System.out.print("Please enter the group to which you want to upload the file: ");
-          String upGroup = kb.nextLine();
-          if(!fcli.upload(upSrc, upDest, upGroup, utkn)) System.out.println("Error uploading file to file server.\n");
-          else System.out.println("File successfully uploaded to file server!\n");
+          upload();
           break;
         case "11":
-          System.out.println("\nDownload a file\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the name of the file you wish to download: ");
-          String downSrc = kb.nextLine();
-          System.out.print("Please enter the name for the destination: ");
-          String downDest = kb.nextLine();
-          if(!fcli.download(downSrc, downDest, utkn)) System.out.println("Error downloading file.\n");
-          else System.out.println("File successfully downloaded!\n");
+          download();
           break;
         case "12":
-          System.out.println("\nDelete a file\n");
-          if(!checkLogInStatus()) break;
-          System.out.print("Please enter the name of the file you wish to delete: ");
-          String delSrc = kb.nextLine();
-          if(!fcli.delete(delSrc, utkn)) System.out.println("Error deleting file from file server.\n");
-          else System.out.println("File successfully deleted from file server!\n");
+          deleteFile();
           break;
         case "13":
-          System.out.println("\nDisconnecting from servers...\n");
-          gcli.disconnect();
-          fcli.disconnect();
-          System.out.println("Bye!");
-          System.exit(0);
+          exit();
         default:
           System.out.println("\nI'm sorry, I didn't understand your input. Let's try again.\n");
       }
     }
   }
 
-  private static boolean checkLogInStatus(){
+  private static void checkLogInStatus(){
     if(utkn == null){
-      System.out.println("\nNo user session found. Please log in with option 1.\n");
-      return false;
+      System.out.println("\nNo user session found. Please log in.\n");
+      login();
     }
-    return true;
+  }
+
+  private static void login(){
+    System.out.println("\nLog in\n");
+    System.out.print("Please enter your username: ");
+    utkn = gcli.getToken(kb.nextLine());
+    System.out.println("Logged in as " + utkn.getSubject() + "\n");
+  }
+
+  private static void createUser(){
+    System.out.println("\nCreate a new user\n");
+    checkLogInStatus();
+    System.out.print("Please enter the new user's username: ");
+    String newName = kb.nextLine();
+    boolean create = gcli.createUser(newName, utkn);
+    if(!create) System.out.println("An error occurred creating user " + newName + "\n");
+    else System.out.println("User " + newName + " created successfully!\n");
+  }
+
+  private static void deleteUser(){
+    System.out.println("\nDelete a user\n");
+    checkLogInStatus();
+    System.out.print("Please enter the username to delete: ");
+    String delName = kb.nextLine();
+    boolean delete = gcli.deleteUser(delName, utkn);
+    if(!delete) System.out.println("An error occurred deleting user " + delName + "\n");
+    else System.out.println("User " + delName + " deleted successfully!\n");
+  }
+
+  private static void createGroup(){
+    System.out.println("\nCreate a group\n");
+    checkLogInStatus();
+    System.out.print("Please enter the new group's name: ");
+    String newGName = kb.nextLine();
+    boolean Gcreate = gcli.createGroup(newGName, utkn);
+    if(!Gcreate) System.out.println("An error occurred creating group " + newGName + "\n");
+    else System.out.println("Group " + newGName + " created successfully!\n");
+  }
+
+  private static void deleteGroup(){
+    System.out.println("\nDelete a group\n");
+    checkLogInStatus();
+    System.out.print("Please enter the group to delete: ");
+    String delGName = kb.nextLine();
+    boolean Gdelete = gcli.deleteGroup(delGName, utkn);
+    if(!Gdelete) System.out.println("An error occurred deleting group " + delGName + "\n");
+    else System.out.println("Group " + delGName + " deleted successfully!\n");
+  }
+
+  private static void addUserToGroup(){
+    System.out.println("\nAdd a user to a group\n");
+    checkLogInStatus();
+    System.out.print("Please enter the user to add: ");
+    String addgName = kb.nextLine();
+    System.out.print("Please enter the group to add " + addgName + " to: ");
+    String addToGName = kb.nextLine();
+    boolean addToG = gcli.addUserToGroup(addgName, addToGName, utkn);
+    if(!addToG) System.out.println("An error occurred adding user " + addgName + " to group " + addToGName + "\n");
+    else System.out.println("User " + addgName + " successfully added to " + addToGName + "!\n");
+  }
+
+  private static void deleteUserFromGroup(){
+    System.out.println("\nDelete a user form a group\n");
+    checkLogInStatus();
+    System.out.print("Please enter the user to delete: ");
+    String delgName = kb.nextLine();
+    System.out.print("Please enter the group to delete from " + delgName + ": ");
+    String delToGName = kb.nextLine();
+    boolean delToG = gcli.deleteUserFromGroup(delgName, delToGName, utkn);
+    if(!delToG) System.out.println("An error occurred deleting user " + delgName + " from group " + delToGName + "\n");
+    else System.out.println("User " + delgName + " successfully deleted from " + delToGName + "!\n");
+  }
+
+  private static void listGroupMembers(){
+    System.out.println("\nList all members of a group\n");
+    checkLogInStatus();
+    System.out.print("Please enter the group name: ");
+    String GCheck = kb.nextLine();
+    List<String> mems  = gcli.listMembers(GCheck, utkn);
+    if(mems == null) System.out.println("An error occurred getting users from " + GCheck + ".\n");
+    else {
+      System.out.println("Members in Group " + GCheck + ": ");
+      for(String mem: mems){
+        System.out.println(mem);
+      }
+      System.out.println();
+    }
+  }
+
+  private static void listFiles(){
+    System.out.println("\nList files\n");
+    checkLogInStatus();
+    // FileThread should check the user's groups from the token
+    List<String> files  = fcli.listFiles(utkn);
+    System.out.println("The files that user " + utkn.getSubject() + "can access are: ");
+    for(String f: files){
+      System.out.println(f);
+    }
+    System.out.println();
+  }
+
+  private static void upload(){
+    System.out.println("\nUpload a file\n");
+    checkLogInStatus();
+    System.out.print("Please enter the path for the file you wish to upload: ");
+    String upSrc = kb.nextLine();
+    System.out.print("Please enter the name for the destination: ");
+    String upDest = kb.nextLine();
+    System.out.print("Please enter the group to which you want to upload the file: ");
+    String upGroup = kb.nextLine();
+    if(!fcli.upload(upSrc, upDest, upGroup, utkn)) System.out.println("Error uploading file to file server.\n");
+    else System.out.println("File successfully uploaded to file server!\n");
+  }
+
+  private static void download(){
+    System.out.println("\nDownload a file\n");
+    checkLogInStatus();
+    System.out.print("Please enter the name of the file you wish to download: ");
+    String downSrc = kb.nextLine();
+    System.out.print("Please enter the name for the destination: ");
+    String downDest = kb.nextLine();
+    if(!fcli.download(downSrc, downDest, utkn)) System.out.println("Error downloading file.\n");
+    else System.out.println("File successfully downloaded!\n");
+  }
+
+  private static void deleteFile(){
+    System.out.println("\nDelete a file\n");
+    checkLogInStatus();
+    System.out.print("Please enter the name of the file you wish to delete: ");
+    String delSrc = kb.nextLine();
+    if(!fcli.delete(delSrc, utkn)) System.out.println("Error deleting file from file server.\n");
+    else System.out.println("File successfully deleted from file server!\n");
+  }
+
+  private static void exit(){
+    System.out.println("\nDisconnecting from servers...\n");
+    gcli.disconnect();
+    fcli.disconnect();
+    System.out.println("Bye!");
+    System.exit(0);
   }
 }
