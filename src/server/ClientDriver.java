@@ -34,9 +34,18 @@ public class ClientDriver{
     System.out.println("Connecting to group client at " + g_ip + ":" + g_port + " and file client at " + f_ip + ":" + f_port);
 
     // connect to servers
-    gcli.connect(g_ip, g_port);
-    fcli.connect(f_ip, f_port);
+    boolean gconn = gcli.connect(g_ip, g_port);
+    boolean fconn = fcli.connect(f_ip, f_port);
 
+    if(!(gconn)){
+      System.out.println("Error connecting to group server. Exiting...");
+      System.exit(1);
+    }
+
+    if(!(fconn)){
+      System.out.println("Error connecting to file server. Exiting...");
+      System.exit(1);
+    }
 
     while(true){
       System.out.println("What would you like to do?");
