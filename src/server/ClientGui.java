@@ -3,47 +3,52 @@ import java.awt.*;
 class ClientGui {
     public static void main(String args[]) {
 
-        //Creating the Frame
         JFrame frame = new JFrame("File Sharing System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(760, 500);
+        frame.setSize(1500, 400);
 
-        JPanel panel = new JPanel();
-        // Get Group Server Info
-        JLabel giplabel = new JLabel("Group Server IP:");
-        JTextField giptf = new JTextField(20);
-        JLabel gportlabel = new JLabel("Group Server Port:");
-        JTextField gporttf = new JTextField(20);
+        JPanel panel1 = new JPanel();
+        JLabel giplabel = new JLabel("Group Server IP: ");
+        JTextField giptf = new JTextField(16);
+        panel1.add(giplabel);
+        panel1.add(giptf);
+        JLabel gportlabel = new JLabel("Group Server Port: ");
+        JTextField gporttf = new JTextField(4);
+        panel1.add(gportlabel);
+        panel1.add(gporttf);
 
-        // Get File Server Info
-        JLabel fiplabel = new JLabel("File Server IP:");
-        JTextField fiptf = new JTextField(20);
-        JLabel fportlabel = new JLabel("File Server Port:");
-        JTextField fporttf = new JTextField(20);
+        JLabel fiplabel = new JLabel("File Server IP: ");
+        JTextField fiptf = new JTextField(16);
+        panel1.add(fiplabel);
+        panel1.add(fiptf);
+        JLabel fportlabel = new JLabel("File Server Port: ");
+        JTextField fporttf = new JTextField(4);
+        panel1.add(fportlabel);
+        panel1.add(fporttf);
 
-        // Set up buttons
-        JButton defaults = new JButton("Use Defaults");
         JButton connect = new JButton("Connect");
-        JButton disconnect = new JButton("Disconnect");
-        JButton reset = new JButton("Clear");
+        JButton defaults = new JButton("Connect with Defaults");
+        panel1.add(connect);
+        panel1.add(defaults);
 
-        // Add it all to panel
-        panel.add(giplabel);
-        panel.add(giptf);
-        panel.add(gportlabel);
-        panel.add(gporttf);
-        panel.add(fiplabel);
-        panel.add(fiptf);
-        panel.add(fportlabel);
-        panel.add(fporttf);
+        JPanel panel2 = new JPanel();
+        JLabel cmdlabel = new JLabel("Command: ");
+        JTextField cmdtf = new JTextField(50);
+        JButton enter = new JButton("Enter");
+        JButton reset = new JButton("Exit");
+        panel2.add(cmdlabel);
+        panel2.add(cmdlabel);
+        panel2.add(cmdtf);
+        panel2.add(enter);
+        panel2.add(reset);
 
-        panel.add(defaults);
-        panel.add(connect);
-        panel.add(disconnect);
-        panel.add(reset);
+        JTextArea ta = new JTextArea();
+        ta.append("Enter IPs/ports and click \"Connect\" to start.\n");
+        ta.append("To use default values, click \"Connect with Defaults\"");
 
-        //Adding Components to the frame.
-        frame.getContentPane().add(BorderLayout.CENTER, panel);
+        frame.getContentPane().add(BorderLayout.SOUTH, panel2);
+        frame.getContentPane().add(BorderLayout.NORTH, panel1);
+        frame.getContentPane().add(BorderLayout.CENTER, ta);
         frame.setVisible(true);
     }
 }
