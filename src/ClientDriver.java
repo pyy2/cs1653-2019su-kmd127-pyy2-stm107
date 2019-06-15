@@ -175,7 +175,12 @@ public class ClientDriver{
     String addToGName = kb.nextLine();
     boolean addToG = gcli.addUserToGroup(addgName, addToGName, utkn);
     if(!addToG) System.out.println("An error occurred adding user " + addgName + " to group " + addToGName + "\n");
-    else System.out.println("User " + addgName + " successfully added to " + addToGName + "!\n");
+    else{
+      System.out.println("User " + addgName + " successfully added to " + addToGName + "!\n");
+      // refresh the token to add the groups.
+      // This covers the scenario where you add yourself to a group.
+      utkn = gcli.getToken(utkn.getSubject());
+    }
   }
 
   private static void deleteUserFromGroup(){
@@ -187,7 +192,12 @@ public class ClientDriver{
     String delToGName = kb.nextLine();
     boolean delToG = gcli.deleteUserFromGroup(delgName, delToGName, utkn);
     if(!delToG) System.out.println("An error occurred deleting user " + delgName + " from group " + delToGName + "\n");
-    else System.out.println("User " + delgName + " successfully deleted from " + delToGName + "!\n");
+    else{
+      System.out.println("User " + delgName + " successfully deleted from " + delToGName + "!\n");
+      // refresh the token to add the groups.
+      // This covers the scenario where you add yourself to a group.
+      utkn = gcli.getToken(utkn.getSubject());
+    }
   }
 
   private static void listGroupMembers(){
@@ -211,7 +221,7 @@ public class ClientDriver{
     checkLogInStatus();
     // FileThread should check the user's groups from the token
     List<String> files  = fcli.listFiles(utkn);
-    System.out.println("The files that user " + utkn.getSubject() + "can access are: ");
+    System.out.println("The files that user " + utkn.getSubject() + " can access are: ");
     for(String f: files){
       System.out.println(f);
     }
@@ -227,6 +237,7 @@ public class ClientDriver{
     String upDest = kb.nextLine();
     System.out.print("Please enter the group to which you want to upload the file: ");
     String upGroup = kb.nextLine();
+    utkn = gcli.getToken(utkn.getSubject());
     if(!fcli.upload(upSrc, upDest, upGroup, utkn)) System.out.println("Error uploading file to file server.\n");
     else System.out.println("File successfully uploaded to file server!\n");
   }
@@ -238,6 +249,7 @@ public class ClientDriver{
     String downSrc = kb.nextLine();
     System.out.print("Please enter the name for the destination: ");
     String downDest = kb.nextLine();
+    utkn = gcli.getToken(utkn.getSubject());
     if(!fcli.download(downSrc, downDest, utkn)) System.out.println("Error downloading file.\n");
     else System.out.println("File successfully downloaded!\n");
   }
