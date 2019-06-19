@@ -7,39 +7,31 @@ public class ClientDriver{
   public static FileClient fcli = new FileClient();
   public static String GIP = "127.0.0.1";
   public static String FIP = "127.0.0.1";
-  public static String GPORT = "8765";
-  public static String FPORT = "4321";
+  public static int GPORT = 8765;
+  public static int FPORT = 4321;
 
   public static void main(String args[]){
     kb = new Scanner(System.in);
-    String g_ip;
-    String f_ip;
-    int g_port;
-    int f_port;
     System.out.println("Welcome to the File Sharing System!");
     System.out.print("Use default ip:port for group and file servers? (y/n): ");
     boolean def = kb.nextLine().toLowerCase().equals("y");
-    if(def){
-      g_ip = "127.0.0.1";
-      f_ip = "127.0.0.1";
-      g_port = 8765;
-      f_port = 4321;
-    }
-    else{
+
+    if(!def){
       System.out.print("Please enter the ip for the group server: ");
-      g_ip = kb.nextLine();
+      GIP = kb.nextLine();
       System.out.print("Please enter the port for the group server: ");
-      g_port = Integer.parseInt(kb.nextLine());
+      GPORT = Integer.parseInt(kb.nextLine());
       System.out.print("Please enter the ip for the file server: ");
-      f_ip = kb.nextLine();
+      FIP = kb.nextLine();
       System.out.print("Please enter the port for the file server: ");
-      f_port = Integer.parseInt(kb.nextLine());
+      FPORT = Integer.parseInt(kb.nextLine());
     }
-    System.out.println("Connecting to group client at " + g_ip + ":" + g_port + " and file client at " + f_ip + ":" + f_port);
+
+    System.out.println("Connecting to group client at " + GIP + ":" + GPORT + " and file client at " + FIP + ":" + FPORT);
 
     // connect to servers
-    boolean gconn = gcli.connect(g_ip, g_port);
-    boolean fconn = fcli.connect(f_ip, f_port);
+    boolean gconn = gcli.connect(GIP, GPORT);
+    boolean fconn = fcli.connect(FIP, FPORT);
 
     if(!(gconn)){
       System.out.println("Error connecting to group server. Exiting...");
@@ -293,9 +285,9 @@ public class ClientDriver{
   private static UserToken bounceToken(){
     // Bounce the server connections and re-login
     gcli.disconnect();
-    gcli.connect(GIP, Integer.parseInt(GPORT));
+    gcli.connect(GIP, GPORT);
     fcli.disconnect();
-    fcli.connect(FIP, Integer.parseInt(FPORT));
+    fcli.connect(FIP, FPORT);
     String uname = utkn.getSubject();
     return gcli.getToken(uname);
   }
