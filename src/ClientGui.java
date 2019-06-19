@@ -12,6 +12,7 @@ class ClientGui {
   public static String GPORT = "8765";
   public static String FPORT = "4321";
   public static boolean loggedin = false;
+  public static boolean connected = false;
 
   public static void main(String args[]) {
 
@@ -234,6 +235,14 @@ class ClientGui {
         GPORT = gporttf.getText();
         FIP = fiptf.getText();
         FPORT = fporttf.getText();
+        if(GIP.equals("") || FIP.equals("") || GPORT.equals("") || FPORT.equals("")){
+          ta.setText("\nYou must enter all connection values (ips and ports).\n\n");
+          GIP = "127.0.0.1";
+          FIP = "127.0.0.1";
+          GPORT = "8765";
+          FPORT = "4321";
+          return;
+        }
         ta.setText("Connection with specified values...");
         connect(GIP, FIP, Integer.parseInt(GPORT), Integer.parseInt(FPORT));
       }
@@ -388,7 +397,10 @@ class ClientGui {
     if(!(fconn)){
       ta.setText("Error connecting to file server.");
     }
-    else ta.setText("Connected!\n");
+    else{
+      ta.setText("Connected!\n");
+      connected = true;
+    }
     if(!loggedin) ta.append("Please log in.\n\n");
     else printMenu();
   }
@@ -418,13 +430,27 @@ class ClientGui {
   }
 
   private static void login(String uname, String pass){
+    if(!connected){
+      ta.setText("Client not connected.\nPlease connect to group and file servers.\n\n");
+      return;
+    }
     ta.setText("\nLoggin in...\n");
     // TODO: Add password to this when we introduce password hashing.
-    if(uname==null) ta.setText("\nYou must enter a username.\n\nPlease try again.\n");
+    if(uname.equals("") || uname.equals(" ")){
+      ta.setText("\nYou must enter a username.\n\nPlease try again.\n");
+      return;
+    }
     utkn = gcli.getToken(uname);
-    ta.append("Logged in as " + utkn.getSubject() + "\n\n\n");
-    loggedin = true;
-    printMenu();
+    if(utkn != null){
+      ta.append("Logged in as " + utkn.getSubject() + "\n\n\n");
+      loggedin = true;
+      printMenu();
+    }
+    else{
+      ta.append("Error loggin in...\nPlease try again\n\n\n");
+      loggedin = false;
+      return;
+    }
   }
 
   private static void createUser(String uname, String pass){
@@ -469,6 +495,7 @@ class ClientGui {
 
   private static void addUserToGroup(String uname, String gname){
     ta.setText("\nAdd a user to a group\n");
+    utkn = bounceToken();
     if(checkLogInStatus()){
       boolean addToG = gcli.addUserToGroup(uname, gname, utkn);
       if(!addToG) ta.append("An error occurred adding user " + uname + " to group " + gname + "\n\n\n");
@@ -479,6 +506,7 @@ class ClientGui {
 
   private static void deleteUserFromGroup(String uname, String gname){
     ta.setText("\nDelete a user form a group\n");
+    utkn = bounceToken();
     if(checkLogInStatus()){
       boolean delToG = gcli.deleteUserFromGroup(uname, gname, utkn);
       if(!delToG) ta.append("An error occurred deleting user " + uname + " from group " + gname + "\n\n\n");
@@ -489,6 +517,7 @@ class ClientGui {
 
   private static void listGroupMembers(String gname){
     ta.setText("\nList all members of a group\n");
+    utkn = bounceToken();
     if(checkLogInStatus()){
       java.util.List<String> mems  = gcli.listMembers(gname, utkn);
       if(mems == null) ta.append("An error occurred getting users from " + gname + ".\n\n\n");
@@ -507,6 +536,8 @@ class ClientGui {
     ta.setText("\nList files\n");
     if(checkLogInStatus()){
       // FileThread should check the user's groups from the token
+      // Bounce the token
+      utkn = bounceToken();
       java.util.List<String> files  = fcli.listFiles(utkn);
       ta.append("The files that user " + utkn.getSubject() + " can access are: \n\n\n");
       for(String f: files){
@@ -519,6 +550,7 @@ class ClientGui {
 
   private static void upload(String upname, String dname, String group){
     ta.setText("\nUpload a file\n");
+    utkn = bounceToken();
     if(checkLogInStatus()){
       if(!fcli.upload(upname, dname, group, utkn)) ta.append("Error uploading file to file server.\n\n\n");
       else ta.append("File successfully uploaded to file server!\n\n\n");
@@ -528,6 +560,7 @@ class ClientGui {
 
   private static void download(String upname, String dname){
     ta.setText("\nDownload a file\n");
+    utkn = bounceToken();
     if(checkLogInStatus()){
       if(!fcli.download(upname, dname, utkn)) ta.append("Error downloading file.\n\n\n");
       else ta.append("File successfully downloaded!\n\n\n");
@@ -537,6 +570,7 @@ class ClientGui {
 
   private static void deleteFile(String fname){
     ta.setText("\nDelete a file\n");
+    utkn = bounceToken();
     if(checkLogInStatus()){
       if(!fcli.delete(fname, utkn)) ta.append("Error deleting file from file server.\n\n\n");
       else ta.append("File successfully deleted from file server!\n\n\n");
@@ -548,6 +582,16 @@ class ClientGui {
     gcli.disconnect();
     fcli.disconnect();
     System.exit(0);
+  }
+
+  private static UserToken bounceToken(){
+    // Bounce the server connections and re-login
+    gcli.disconnect();
+    gcli.connect(GIP, Integer.parseInt(GPORT));
+    fcli.disconnect();
+    fcli.connect(FIP, Integer.parseInt(FPORT));
+    String uname = utkn.getSubject();
+    return gcli.getToken(uname);
   }
 
 }

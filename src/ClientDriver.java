@@ -5,6 +5,10 @@ public class ClientDriver{
   public static UserToken utkn = null;
   public static GroupClient gcli = new GroupClient();
   public static FileClient fcli = new FileClient();
+  public static String GIP = "127.0.0.1";
+  public static String FIP = "127.0.0.1";
+  public static String GPORT = "8765";
+  public static String FPORT = "4321";
 
   public static void main(String args[]){
     kb = new Scanner(System.in);
@@ -112,23 +116,31 @@ public class ClientDriver{
     }
   }
 
-  private static void checkLogInStatus(){
+  private static boolean checkLogInStatus(){
     if(utkn == null){
       System.out.println("\nNo user session found. Please log in.\n");
-      login();
+      return login();
     }
+    return true;
   }
 
-  private static void login(){
+  private static boolean login(){
     System.out.println("\nLog in\n");
     System.out.print("Please enter your username: ");
     utkn = gcli.getToken(kb.nextLine());
-    System.out.println("Logged in as " + utkn.getSubject() + "\n");
+    if(utkn != null){
+      System.out.println("Logged in as " + utkn.getSubject() + "\n");
+      return true;
+    }
+    else{
+      System.out.println("Error when logging in with the requested user.\n");
+      return false;
+    }
   }
 
   private static void createUser(){
     System.out.println("\nCreate a new user\n");
-    checkLogInStatus();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the new user's username: ");
     String newName = kb.nextLine();
     boolean create = gcli.createUser(newName, utkn);
@@ -138,7 +150,7 @@ public class ClientDriver{
 
   private static void deleteUser(){
     System.out.println("\nDelete a user\n");
-    checkLogInStatus();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the username to delete: ");
     String delName = kb.nextLine();
     boolean delete = gcli.deleteUser(delName, utkn);
@@ -148,7 +160,7 @@ public class ClientDriver{
 
   private static void createGroup(){
     System.out.println("\nCreate a group\n");
-    checkLogInStatus();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the new group's name: ");
     String newGName = kb.nextLine();
     boolean Gcreate = gcli.createGroup(newGName, utkn);
@@ -158,7 +170,7 @@ public class ClientDriver{
 
   private static void deleteGroup(){
     System.out.println("\nDelete a group\n");
-    checkLogInStatus();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the group to delete: ");
     String delGName = kb.nextLine();
     boolean Gdelete = gcli.deleteGroup(delGName, utkn);
@@ -168,7 +180,8 @@ public class ClientDriver{
 
   private static void addUserToGroup(){
     System.out.println("\nAdd a user to a group\n");
-    checkLogInStatus();
+    utkn = bounceToken();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the user to add: ");
     String addgName = kb.nextLine();
     System.out.print("Please enter the group to add " + addgName + " to: ");
@@ -185,7 +198,8 @@ public class ClientDriver{
 
   private static void deleteUserFromGroup(){
     System.out.println("\nDelete a user form a group\n");
-    checkLogInStatus();
+    utkn = bounceToken();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the user to delete: ");
     String delgName = kb.nextLine();
     System.out.print("Please enter the group to delete from " + delgName + ": ");
@@ -202,7 +216,8 @@ public class ClientDriver{
 
   private static void listGroupMembers(){
     System.out.println("\nList all members of a group\n");
-    checkLogInStatus();
+    utkn = bounceToken();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the group name: ");
     String GCheck = kb.nextLine();
     List<String> mems  = gcli.listMembers(GCheck, utkn);
@@ -218,7 +233,8 @@ public class ClientDriver{
 
   private static void listFiles(){
     System.out.println("\nList files\n");
-    checkLogInStatus();
+    utkn = bounceToken();
+    if(!checkLogInStatus()) return;
     // FileThread should check the user's groups from the token
     List<String> files  = fcli.listFiles(utkn);
     System.out.println("The files that user " + utkn.getSubject() + " can access are: ");
@@ -230,7 +246,8 @@ public class ClientDriver{
 
   private static void upload(){
     System.out.println("\nUpload a file\n");
-    checkLogInStatus();
+    utkn = bounceToken();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the path for the file you wish to upload: ");
     String upSrc = kb.nextLine();
     System.out.print("Please enter the name for the destination: ");
@@ -244,7 +261,8 @@ public class ClientDriver{
 
   private static void download(){
     System.out.println("\nDownload a file\n");
-    checkLogInStatus();
+    utkn = bounceToken();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the name of the file you wish to download: ");
     String downSrc = kb.nextLine();
     System.out.print("Please enter the name for the destination: ");
@@ -256,7 +274,8 @@ public class ClientDriver{
 
   private static void deleteFile(){
     System.out.println("\nDelete a file\n");
-    checkLogInStatus();
+    utkn = bounceToken();
+    if(!checkLogInStatus()) return;
     System.out.print("Please enter the name of the file you wish to delete: ");
     String delSrc = kb.nextLine();
     if(!fcli.delete(delSrc, utkn)) System.out.println("Error deleting file from file server.\n");
@@ -269,5 +288,15 @@ public class ClientDriver{
     fcli.disconnect();
     System.out.println("Bye!");
     System.exit(0);
+  }
+
+  private static UserToken bounceToken(){
+    // Bounce the server connections and re-login
+    gcli.disconnect();
+    gcli.connect(GIP, Integer.parseInt(GPORT));
+    fcli.disconnect();
+    fcli.connect(FIP, Integer.parseInt(FPORT));
+    String uname = utkn.getSubject();
+    return gcli.getToken(uname);
   }
 }
