@@ -16,18 +16,22 @@ In addition to a standard OTP protocol, there will need to be expiration times o
 
 #### T2: Token Modification/Forgery
 
-There are multiple steps to combat against Token Modification/Forgery. First the underlying principles of least privilege and separation of privilege will need to be used. Using the least privilege principle, a user should only have the persmission level in the system where upon they need to perform a specific task. Using separation of privilege, a user should not be able to make their account into a root account by just having access to the system. The user should be a member of the groupserver as well as know the root password. To ensure that a token is valid, we will use a Certification Authority (CA), a trusted third party 
+There are multiple steps to combat against Token Modification/Forgery. First the underlying principles of least privilege and separation of privilege will need to be used. Using the least privilege principle, a user should only have the persmission level in the system where upon they need to perform a specific task. Using separation of privilege, a user should not be able to make their account into a root account by just having access to the system. The user should be a member of the groupserver as well as know the root password. 
+
+To make the fileserver more secure, we will use RSA signing and verification. In the figure below, the HMAC would be signed with a user's public key. 
+
+![HMAC](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/HMAC.png)
+
 
 ** **
 
 #### T3: Unauthorized File Server
 
-public key cryptography
+To ensure that the file server is infact the correct fileserver we will be using a Certification Authority (CA), a trusted third party. 
 
 #### T4: Information Leakage via Passive Monitoring
 
-To combat information leakage via passive monitoring there will need to be a Transport Layer Security (TLS) implemented. The TLS will prevent information leakage and data integrity between two parties. The TLS is implemented by using symmetric key encryption that is agreed upon after a handshake is completed. 
-
+To combat information leakage via passive monitoring symmetric key encryption will be used. The specific algorithm and the keys will be generated when the handshake if first initiated by the client. The symmetric key encryption will prevent information leakage and data integrity between two parties. using AES would be a good choice because of the encryption standard and speed that it provides. 
 
 ### References
 
