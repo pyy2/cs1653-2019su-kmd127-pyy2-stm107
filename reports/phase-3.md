@@ -2,38 +2,66 @@
 
 #### Introduction
 
-Hello World!
+In order to develop a more secure filesharing system, the underlying mechanism to secure communication channels and verification will be based on Public Key Infrastructure (PKI). Different aspects of PKI in conjunction with other cryptographic techniques such as symmetric key encryption will be used to address each of the threat models that the system will need to protect against. Under the assumption that the group server is a trusted system, the group server can reliably host a list of public keys associated for the users, group server, and file system so it will serve as a trusted third party.
 
 #### T1: Unauthorized Token Issuance
 
+Unauthorized token issuance can occur as the result of a few different problems, each of which will need to be addressed. 
 
-Asking challenge questions is one way that the system can be more secure, however, it is a weak system because the question/answers are reused. To protect against unauthorized token issuance, the main goal will be to implement a One-Time-Password (OTP) using Two-Factor Authenication (2FA). This mechanism coincides with the separation of privilege notion that a system should not grant permission based on a single condition. 2FA will minimize risk that the user requesting access is an unauthorized user by using a OTP. Using a OTP will be the most secure and user-friendly method to secure the system because the OTP will be generated through mobile devices (?). Using a username/password, the user will identify who they state they are and 2FA verify who they state they are. A sample diagram of how the OTP will work is shown in Figure 1.
+1.	User Account Creation
 
-**Figure 1: One Time Password Mechanism**
-![2FA Mechanism](https://www.researchgate.net/profile/Alex_Chen7/publication/280027625/figure/fig1/AS:391563327885337@1470367381269/A-high-level-overview-of-a-Web-2FA-sequence.png)
+Stolen passwords are becoming more and more prevalent. According to Saltzer and Schroeder, access to a system should not be granted based on one condition. Because passwords are reused, the username/password combination is very weak. A username provides an instance of who the user states they are, and the password verifies the user. To strengthen this component, the admin will distribute username/passwords through a secure means ie. In person, imessage (encrypted end-to-end), secure email. This is to ensure verify that the correct user will be entering the system. 
 
-In addition to a standard OTP protocol, there will need to be expiration times on two accounts when the system is implemented. Adding an expiration extends this idea to a Time-Based One-Time Password (TOTP). The OTP will only be viable for a set timeframe ie. 30 seconds and afterwards the password will expire. Second, the issued token will only be available or able to be reissued within a set timeframe ie. 2 hours. After the set timeframe, the token will expire and the system will re-prompt for username/password and a OTP. The assumption under this model is that the issuer for the OTP is trusted. 
+2.	Brute Force Protection
+
+Passwords can be brute forced. Given enough time, user passwords can be cracked. To combat brute force in conjunction with using AES cryptography which is a quicker algorithm than Blowfish and RSA, a password attempt limit will be implemented with the maximum number of tries per user set at 3. AES-128 will be used because it is a quick reliable cryptographic algorithm. Upon user account creation there will need to be a field with the number of unsuccessful login attempts. The field will range from 0-2 and once the number goes above 2, the account will lock for 5 minutes then 10 minutes, etc.
+
+3.	Token Issuance
+
+Problems 1 and 2 are only valid if the line of communication is secure from the beginning. If there is a man-in-the-middle attack, sending the username/password over an unsecure line is unsafe. To solve this problem as previous stated, account creation will need to be handled from the server side. The Admin of the system will generate keys to distribute to users that create an account. Also during initialization, the group server, file server, and client will create an RSA-2048 public/private keypair for authenication purposes.
+
+** **
+  
 
 #### T2: Token Modification/Forgery
 
-There are multiple steps to combat against Token Modification/Forgery. First the underlying principles of least privilege and separation of privilege will need to be used. Using the least privilege principle, a user should only have the persmission level in the system where upon they need to perform a specific task. Using separation of privilege, a user should not be able to make their account into a root account by just having access to the system. The user should be a member of the groupserver as well as know the root password. 
+There are multiple steps to combat against Token Modification/Forgery. First the underlying principles of least privilege and separation of privilege will need to be used. Using the least privilege principle, a user should only have the permission level in the system where upon they need to perform a specific task. There will only be one root/admin account that is created when the server is created. Using separation of privilege, a user should not be able to make their account into a root account by just having access to the system. The user should be a member of the group server as well as know the root password. 
 
-To make the fileserver more secure, we will use RSA signing and verification. In the figure below, the HMAC would be signed with a user's public key. 
-
-![HMAC](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/HMAC.png)
-
+To make the fileserver more secure, we will use RSA signing and verification combined with hashing. Hashing is required to normalize the length and should be done uniquely every time. 
 
 ** **
 
 #### T3: Unauthorized File Server
 
-To ensure that the file server is infact the correct fileserver we will be using a Certification Authority (CA), a trusted third party. 
-
 #### T4: Information Leakage via Passive Monitoring
 
-To combat information leakage via passive monitoring symmetric key encryption will be used. The specific algorithm and the keys will be generated when the handshake if first initiated by the client. The symmetric key encryption will prevent information leakage and data integrity between two parties. using AES would be a good choice because of the encryption standard and speed that it provides. 
+#### Implementation
 
-### References
+**Initialization**
 
-[Time-Based One-Time Passwords](https://tools.ietf.org/html/rfc6238#section-4)
-[Duo Mobile API](https://duo.com/docs/authapi)
+1.	When first starting the client, group server, and file system the admin account is automatically created. A public/private key will be generated by RSA for the group server, file system, and client. 
+2.	If new users want to create an account, they would need to contact the administrator. The admin would then provide the username/password which would be securely distributed to the individual through a secure means ie. In person, secure email, imessage (automatic end-to-end encryption). 
+
+The admin creating the user on the system will be a means of verification and validation to the server. 
+
+3.	When the client first connects to the group server, the client sends the public key and the group server validates the client public key. The key is stored in the config file in the group server.
+4.	A Diffie Hellman key exchange takes place between the group server and client to generate a symmetric key
+
+
+** Client-to-Group Server **
+
+1.	The user logins with the given username/password encrypted with the symmetric key from the Diffie-Hellman exchange.
+2.	The group server decrypts the information and checks against the stored password in the group server.
+3.	If it’s the first time the user is logged in, the group server responds with a change password response encrypted.
+4.	The client responds with a username and HMAC password encrypted with Kab
+5.	The group server replaces the password with the hash and the Boolean flag is turned to false.
+6.	The group server sends back an authentication token concatenated with the group server public key, and the token hashed with the group server public key with SHA-256 signed with the group public server that is all encrypted with the symmetric key Kab
+
+** Client-to-File Server **
+
+7.	On the first connection, the fileserver will send the public key to the client so that the client. The client will store the fileserver public key in a configuration file.
+8.	The client will send a challenge to the fileserver that is encrypted with the file server’s public key
+9.	Fileserver will respond with the same challenge unencrypted 
+10.	Diffie-Hellman key exchange occurs between the client and fileserver to generate shared symmetric keys
+11.	From here on, only the client server will be sending requests to the fileserver as a request concatenated with a token concatenated with the group public key with the signed hash from the group server that is encrypted with the shared key so that the fileserver can verify with the group server’s public key that the authentication token is valid. 
+12.	
