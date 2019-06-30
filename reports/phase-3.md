@@ -20,42 +20,29 @@ Passwords can be brute forced. Given enough time, user passwords can be cracked.
 
 Problems 1 and 2 are only valid if the line of communication is secure from the beginning. If there is a man-in-the-middle attack, sending the username/password over an unsecure line is unsafe. To solve this problem as previous stated, account creation will need to be handled from the server side. The Admin of the system will generate keys to distribute to users that create an account. Also during initialization, the group server, file server, and client will create an RSA-2048 public/private keypair for asymmetric key purposes and RSA signing/verification. RSA-2048 is chosen because according to the National Institute for Standards and Technology (NIST), RSA-1024 will likely become cracked in the near future. 
 
-RSA generation is based on integer factorization of a large prime number. Large prime integers can be found relatively efficiently using Fermat's Primality Test, however in this instance we will be using the Bouncy Castle package org.bouncycastle.crypto.generators.RSAKeyPairGenerator with the following code snippet:
+RSA generation is based on integer factorization of a large prime number. Large prime integers can be found relatively efficiently using Fermat's Primality Test, however in this instance we will be using the Bouncy Castle package org.bouncycastle.crypto.generators. RSAKeyPairGenerator with Java's SecureRandom() package.
 
-    ** KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA"); **
-    ** keyGen.initialize(new SecureRandom()); **
-
-    public key = keypair.getPublic();
-    private key = keypair.getPrivate();
-
-    to encrypt:
-    final Cipher cipher = Cipher.getInstance(RSA/NONE/OAEPWithSHA256AndMGF1Padding);
-
-The java.security.SecureRandom package is used to generate a crypgraphically strong random number. The cipher instance will need padding because the SecureRandom() function may not necessarily be 256 bits long. The keys will be stored in a config file on each machine. 
+The java.security.SecureRandom package is used to generate a crypgraphically strong random number. The cipher instance will need padding using RSA/NONE/OAEPWithSHA256AndMGF1Padding because the SecureRandom() function may not necessarily be 256 bits long. The keys will be stored in a config file on each machine. 
 
 ** **
-<!-- According to Saltzer and Schroeder, access to a system should not be granted based on one condition. -->
 
 #### T2: Token Modification/Forgery
 
 There are multiple steps to combat against Token Modification/Forgery. First the underlying principles of least privilege and separation of privilege will need to be used. Using the least privilege principle, a user should only have the permission level in the system where upon they need to perform a specific task. There will only be one root/admin account in the system that is created during initialization. Using separation of privilege, a user should not be able to make their account into a root account by just having access to the system. The user should be a member of the group server as well as know the root password to modify permissions
 
-To make the fileserver more secure and convince a third party that the message is legitimate, we will use RSA signing and verification combined with a hash-based message authenication code (HMAC). RSA signing and verification will be done with SHA-256 a secure hashing algorithm to generate a 32-byte hash that messages can be signed with. The importantance of using a secure hashing algorithm is that it is a one-way function so that it cannot be decrypted. SHA-256 was chosen because it has the best preimage resistance in relation to speed according to NIST. To generate the RSA signature, Bouncy Castle will again be used:
+To make the fileserver more secure and convince a third party that the message is legitimate, we will use RSA signing and verification combined with a hash-based message authenication code (HMAC). RSA signing and verification will be done with SHA-256 a secure hashing algorithm to generate a 32-byte hash that messages can be signed with. The importantance of using a secure hashing algorithm is that it is a one-way function so that it cannot be decrypted. SHA-256 was chosen because it has the best preimage resistance in relation to speed according to NIST. To generate the RSA signature, Bouncy Castle will again be used. To generate the HMAC using SHA256 digest, it will go through 2 rounds of hashing. Once to produce an inner key and hash and again to protect against length extension attacks.
 
-    ** Signature sig = Signature.getInstance("SHA256withRSA"); ** 
-    ** sig.initSign(keypair.getPrivate()); // sign data **
-    ** sig.update(plaintext.getBytes()); **
-    ** byte[] sigBytes = sig.sign(); **
-
-To generate the HMAC, SHA-256
-
-When messages are sent, the RSA signature will be generated through bouncy castle using the partie's private key. 
+When messages are sent, the RSA signature and HMAC will be generated using the partie's private key. By combining the message digest encrypted with the recipient's public key and signing the HMAC that will contain the encrypted digest, a third party can validate that the message has not been tampered with although it may be prone to snooping.
 
 ** **
 
 #### T3: Unauthorized File Server
 
+To authorize that the file server s is indeed file server s and not s', there will be a public key exchange that takes place initially between the client and file server. The file server will send their public key to the client. The user will send some challenge R that will be encrypted using the filesystem's public key. Once the filesystem has decrypted the challenge, the file server will broadcast R unencrypted to prevent key reuse. It is important that the file system does NOT use their private key to broadcast the message. Constantly using the private key results in patterns that develop that can be used by an adversary. The client will then add s an authorized user in their config file to denote a trusted entity. 
+
 #### T4: Information Leakage via Passive Monitoring
+
+To prevent snooping and constant reuse of public/private keys, once verification is done with public key exchanges, Diffie-Hellman-Hybrid approach will be used to create a shared symmetric key using the AES-128 standard. 
 
 #### Implementation
 
@@ -86,4 +73,3 @@ The admin creating the user on the system will be a means of verification and va
 9.	Fileserver will respond with the same challenge unencrypted 
 10.	Diffie-Hellman key exchange occurs between the client and fileserver to generate shared symmetric keys
 11.	From here on, only the client server will be sending requests to the fileserver as a request concatenated with a token concatenated with the group public key with the signed hash from the group server that is encrypted with the shared key so that the fileserver can verify with the group server’s public key that the authentication token is valid. 
-12.	
