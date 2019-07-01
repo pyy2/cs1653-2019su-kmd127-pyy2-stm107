@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import java.lang.Byte;
+import java.util.Base64;
 
 // security packages
 import java.security.*;
@@ -51,7 +51,8 @@ public abstract class Client {
 			try {
 				PublicKey clientK = (PublicKey) input.readObject(); // get gs key from buffer
 				System.out.println("Group server public key received:\n" + clientK);
-				String aesKey = decrypt("RSA", (byte[]) input.readObject(), keyPair.getPrivate());
+				byte[] encrypted = Base64.getDecoder().decode((byte[]) input.readObject());
+				String aesKey = decrypt("RSA/ECB/PKCS1Padding", encrypted, keyPair.getPrivate());
 				System.out.println("Encrypted AES key Received:\n" + aesKey); // need serializable?
 				String hello = (String) input.readObject();
 			} catch (ClassNotFoundException e) {

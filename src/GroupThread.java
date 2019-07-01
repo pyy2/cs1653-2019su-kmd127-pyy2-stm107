@@ -6,6 +6,7 @@ import java.lang.Thread;
 import java.net.Socket;
 import java.io.*;
 import java.util.*;
+import java.util.Base64;
 
 // security packages
 import java.security.*;
@@ -44,14 +45,14 @@ public class GroupThread extends Thread {
 			System.out.println("Received client's public key: \n" + clientK);
 
 			Key aesKey = genAESKey(); // generate symmetric AES key
-			System.out.println("Generated AES Key \n" + aesKey.getEncoded());
+			System.out.println("Generated AES Key:" + Base64.getEncoder().encodeToString(aesKey.getEncoded()));
 
-			System.out.println("\nSending GS public key to client");
+			System.out.println("\nSending GS public key to client: " + keyPair.getPublic());
 			output.writeObject(keyPair.getPublic()); // send GS public key
-			System.out.println("Sending encrypted symmetric key to client");
-			output.writeObject(encrypt("RSA", new String(aesKey.getEncoded()), clientK)); // encrypt AES key with
-																							// client's public then send
-																							// to client
+			byte[] encrypted = encrypt("RSA/ECB/PKCS1Padding", Base64.getEncoder().encodeToString(aesKey.getEncoded()),
+					clientK);
+			System.out.println("Sending encrypted symmetric key to client:\n" + new String(encrypted));
+			output.writeObject(encrypted); // encrypt AES key with client's public then send to client
 			System.out.println("Sending signed HMAC to client");
 			output.writeObject("HMAC");
 
