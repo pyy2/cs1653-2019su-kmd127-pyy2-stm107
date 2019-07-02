@@ -11,6 +11,7 @@ import java.util.Base64;
 // security packages
 import java.security.*;
 import javax.crypto.*;
+import java.security.Signature;
 
 import javax.crypto.spec.*;
 import java.security.Key;
@@ -87,8 +88,16 @@ public class GroupThread extends Thread {
 			// send SHA256 checksum of symmetric key for verification
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			byte[] checksum = digest.digest(Base64.getDecoder().decode(aesKey));
-			output.writeObject(checksum);
+			output.writeObject(checksum); // send checksum
 			System.out.println("Checksum -> " + Base64.getEncoder().encodeToString(checksum));
+
+			// send signed checksum
+			Signature sig = Signature.getInstance("SHA256withRSA"); // sign
+			sig.initSign(keyPair.getPrivate()); // use group server private key
+			sig.update(checksum); // input checksum
+			byte[] sigBytes = sig.sign(); // sign
+			output.writeObject(sigBytes);
+			System.out.println("Send Signed Checksum");
 
 			// Mac mac = Mac.getInstance("HmacSHA256");
 			// mac.init(clientK); // initialize HMAC with client key

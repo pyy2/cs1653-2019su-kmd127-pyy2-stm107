@@ -8,6 +8,7 @@ import java.util.*;
 import java.security.*;
 import javax.crypto.spec.*;
 import javax.crypto.Cipher;
+import java.security.Signature;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -68,21 +69,40 @@ public abstract class Client {
 			output.writeObject(keyPair.getPublic()); // write public key to channel
 
 			try {
-				PublicKey clientK = (PublicKey) input.readObject(); // get gs key from buffer
-				String aesKey = decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), keyPair.getPrivate());
+				PublicKey groupK = (PublicKey) input.readObject(); // group public key
+				String aesKey = decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), keyPair.getPrivate()); // AES
 				MessageDigest digest = MessageDigest.getInstance("SHA-256");
-				byte[] checkSum = (byte[]) input.readObject();
-				byte[] checksum = digest.digest((byte[]) input.readObject());
+				byte[] _checkSum = (byte[]) input.readObject(); // checksum
+				byte[] checkSum = digest.digest(Base64.getDecoder().decode(aesKey));
+				byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
 
-				System.out.println("Group server public key -> " + clientK);
+				// Verify RSA signature
+				Signature sig = Signature.getInstance("SHA256withRSA");
+				sig.initVerify(groupK);
+				sig.update(_checkSum);
+
+				System.out.println("Group server public key -> " + groupK);
 				System.out.println("Received AES key ->" + aesKey);
-				System.out.println("Checksum -> " + Base64.getEncoder().encodeToString(checksum));
+				System.out.println("Checksum -> " + Base64.getEncoder().encodeToString(_checkSum));
+				System.out.println("Computed Checksum -> " + Base64.getEncoder().encodeToString(checkSum));
+				System.out.println("Verified Signature -> " + sig.verify(signedChecksum));
+
+				if (isEqual(_checkSum, checkSum)) {
+					System.out.println("====Checksum verified====\n\n");
+				} else {
+					System.out.println("INVALID CHECKSUM");
+					return false;
+				}
 
 				// String hello = (String) input.readObject();
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (NoSuchAlgorithmException e2) {
 				e2.printStackTrace();
+			} catch (InvalidKeyException e3) {
+				e3.printStackTrace();
+			} catch (SignatureException e4) {
+				e4.printStackTrace();
 			}
 
 		} catch (UnknownHostException e) {
@@ -93,7 +113,19 @@ public abstract class Client {
 			System.err.println("Invalid Port # ?");
 			e2.printStackTrace();
 		}
+		System.out.println("Connection Status: " + isConnected());
 		return isConnected();
+	}
+
+	private boolean isEqual(byte[] a, byte[] b) {
+		if (a.length != b.length) {
+			return false;
+		}
+		int result = 0;
+		for (int i = 0; i < a.length; i++) {
+			result |= a[i] ^ b[i];
+		}
+		return result == 0;
 	}
 
 	private String decrypt(final String type, final byte[] encrypted, final Key key) {
