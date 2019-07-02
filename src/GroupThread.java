@@ -10,6 +10,8 @@ import java.util.Base64;
 
 // security packages
 import java.security.*;
+import javax.crypto.*;
+
 import javax.crypto.spec.*;
 import java.security.Key;
 import java.security.Security;
@@ -44,17 +46,56 @@ public class GroupThread extends Thread {
 			PublicKey clientK = (PublicKey) input.readObject(); // get client key from buffer
 			System.out.println("Received client's public key: \n" + clientK);
 
-			Key aesKey = genAESKey(); // generate symmetric AES key
-			System.out.println("Generated AES Key:" + Base64.getEncoder().encodeToString(aesKey.getEncoded()));
+			if (my_gs.tcList.pubkeys != null) {
+				// Check to see if ip:pubkey pair exists yet.
+				if (my_gs.tcList.pubkeys.containsKey(socket.getInetAddress().toString())) {
+					// If the ip is there, make sure that the pubkey matches.
+					PublicKey storedCliKey = my_gs.tcList.pubkeys.get(socket.getInetAddress().toString());
+					if (!storedCliKey.equals(clientK)) {
+						System.out.println("The stored fingerprint does not match the incoming client key!");
+						System.out.println("Terminating connection...");
+						socket.close(); // Close the socket
+						proceed = false; // End this communication loop
+					}
+					// The keys match, it's safe to proceed
+					else {
+						System.out.println("Fingerprint verified!");
+					}
+				}
+				// IP does not yet exist in trusted client list. Add it.
+				else {
+					System.out.println("This is your first time connecting this client to the group server.");
+					System.out.println("Adding client's public key to trusted clients list...");
+					my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
+				}
+			}
 
-			System.out.println("\nSending GS public key to client: " + keyPair.getPublic());
-			output.writeObject(keyPair.getPublic()); // send GS public key
-			byte[] encrypted = encrypt("RSA/ECB/PKCS1Padding", Base64.getEncoder().encodeToString(aesKey.getEncoded()),
-					clientK);
-			System.out.println("Sending encrypted symmetric key to client:\n" + new String(encrypted));
-			output.writeObject(encrypted); // encrypt AES key with client's public then send to client
-			System.out.println("Sending signed HMAC to client");
-			output.writeObject("HMAC");
+			// create AES symmetric key to send to client
+			Key _aesKey = genAESKey();
+			String aesKey = Base64.getEncoder().encodeToString(_aesKey.getEncoded()); // stringify
+			System.out.println("AES Key:" + aesKey);
+
+			// send group server public key to client
+			output.writeObject(keyPair.getPublic());
+			System.out.println("\n\nGS public key -> client: " + keyPair.getPublic());
+
+			// send symmetric key encrypted with client's public key with padding
+			byte[] _encrypted = encrypt("RSA/ECB/PKCS1Padding", aesKey, clientK);
+			output.writeObject(_encrypted);
+			System.out.println("\n\nAES key -> client: \n" + Base64.getEncoder().encodeToString(_encrypted));
+
+			// send SHA256 checksum of symmetric key for verification
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			byte[] checksum = digest.digest(Base64.getDecoder().decode(aesKey));
+			output.writeObject(checksum);
+			System.out.println("Checksum -> " + Base64.getEncoder().encodeToString(checksum));
+
+			// Mac mac = Mac.getInstance("HmacSHA256");
+			// mac.init(clientK); // initialize HMAC with client key
+			// byte[] _hmac = mac.doFinal(Base64.getDecoder().decode(aesKey));
+			// String hmac = Base64.getEncoder().encodeToString(_hmac);
+			// System.out.println("Generated HMAC: " + hmac);
+			// output.writeObject("HMAC");
 
 			do {
 				Envelope message = (Envelope) input.readObject();
@@ -239,7 +280,7 @@ public class GroupThread extends Thread {
 
 	/*
 	 * Method to generate public/private RSA keypair when client is launched
-	 * 
+	 *
 	 * @return keypair - client's public/private keypair
 	 */
 	private KeyPair genKeyPair() {
@@ -260,7 +301,7 @@ public class GroupThread extends Thread {
 	/*
 	 * Method to generate public/private AES symmetric key after client public key
 	 * received
-	 * 
+	 *
 	 * @return key - AES symmetric key
 	 */
 	private Key genAESKey() {
@@ -280,7 +321,7 @@ public class GroupThread extends Thread {
 
 	/*
 	 * Encryption method
-	 * 
+	 *
 	 * @return encrypted - encrypted byte value
 	 */
 	private byte[] encrypt(final String type, final String plaintext, final Key key) {

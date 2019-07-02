@@ -1,10 +1,8 @@
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 
-import java.util.Base64;
+import java.util.*;
 
 // security packages
 import java.security.*;
@@ -22,6 +20,9 @@ public abstract class Client {
 	protected Socket sock;
 	protected ObjectOutputStream output;
 	protected ObjectInputStream input;
+	String keyFile = "ClientKeyPair.bin";
+	ObjectInputStream keyPairStream;
+	KeyPair keyPair;
 
 	public boolean connect(final String server, final int port) {
 
@@ -39,24 +40,49 @@ public abstract class Client {
 			// situation. :shrug:
 			output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket
 			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
+			ObjectOutputStream outStream;
 
-			System.out.println("Generating Client RSA keypair");
-			KeyPair keyPair = genKeyPair();
-			System.out.println(keyPair.getPublic());
-			System.out.println(keyPair.getPrivate());
+			// Only generate a new keypair if there isn't one for this client already.
+			// That way, fingerprinting on the group server can occur and the GS can verify
+			// on subsequent connections.
+			try {
+				// Try to read teh keypair from a file.
+				FileInputStream fis_keys = new FileInputStream(keyFile);
+				keyPairStream = new ObjectInputStream(fis_keys);
+				keyPair = (KeyPair) keyPairStream.readObject();
+			} catch (FileNotFoundException e) {
+				// The file doesn't exist, then there's no RSA keys for this client.
+				System.out.println("Generating Client RSA keypair");
+				keyPair = genKeyPair();
+				System.out.println(keyPair.getPublic());
+				System.out.println(keyPair.getPrivate());
+				// save the key pair for future use.
+				outStream = new ObjectOutputStream(new FileOutputStream("ClientKeyPair.bin"));
+				outStream.writeObject(keyPair);
+			} catch (Exception e) {
+				System.out.println("Unable to load key pair for this client.");
+				System.out.println("Exception: " + e);
+			}
 
 			System.out.println("Writing public key to Group Server\n");
 			output.writeObject(keyPair.getPublic()); // write public key to channel
 
 			try {
 				PublicKey clientK = (PublicKey) input.readObject(); // get gs key from buffer
-				System.out.println("Group server public key received:\n" + clientK);
-				byte[] encrypted = Base64.getDecoder().decode((byte[]) input.readObject());
-				String aesKey = decrypt("RSA/ECB/PKCS1Padding", encrypted, keyPair.getPrivate());
-				System.out.println("Encrypted AES key Received:\n" + aesKey); // need serializable?
-				String hello = (String) input.readObject();
+				String aesKey = decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), keyPair.getPrivate());
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+				byte[] checkSum = (byte[]) input.readObject();
+				byte[] checksum = digest.digest((byte[]) input.readObject());
+
+				System.out.println("Group server public key -> " + clientK);
+				System.out.println("Received AES key ->" + aesKey);
+				System.out.println("Checksum -> " + Base64.getEncoder().encodeToString(checksum));
+
+				// String hello = (String) input.readObject();
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e2) {
+				e2.printStackTrace();
 			}
 
 		} catch (UnknownHostException e) {
@@ -85,7 +111,7 @@ public abstract class Client {
 
 	/*
 	 * Method to generate public/private RSA keypair when client attempts to connect
-	 * 
+	 *
 	 * @return keypair - client's public/private keypair
 	 */
 	private KeyPair genKeyPair() {

@@ -18,6 +18,7 @@ public class GroupServer extends Server {
 
 	public static final int SERVER_PORT = 8765;
 	public UserList userList;
+	public TrustedClients tcList;
 
 	public GroupServer() {
 		super(SERVER_PORT, "ALPHA");
@@ -32,13 +33,29 @@ public class GroupServer extends Server {
 		// account needs to be created
 
 		String userFile = "UserList.bin";
+		String tcFile = "TrustedClients.bin";
 		Scanner console = new Scanner(System.in);
+		ObjectInputStream tcStream;
 		ObjectInputStream userStream;
 		ObjectInputStream groupStream;
 
 		// This runs a thread that saves the lists on program exit
 		Runtime runtime = Runtime.getRuntime();
 		runtime.addShutdownHook(new ShutDownListener(this));
+
+		// Open the trusted clients list
+		try {
+			FileInputStream fis_tc = new FileInputStream(tcFile);
+			tcStream = new ObjectInputStream(fis_tc);
+			tcList = (TrustedClients) tcStream.readObject();
+		} catch (FileNotFoundException e) {
+			System.out.println("No Trusted Clients found!");
+			System.out.println("Instantiating Trusted Clients list...");
+			tcList = new TrustedClients();
+		} catch (Exception e) {
+			System.out.println("Unable to load list of trusted clients.");
+			System.out.println("Exception: " + e);
+		}
 
 		// Open user file to get user list
 		try {
@@ -109,6 +126,13 @@ class ShutDownListener extends Thread {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 		}
+		try {
+			outStream = new ObjectOutputStream(new FileOutputStream("TrustedClients.bin"));
+			outStream.writeObject(my_gs.tcList);
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+		}
 	}
 }
 
@@ -128,6 +152,13 @@ class AutoSave extends Thread {
 				try {
 					outStream = new ObjectOutputStream(new FileOutputStream("UserList.bin"));
 					outStream.writeObject(my_gs.userList);
+				} catch (Exception e) {
+					System.err.println("Error: " + e.getMessage());
+					e.printStackTrace(System.err);
+				}
+				try {
+					outStream = new ObjectOutputStream(new FileOutputStream("TrustedClients.bin"));
+					outStream.writeObject(my_gs.tcList);
 				} catch (Exception e) {
 					System.err.println("Error: " + e.getMessage());
 					e.printStackTrace(System.err);
