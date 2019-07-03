@@ -119,7 +119,30 @@ public class ClientDriver{
   private static boolean login(){
     System.out.println("\nLog in\n");
     System.out.print("Please enter your username: ");
-    utkn = gcli.getToken(kb.nextLine());
+    String username = kb.nextLine();
+    System.out.print("Please enter your password: ");
+    String password = kb.nextLine();
+    if(!gcli.userExists(username)){
+      //intentionally non-specific error message.
+      System.out.println("Error logging in.\n\n");
+      return false;
+    }
+    // Check for password match
+    System.out.println("Verifying password...");
+    if(!gcli.checkPassword(username, password)){
+      //intentionally non-specific error message.
+      System.out.println("Error logging in.\n\n");
+      return false;
+    }
+    // if(gcli.my_gs.list.get(username).passwordNeedsChanged){
+    //   System.out.println("It's your first time logging in. Please change your password.");
+    //   System.out.print("Enter new password: ");
+    //   String new_pwd = kb.nextLine();
+    //   gcli.my_gs.list.get(username).changePassword(new_pwd);
+    //   gcli.my_gs.list.get(username).passwordNeedsChanged = false;
+    // }
+    utkn = gcli.getToken(username);
+
     if(utkn != null){
       System.out.println("Logged in as " + utkn.getSubject() + "\n");
       return true;
@@ -135,9 +158,15 @@ public class ClientDriver{
     if(!checkLogInStatus()) return;
     System.out.print("Please enter the new user's username: ");
     String newName = kb.nextLine();
-    boolean create = gcli.createUser(newName, utkn);
+    System.out.print("Please enter a temporary password for the user: ");
+    String pwd = kb.nextLine();
+    boolean create = gcli.createUser(newName, pwd, utkn);
     if(!create) System.out.println("An error occurred creating user " + newName + "\n");
-    else System.out.println("User " + newName + " created successfully!\n");
+    else{
+      System.out.println("User " + newName + " created successfully!");
+      System.out.println("NOTE: The temporary password will need to be changed when the user logs in for the first time.\n\n");
+    }
+
   }
 
   private static void deleteUser(){

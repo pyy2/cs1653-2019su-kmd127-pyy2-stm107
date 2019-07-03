@@ -22,7 +22,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class GroupThread extends Thread {
 	private final Socket socket;
-	private GroupServer my_gs;
+	protected GroupServer my_gs;
 
 	public GroupThread(Socket _socket, GroupServer _gs) {
 		socket = _socket;
@@ -128,6 +128,30 @@ public class GroupThread extends Thread {
 					}
 				} else if (message.getMessage().equals("CUSER")) // Client wants to create a user
 				{
+					if (message.getObjContents().size() < 3) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								if (message.getObjContents().get(2) != null) {
+									String username = (String) message.getObjContents().get(0); // Extract the username
+									String password = (String) message.getObjContents().get(1);
+									UserToken yourToken = (UserToken) message.getObjContents().get(2); // Extract the token
+
+									if (createUser(username, password, yourToken)) {
+										response = new Envelope("OK"); // Success
+									}
+								}
+							}
+						}
+					}
+
+					output.writeObject(response);
+				}
+				else if (message.getMessage().equals("CPWD")) // Client wants to for password match
+				{
 					if (message.getObjContents().size() < 2) {
 						response = new Envelope("FAIL");
 					} else {
@@ -136,17 +160,17 @@ public class GroupThread extends Thread {
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								String username = (String) message.getObjContents().get(0); // Extract the username
-								UserToken yourToken = (UserToken) message.getObjContents().get(1); // Extract the token
+								String password = (String) message.getObjContents().get(1);
 
-								if (createUser(username, yourToken)) {
+								if (checkPassword(username, password)) {
 									response = new Envelope("OK"); // Success
 								}
 							}
 						}
 					}
-
 					output.writeObject(response);
-				} else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
+				}
+				else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
 				{
 
 					if (message.getObjContents().size() < 2) {
@@ -357,8 +381,20 @@ public class GroupThread extends Thread {
 		}
 	}
 
+	// Method to verify password match.
+	private boolean checkPassword(String username, String pwd) {
+		if (my_gs.userList.checkUser(username)) {
+			if(my_gs.userList.checkPassword(username, pwd)){
+				return true;
+			}
+			return false;
+		} else {
+			return false;
+		}
+	}
+
 	// Method to create a user
-	private boolean createUser(String username, UserToken yourToken) {
+	private boolean createUser(String username, String password, UserToken yourToken) {
 		String requester = yourToken.getSubject();
 
 		// Check if requester exists
@@ -371,7 +407,7 @@ public class GroupThread extends Thread {
 				if (my_gs.userList.checkUser(username)) {
 					return false; // User already exists
 				} else {
-					my_gs.userList.addUser(username);
+					my_gs.userList.addUser(username, password);
 					return true;
 				}
 			} else {

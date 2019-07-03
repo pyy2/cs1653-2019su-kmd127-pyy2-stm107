@@ -11,6 +11,12 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+// security packages
+import java.security.*;
+import javax.crypto.*;
+import java.security.Signature;
+
+
 public class FileThread extends Thread {
 	private final Socket socket;
 
@@ -25,6 +31,15 @@ public class FileThread extends Thread {
 			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 			Envelope response;
+
+			// Gets the clients pubkey (added for now for testing.)
+			PublicKey clientK = (PublicKey) input.readObject(); // get client key from buffer
+			System.out.println("Received client's public key: \n" + clientK);
+
+			PublicKey dummykey = null;
+			output.writeObject(dummykey);
+
+			System.out.println("\n\nWriting a dummy public key...\n\n");
 
 			do {
 				Envelope e = (Envelope) input.readObject();

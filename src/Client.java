@@ -65,8 +65,12 @@ public abstract class Client {
 				System.out.println("Exception: " + e);
 			}
 
-			System.out.println("Writing public key to Group Server\n");
+			System.out.println("Writing public key to Server\n");
+			// literally just for testing so the file server doesn't poop out.
+			if(port != 4321){
 			output.writeObject(keyPair.getPublic()); // write public key to channel
+
+
 
 			try {
 				PublicKey groupK = (PublicKey) input.readObject(); // group public key
@@ -104,6 +108,7 @@ public abstract class Client {
 			} catch (SignatureException e4) {
 				e4.printStackTrace();
 			}
+		}
 
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -113,6 +118,7 @@ public abstract class Client {
 			System.err.println("Invalid Port # ?");
 			e2.printStackTrace();
 		}
+
 		System.out.println("Connection Status: " + isConnected());
 		return isConnected();
 	}

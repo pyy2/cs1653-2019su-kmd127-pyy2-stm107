@@ -42,6 +42,28 @@ public interface GroupClientInterface
 
 
     /**
+     * Method used to determine if the user exists without returning the token.
+     *
+     * @param username The user whose token is being requested
+     *
+     * @return true if user exists, false if it does not.
+     *
+     */
+    public boolean userExists(final String username);
+
+
+    /**
+     * Method used to determine if the user's password is correct.
+     *
+     * @param username The user whose token is being requested
+     *
+     * @return true if password is correct, false if it is not.
+     *
+     */
+    public boolean checkPassword(final String username, final String pwd);
+
+
+    /**
      * Creates a new user.  This method should only succeed if the
      * user invoking it is a member of the special group "ADMIN".
      *
@@ -51,7 +73,7 @@ public interface GroupClientInterface
      * @return true if the new user was created, false otherwise
      *
      */
-    public boolean createUser(final String username, final UserToken token);
+    public boolean createUser(final String username, final String password, final UserToken token);
 
 
     /**

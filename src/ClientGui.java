@@ -440,6 +440,18 @@ class ClientGui {
       ta.setText("\nYou must enter a username.\n\nPlease try again.\n");
       return;
     }
+    if(!gcli.userExists(uname)){
+      //intentionally non-specific error message.
+      ta.setText("Error logging in!\n\n");
+      return;
+    }
+    // Check for password match
+    ta.append("Verifying password...");
+    if(!gcli.checkPassword(uname, pass)){
+      //intentionally non-specific error message.
+      ta.setText("Error logging in.\n\n");
+      return;
+    }
     utkn = gcli.getToken(uname);
     if(utkn != null){
       ta.append("Logged in as " + utkn.getSubject() + "\n\n\n");
@@ -456,7 +468,7 @@ class ClientGui {
   private static void createUser(String uname, String pass){
     ta.setText("\nCreate a new user\n\n");
     if(checkLogInStatus()){
-      boolean create = gcli.createUser(uname, utkn);
+      boolean create = gcli.createUser(uname, pass, utkn);
       if(!create) ta.append("An error occurred creating user " + uname + "\n");
       else ta.append("User " + uname + " created successfully!\n\n\n");
       printMenu();

@@ -46,7 +46,38 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	 }
 
-	 public boolean createUser(String username, UserToken token)
+	 public boolean userExists(String username){
+		 return (getToken(username)!=null);
+	 }
+
+	 public boolean checkPassword(String username, String password){
+		 try{
+		 	Envelope message = null, response = null;
+			//Tell the server to create a user
+			message = new Envelope("CPWD");
+			message.addObject(username); //Add user name string
+			message.addObject(password);
+			output.writeObject(message);
+
+			response = (Envelope)input.readObject();
+
+			//If server indicates success, return true
+			if(response.getMessage().equals("OK"))
+			{
+				return true;
+			}
+
+			return false;
+		}
+		catch(Exception e)
+		{
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	 }
+
+	 public boolean createUser(String username, String password, UserToken token)
 	 {
 		 try
 			{
@@ -54,6 +85,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				//Tell the server to create a user
 				message = new Envelope("CUSER");
 				message.addObject(username); //Add user name string
+				message.addObject(password);
 				message.addObject(token); //Add the requester's token
 				output.writeObject(message);
 

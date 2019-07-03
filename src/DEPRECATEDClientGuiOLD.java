@@ -208,7 +208,7 @@ class ClientGuiOLD {
   private static void createUser(){
     ta.setText("\nCreate a new user\n\n");
     if(checkLogInStatus()){
-      boolean create = gcli.createUser(cmd[1], utkn);
+      boolean create = gcli.createUser(cmd[1], cmd[2], utkn);
       if(!create) ta.append("An error occurred creating user " + cmd[1] + "\n");
       else ta.append("User " + cmd[1] + " created successfully!\n\n\n");
       printMenu();

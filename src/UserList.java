@@ -1,5 +1,9 @@
 /* This list represents the users on the server */
 import java.util.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
+import java.math.BigInteger;
 
 
 	public class UserList implements java.io.Serializable {
@@ -9,6 +13,7 @@ import java.util.*;
 		 */
 		private static final long serialVersionUID = 7600343803563417992L;
 		// changed to protected in oreder to be able to check all users' groups.
+		// adding byte array for password hash.
 		protected Hashtable<String, User> list = new Hashtable<String, User>();
 		protected Set<String> groupSet = new HashSet<String>();
 
@@ -38,10 +43,25 @@ import java.util.*;
 			return memList;
 		}
 
-		public synchronized void addUser(String username)
+		public synchronized void addUser(String username, String password)
 		{
+			byte[] pwd_hash;
+			try{
+				MessageDigest md = MessageDigest.getInstance("SHA-256");
+				// add password hash and boolean for passwordNeedsChanged (true on creation, set to false on first login)
+				md.update(password.getBytes());
+				pwd_hash = md.digest();
+			}
+			catch(Exception e){
+				System.out.println("Error generating password hash: " + e);
+				return;
+			}
+
 			User newUser = new User();
+			newUser.pwd_hash = pwd_hash;
+			newUser.passwordNeedsChanged = true;
 			list.put(username, newUser);
+			System.out.println("This is the user: " + list.get(username));
 		}
 
 		public synchronized void deleteUser(String username)
@@ -59,6 +79,25 @@ import java.util.*;
 			{
 				return false;
 			}
+		}
+
+		public synchronized boolean checkPassword(String username, String password){
+      byte[] pwd_hash;
+			try{
+				MessageDigest md = MessageDigest.getInstance("SHA-256");
+				// add password hash and boolean for passwordNeedsChanged (true on creation, set to false on first login)
+				md.update(password.getBytes());
+				pwd_hash = md.digest();
+			}
+			catch(Exception e){
+				System.out.println("Error generating password hash: " + e);
+				return false;
+			}
+			User check_user = list.get(username);
+			if(!Arrays.equals(check_user.pwd_hash, pwd_hash)){
+				return false;
+			}
+			return true;
 		}
 
 		public synchronized ArrayList<String> getUserGroups(String username)
@@ -100,11 +139,28 @@ import java.util.*;
 		private static final long serialVersionUID = -6699986336399821598L;
 		private ArrayList<String> groups;
 		private ArrayList<String> ownership;
+		private byte[] pwd_hash;
+		private boolean passwordNeedsChanged;
 
 		public User()
 		{
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
+		}
+
+		public void changePassword(String pwd){
+			byte[] hash;
+			try{
+				MessageDigest md = MessageDigest.getInstance("SHA-256");
+				// add password hash and boolean for passwordNeedsChanged (true on creation, set to false on first login)
+				md.update(pwd.getBytes());
+				hash = md.digest();
+			}
+			catch(Exception e){
+				System.out.println("Error generating password hash: " + e);
+				return;
+			}
+			pwd_hash = hash;
 		}
 
 		public ArrayList<String> getGroups()
