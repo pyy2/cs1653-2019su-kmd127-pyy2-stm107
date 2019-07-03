@@ -98,7 +98,6 @@ public abstract class Client {
 					return false;
 				}
 
-				// String hello = (String) input.readObject();
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (NoSuchAlgorithmException e2) {
