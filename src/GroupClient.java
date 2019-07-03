@@ -53,10 +53,60 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 public boolean checkPassword(String username, String password){
 		 try{
 		 	Envelope message = null, response = null;
-			//Tell the server to create a user
 			message = new Envelope("CPWD");
 			message.addObject(username); //Add user name string
 			message.addObject(password);
+			output.writeObject(message);
+
+			response = (Envelope)input.readObject();
+
+			//If server indicates success, return true
+			if(response.getMessage().equals("OK"))
+			{
+				return true;
+			}
+
+			return false;
+		}
+		catch(Exception e)
+		{
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	 }
+
+	 public boolean firstLogin(String username){
+		 try{
+		 	Envelope message = null, response = null;
+			message = new Envelope("FLOGIN");
+			message.addObject(username); //Add user name string
+			output.writeObject(message);
+
+			response = (Envelope)input.readObject();
+
+			//If server indicates success, return true
+			if(response.getMessage().equals("OK"))
+			{
+				return true;
+			}
+
+			return false;
+		}
+		catch(Exception e)
+		{
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	 }
+
+	 public boolean resetPassword(String username, String password){
+		 try{
+		 	Envelope message = null, response = null;
+			message = new Envelope("RPASS");
+			message.addObject(username); //Add user name string
+			message.addObject(password); //Add user name string
 			output.writeObject(message);
 
 			response = (Envelope)input.readObject();

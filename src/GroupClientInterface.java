@@ -44,7 +44,7 @@ public interface GroupClientInterface
     /**
      * Method used to determine if the user exists without returning the token.
      *
-     * @param username The user whose token is being requested
+     * @param username The user whose existance is being requested
      *
      * @return true if user exists, false if it does not.
      *
@@ -55,12 +55,36 @@ public interface GroupClientInterface
     /**
      * Method used to determine if the user's password is correct.
      *
-     * @param username The user whose token is being requested
+     * @param username The user whose password is being checked
+     * @param pwd The password to verify
      *
      * @return true if password is correct, false if it is not.
      *
      */
     public boolean checkPassword(final String username, final String pwd);
+
+
+    /**
+     * Method used to determine if the user's needs to reset their password on first login
+     *
+     * @param username The user whose's apssword status is being requested
+     *
+     * @return true if password needs to be reset, false if it does not.
+     *
+     */
+    public boolean firstLogin(final String username);
+
+
+    /**
+     * Method used to change a user's password.
+     *
+     * @param username The user whose password is being changed
+     * @param pwd The new password
+     *
+     * @return true if success, false if fail
+     *
+     */
+    public boolean resetPassword(final String username, final String pwd);
 
 
     /**

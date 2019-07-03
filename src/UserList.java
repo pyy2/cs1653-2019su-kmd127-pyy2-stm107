@@ -100,6 +100,38 @@ import java.math.BigInteger;
 			return true;
 		}
 
+		public synchronized boolean firstLogin(String username){
+
+			User check_user = list.get(username);
+			if(check_user.passwordNeedsChanged){
+				return true;
+			}
+			return false;
+		}
+
+		public synchronized boolean resetPassword(String username, String password){
+      byte[] pwd_hash;
+			byte[] old_pwd;
+			try{
+				MessageDigest md = MessageDigest.getInstance("SHA-256");
+				md.update(password.getBytes());
+				pwd_hash = md.digest();
+			}
+			catch(Exception e){
+				System.out.println("Error generating password hash: " + e);
+				return false;
+			}
+			User check_user = list.get(username);
+			old_pwd = check_user.pwd_hash;
+			// Set the user's password to the new hash
+			check_user.pwd_hash = pwd_hash;
+			if(Arrays.equals(check_user.pwd_hash, old_pwd)){
+				return false;
+			}
+			check_user.passwordNeedsChanged = false;
+			return true;
+		}
+
 		public synchronized ArrayList<String> getUserGroups(String username)
 		{
 			return list.get(username).getGroups();

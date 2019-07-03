@@ -170,6 +170,43 @@ public class GroupThread extends Thread {
 					}
 					output.writeObject(response);
 				}
+				else if (message.getMessage().equals("FLOGIN"))
+				{
+					if (message.getObjContents().size() < 1) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							String username = (String) message.getObjContents().get(0); // Extract the username
+
+							if (firstLogin(username)) {
+								response = new Envelope("OK"); // Success
+							}
+						}
+					}
+					output.writeObject(response);
+				}
+				else if (message.getMessage().equals("RPASS")) // Client wants to reset password
+				{
+					if (message.getObjContents().size() < 2) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								String username = (String) message.getObjContents().get(0); // Extract the username
+								String password = (String) message.getObjContents().get(1);
+
+								if (resetPassword(username, password)) {
+									response = new Envelope("OK"); // Success
+								}
+							}
+						}
+					}
+					output.writeObject(response);
+				}
 				else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
 				{
 
@@ -385,6 +422,30 @@ public class GroupThread extends Thread {
 	private boolean checkPassword(String username, String pwd) {
 		if (my_gs.userList.checkUser(username)) {
 			if(my_gs.userList.checkPassword(username, pwd)){
+				return true;
+			}
+			return false;
+		} else {
+			return false;
+		}
+	}
+
+	// Method to check if password needs reset
+	private boolean firstLogin(String username) {
+		if (my_gs.userList.checkUser(username)) {
+			if(my_gs.userList.firstLogin(username)){
+				return true;
+			}
+			return false;
+		} else {
+			return false;
+		}
+	}
+
+	// Method to reset password.
+	private boolean resetPassword(String username, String pwd) {
+		if (my_gs.userList.checkUser(username)) {
+			if(my_gs.userList.resetPassword(username, pwd)){
 				return true;
 			}
 			return false;

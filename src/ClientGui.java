@@ -67,6 +67,26 @@ class ClientGui {
 
     JButton exit = new JButton("Exit");
 
+    //////////////// Reset Password Panel ///////////////
+    JPanel reset_panel = new JPanel();
+    JLabel uRes = new JLabel("Username: ");
+    JTextField uRestf = new JTextField(10);
+    reset_panel.add(uRes);
+    reset_panel.add(uRestf);
+
+    JLabel rpasslog = new JLabel("Password: ");
+    JTextField rpasslogtf = new JTextField(10);
+    reset_panel.add(rpasslog);
+    reset_panel.add(rpasslogtf);
+
+    JLabel npasslog = new JLabel("New Password: ");
+    JTextField npasslogtf = new JTextField(10);
+    reset_panel.add(npasslog);
+    reset_panel.add(npasslogtf);
+
+    JButton resetbutton = new JButton("Reset Password");
+    reset_panel.add(resetbutton);
+
     //////////////// Create User Panel ///////////////
     JPanel cu_panel = new JPanel();
     JLabel cuname = new JLabel("CREATE USER\nUsername: ");
@@ -200,6 +220,7 @@ class ClientGui {
     //////////////// Add to the frame ///////////////
     frame.getContentPane().add(conn_panel);
     frame.getContentPane().add(login_panel);
+    frame.getContentPane().add(reset_panel);
     frame.getContentPane().add(cu_panel);
     frame.getContentPane().add(du_panel);
     frame.getContentPane().add(cg_panel);
@@ -256,6 +277,19 @@ class ClientGui {
         ulogtf.setText("");
         passlogtf.setText("");
         login(uname, pass);
+      }
+    });
+
+    // reset password
+    resetbutton.addActionListener(new ActionListener(){
+      public void actionPerformed(ActionEvent e){
+        String uname = uRestf.getText();
+        String pass = rpasslogtf.getText();
+        String npass = npasslogtf.getText();
+        ulogtf.setText("");
+        rpasslogtf.setText("");
+        npasslogtf.setText("");
+        resetPassword(uname, pass, npass);
       }
     });
 
@@ -452,6 +486,11 @@ class ClientGui {
       ta.setText("Error logging in.\n\n");
       return;
     }
+    if(gcli.firstLogin(uname)){
+      ta.setText("It's your first time logging in. Please change your password.\n\n");
+      ta.append("Please change your password using the \"PASSWORD RESET\" section in the GUI above.\n\n");
+      return;
+    }
     utkn = gcli.getToken(uname);
     if(utkn != null){
       ta.append("Logged in as " + utkn.getSubject() + "\n\n\n");
@@ -462,6 +501,16 @@ class ClientGui {
       ta.append("Error loggin in...\nPlease try again\n\n\n");
       loggedin = false;
       return;
+    }
+  }
+
+  private static void resetPassword(String uname, String pass, String npass){
+    ta.setText("\nReset Password\n\n");
+    if(gcli.checkPassword(uname, pass)){
+      boolean reset = gcli.resetPassword(uname, npass);
+      if(!reset) ta.append("An error occurred resetting user password!\n");
+      else ta.append("User " + uname + " successfully reset password!\n\n\n");
+      printMenu();
     }
   }
 

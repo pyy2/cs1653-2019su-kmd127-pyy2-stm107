@@ -47,18 +47,19 @@ public class ClientDriver{
       System.out.println("What would you like to do?");
       System.out.println("Please select from the following operations (please enter a number 1-13): ");
       System.out.println("1. Log in (Get user token)");
-      System.out.println("2. Create a new user.");
-      System.out.println("3. Delete a user.");
-      System.out.println("4. Create a new group.");
-      System.out.println("5. Delete a group.");
-      System.out.println("6. Add a user to a group.");
-      System.out.println("7. Remove a user from a group.");
-      System.out.println("8. List all members of a group.");
-      System.out.println("9. List files.");
-      System.out.println("10. Upload a file.");
-      System.out.println("11. Download a file.");
-      System.out.println("12. Delete a file.");
-      System.out.println("13. Exit");
+      System.out.println("2. Reset password.");
+      System.out.println("3. Create a new user.");
+      System.out.println("4. Delete a user.");
+      System.out.println("5. Create a new group.");
+      System.out.println("6. Delete a group.");
+      System.out.println("7. Add a user to a group.");
+      System.out.println("8. Remove a user from a group.");
+      System.out.println("9. List all members of a group.");
+      System.out.println("10. List files.");
+      System.out.println("11. Upload a file.");
+      System.out.println("12. Download a file.");
+      System.out.println("13. Delete a file.");
+      System.out.println("14. Exit");
       System.out.print(">> ");
 
       String command = kb.nextLine();
@@ -68,39 +69,42 @@ public class ClientDriver{
           login();
           break;
         case "2":
-          createUser();
+          resetPassword();
           break;
         case "3":
-          deleteUser();
+          createUser();
           break;
         case "4":
-          createGroup();
+          deleteUser();
           break;
         case "5":
-          deleteGroup();
+          createGroup();
           break;
         case "6":
-          addUserToGroup();
+          deleteGroup();
           break;
         case "7":
-          deleteUserFromGroup();
+          addUserToGroup();
           break;
         case "8":
-          listGroupMembers();
+          deleteUserFromGroup();
           break;
         case "9":
-          listFiles();
+          listGroupMembers();
           break;
         case "10":
-          upload();
+          listFiles();
           break;
         case "11":
-          download();
+          upload();
           break;
         case "12":
-          deleteFile();
+          download();
           break;
         case "13":
+          deleteFile();
+          break;
+        case "14":
           exit();
         default:
           System.out.println("\nI'm sorry, I didn't understand your input. Let's try again.\n");
@@ -134,13 +138,16 @@ public class ClientDriver{
       System.out.println("Error logging in.\n\n");
       return false;
     }
-    // if(gcli.my_gs.list.get(username).passwordNeedsChanged){
-    //   System.out.println("It's your first time logging in. Please change your password.");
-    //   System.out.print("Enter new password: ");
-    //   String new_pwd = kb.nextLine();
-    //   gcli.my_gs.list.get(username).changePassword(new_pwd);
-    //   gcli.my_gs.list.get(username).passwordNeedsChanged = false;
-    // }
+    if(gcli.firstLogin(username)){
+      System.out.println("It's your first time logging in. Please change your password.");
+      System.out.print("Please enter new password: ");
+      String new_password = kb.nextLine();
+      if(!gcli.resetPassword(username, new_password)){
+        System.out.println("Error changing password! New password cannot equal old password\n\n");
+        // don't return, just let them continue.
+      }
+      else System.out.println("Password changed successfully!\n\n");
+    }
     utkn = gcli.getToken(username);
 
     if(utkn != null){
@@ -151,6 +158,26 @@ public class ClientDriver{
       System.out.println("Error when logging in with the requested user.\n");
       return false;
     }
+  }
+
+  private static void resetPassword(){
+    if(!checkLogInStatus()) return;
+    System.out.print("Please enter your username: ");
+    String username = kb.nextLine();
+    System.out.print("Please enter your old password: ");
+    String old_pass = kb.nextLine();
+    // verify old password is known!
+    if(!gcli.checkPassword(username, old_pass)){
+      System.out.println("Current password incorrect.\n\n");
+      return;
+    }
+    System.out.print("Please enter new password: ");
+    String new_password = kb.nextLine();
+    if(!gcli.resetPassword(username, new_password)){
+      System.out.println("Error changing password! New password cannot equal old password\n\n");
+      // don't return, just let them continue.
+    }
+    else System.out.println("Password changed successfully!\n\n");
   }
 
   private static void createUser(){
