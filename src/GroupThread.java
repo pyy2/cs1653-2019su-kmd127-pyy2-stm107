@@ -81,7 +81,7 @@ public class GroupThread extends Thread {
 			System.out.println("\n\nGS public key -> client: " + keyPair.getPublic());
 
 			// send symmetric key encrypted with client's public key with padding
-			byte[] _encrypted = encrypt("RSA/ECB/PKCS1Padding", aesKey, clientK);
+			byte[] _encrypted = encrypt("RSA/ECB/PKCS1Padding", _aesKey.getEncoded(), clientK);
 			output.writeObject(_encrypted);
 			System.out.println("\n\nAES key -> client: \n" + Base64.getEncoder().encodeToString(_encrypted));
 
@@ -159,7 +159,7 @@ public class GroupThread extends Thread {
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								String username = (String) message.getObjContents().get(0); // Extract the username
+								String username = decrypt("AES", (byte[]) message.getObjContents().get(0), _aesKey); // Extract the username
 								String password = (String) message.getObjContents().get(1);
 
 								if (checkPassword(username, password)) {
@@ -168,6 +168,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
+					// encrypt envelope with shared key
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("FLOGIN"))
@@ -394,16 +395,29 @@ public class GroupThread extends Thread {
 	 *
 	 * @return encrypted - encrypted byte value
 	 */
-	private byte[] encrypt(final String type, final String plaintext, final Key key) {
+	private byte[] encrypt(final String type, final byte[] plaintext, final Key key) {
 		byte[] encrypted = null;
 		try {
 			final Cipher cipher = Cipher.getInstance(type);
 			cipher.init(Cipher.ENCRYPT_MODE, key);
-			encrypted = cipher.doFinal(plaintext.getBytes());
+			encrypted = cipher.doFinal(plaintext);
 		} catch (Exception e) {
-			System.out.println("The Exception is=" + e);
+			System.out.println("The Encryption Exception is=" + e);
 		}
 		return encrypted;
+	}
+
+	protected String decrypt(final String type, final byte[] encrypted, final Key key) {
+		String decryptedValue = null;
+		try {
+			final Cipher cipher = Cipher.getInstance(type);
+			cipher.init(Cipher.DECRYPT_MODE, key);
+			decryptedValue = new String(cipher.doFinal(encrypted));
+		} catch (Exception e) {
+			System.out.println("The Exception is=" + e);
+			e.printStackTrace(System.err);
+		}
+		return decryptedValue;
 	}
 
 	// Method to create tokens

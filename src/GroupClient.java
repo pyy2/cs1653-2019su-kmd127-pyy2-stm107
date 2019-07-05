@@ -54,8 +54,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 		 try{
 		 	Envelope message = null, response = null;
 			message = new Envelope("CPWD");
-			message.addObject(username); //Add user name string
-			message.addObject(password);
+			// encrypt username and password with shared Key
+			message.addObject(encrypt("AES", username, sharedAES));
+			message.addObject(encrypt("AES", password, sharedAES));
 			output.writeObject(message);
 
 			response = (Envelope)input.readObject();
