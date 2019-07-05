@@ -423,8 +423,8 @@ class ClientGui {
   }
 
   private static void connect(String gip, String fip, int gport, int fport){
-    boolean gconn = gcli.connect(gip, gport);
-    boolean fconn = fcli.connect(fip, fport);
+    boolean gconn = gcli.connect(gip, gport, "group");
+    boolean fconn = fcli.connect(fip, fport, "file");
     if(!(gconn)){
       ta.setText("Error connecting to group server.");
     }
@@ -648,9 +648,9 @@ class ClientGui {
   private static UserToken bounceToken(){
     // Bounce the server connections and re-login
     gcli.disconnect();
-    gcli.connect(GIP, Integer.parseInt(GPORT));
+    gcli.connect(GIP, Integer.parseInt(GPORT), "group");
     fcli.disconnect();
-    fcli.connect(FIP, Integer.parseInt(FPORT));
+    fcli.connect(FIP, Integer.parseInt(FPORT), "file");
     String uname = utkn.getSubject();
     return gcli.getToken(uname);
   }

@@ -14,11 +14,12 @@ public interface GroupClientInterface
      *
      * @param server The IP address or hostname of the group server
      * @param port The port that the group server is listening on
+     * @param type A string indicating if this is the "group" or "file" server connection.
      *
      * @return true if the connection succeeds, false otherwise
      *
      */
-    public boolean connect(final String server, final int port);
+    public boolean connect(final String server, final int port, final String type);
 
 
     /**

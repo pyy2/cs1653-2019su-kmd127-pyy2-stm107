@@ -30,8 +30,8 @@ public class ClientDriver{
     System.out.println("Connecting to group client at " + GIP + ":" + GPORT + " and file client at " + FIP + ":" + FPORT);
 
     // connect to servers
-    boolean gconn = gcli.connect(GIP, GPORT);
-    boolean fconn = fcli.connect(FIP, FPORT);
+    boolean gconn = gcli.connect(GIP, GPORT, "group");
+    boolean fconn = fcli.connect(FIP, FPORT, "file");
 
     if(!(gconn)){
       System.out.println("Error connecting to group server. Exiting...");
@@ -341,9 +341,9 @@ public class ClientDriver{
   private static UserToken bounceToken(){
     // Bounce the server connections and re-login
     gcli.disconnect();
-    gcli.connect(GIP, GPORT);
+    gcli.connect(GIP, GPORT, "group");
     fcli.disconnect();
-    fcli.connect(FIP, FPORT);
+    fcli.connect(FIP, FPORT, "file");
     String uname = utkn.getSubject();
     return gcli.getToken(uname);
   }

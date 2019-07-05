@@ -15,11 +15,12 @@ public interface FileClientInterface
      *
      * @param server The IP address or hostname of the file server
      * @param port The port that the file server is listening on
+     * @param type A string indicating if this is the "group" or "file" server connection.
      *
      * @return true if the connection succeeds, false otherwise
      *
      */
-    public boolean connect(final String server, final int port);
+    public boolean connect(final String server, final int port, final String type);
 
 
     /**
