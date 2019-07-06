@@ -1,5 +1,9 @@
 # Compilation Instructions
+From root of working dir
+- Enter 'make all'
 
-To compile the client and server code:
- - Enter the `src/` directory of the repository
- - Type `javac *.java`
+# Running
+From root of working dir
+- Enter 'make groupserver'
+- Open new terminal and from root of working dir enter 'make fileserver'
+- Open new terminal and from root of working dir enter 'make client'
