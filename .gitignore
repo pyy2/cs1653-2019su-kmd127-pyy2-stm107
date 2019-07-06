@@ -1,6 +1,7 @@
 # Shared file directory
 /src/**/shared_files/*
 /build/
+/src/jar
 
 # Binary files
 *.bin

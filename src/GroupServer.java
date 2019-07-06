@@ -6,10 +6,9 @@
 
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.NoSuchFileException;
 import java.io.*;
 import java.util.*;
-
-// security packages
 import java.security.*;
 import javax.crypto.spec.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -19,6 +18,7 @@ public class GroupServer extends Server {
 	public static final int SERVER_PORT = 8765;
 	public UserList userList;
 	public TrustedClients tcList;
+	public final String groupConfig = "GroupConfig.bin";
 
 	public GroupServer() {
 		super(SERVER_PORT, "ALPHA");
@@ -76,10 +76,16 @@ public class GroupServer extends Server {
 			userList.addUser(username, password);
 			userList.addGroup(username, "ADMIN");
 			userList.addOwnership(username, "ADMIN");
+
+			// if no users exist, it's a new group server so generate key
+			KeyPair kp = generateGroupKeypair();
+			System.out.println(kp.getPublic());
+			System.out.println(kp.getPrivate());
+
 		} catch (IOException e) {
 			System.out.println("Error reading from UserList file");
 			System.exit(-1);
-		} catch (ClassNotFoundException e) {
+		} catch (ClassNotFoundException e2) {
 			System.out.println("Error reading from UserList file");
 			System.exit(-1);
 		}
@@ -91,10 +97,8 @@ public class GroupServer extends Server {
 
 		// This block listens for connections and creates threads on new connections
 		try {
-
 			final ServerSocket serverSock = new ServerSocket(port);
 			System.out.printf("%s up and running\n", this.getClass().getName());
-
 			Socket sock = null;
 			GroupThread thread = null;
 
@@ -107,6 +111,53 @@ public class GroupServer extends Server {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 		}
+	}
+
+	protected KeyPair generateGroupKeypair() {
+		KeyPair keyPair = null;
+		// Check if Group server has public/private keypair
+		try {
+			// Try to read the keypair from a file.
+			FileInputStream fis_keys = new FileInputStream(groupConfig);
+			ObjectInputStream keyPairStream = new ObjectInputStream(fis_keys);
+			keyPair = (KeyPair) keyPairStream.readObject();
+		} catch (FileNotFoundException e) {
+			try {
+				// The file doesn't exist, then there's no RSA keys for this client.
+				System.out.println("Generating Client RSA keypair");
+				keyPair = genKeyPair();
+				// save the key pair for future use.
+				ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(groupConfig));
+				outStream.writeObject(keyPair);
+			} catch (IOException e4) {
+				e4.printStackTrace();
+			}
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		} catch (ClassNotFoundException e3) {
+			e3.printStackTrace();
+		}
+		return keyPair;
+	}
+
+	/*
+	 * Method to generate public/private RSA keypair when client is launched
+	 *
+	 * @return keypair - client's public/private keypair
+	 */
+	private KeyPair genKeyPair() {
+		KeyPair keyPair = null;
+		try {
+			Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider()); // add security provider
+			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC"); // set RSA instance
+			keyGen.initialize(2048); // set bit size
+			keyPair = keyGen.genKeyPair(); // generate key pair
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (NoSuchProviderException e2) {
+			e2.printStackTrace();
+		}
+		return keyPair;
 	}
 }
 
