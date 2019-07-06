@@ -1,0 +1,287 @@
+import java.io.*;
+import java.io.File;
+import java.util.*;
+import java.util.Base64;
+import java.security.*;
+import javax.crypto.*;
+import javax.crypto.Mac;
+import java.security.Signature;
+import javax.crypto.spec.*;
+import java.security.Key;
+import java.security.Security;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import java.security.spec.KeySpec;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+class Crypto {
+
+    PublicKey clientK;
+    Key pub;
+    PrivateKey priv;
+    KeyPair KP;
+    SecretKey aes;
+
+    // constructor
+    Crypto() {
+        Security.addProvider(new BouncyCastleProvider());
+        clientK = null;
+        KP = null;
+        aes = null;
+    }
+
+    // create keys into key files if not generated already
+    void setSystemKP(String filename) {
+        System.out.println("No key files found! Generating " + filename + " RSA keypair file");
+        KP = genKP();
+        PublicKey publicKey = KP.getPublic();
+        PrivateKey privateKey = KP.getPrivate();
+        System.out.println("Keypairs generated: Saving to file...");
+        try {
+            KeyFactory fact = KeyFactory.getInstance("RSA");
+            RSAPublicKeySpec _pub = fact.getKeySpec(publicKey, RSAPublicKeySpec.class);
+            RSAPrivateKeySpec _priv = fact.getKeySpec(privateKey, RSAPrivateKeySpec.class);
+            saveToFile(filename + "public.key", _pub.getModulus(), _pub.getPublicExponent());
+            saveToFile(filename + "private.key", _priv.getModulus(), _priv.getPrivateExponent());
+            System.out.println("keys saved in " + filename);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e2) {
+            e2.printStackTrace();
+        } catch (IOException e3) {
+            e3.printStackTrace();
+        } catch (InvalidKeySpecException e4) {
+            e4.printStackTrace();
+        }
+    }
+
+    // save keys to public/private .key file
+    private void saveToFile(String fileName, BigInteger mod, BigInteger exp) throws IOException {
+        System.out.println("Creating file: " + fileName);
+        ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(fileName)));
+        try {
+            oos.writeObject(mod);
+            oos.writeObject(exp);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            oos.close();
+        }
+    }
+
+    // Return the saved key from file
+    Key readKeyFromFile(String filename) throws IOException {
+        InputStream in = new FileInputStream(filename);
+        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
+        Key key = null;
+        try {
+            BigInteger m = (BigInteger) oin.readObject();
+            BigInteger e = (BigInteger) oin.readObject();
+            KeyFactory fact = KeyFactory.getInstance("RSA");
+            if (filename.contains("public"))
+                key = fact.generatePublic(new RSAPublicKeySpec(m, e));
+            else
+                key = fact.generatePrivate(new RSAPrivateKeySpec(m, e));
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            oin.close();
+        }
+        return key;
+    }
+
+    // set system public key
+    void setPublicKey(String name) {
+        try {
+            this.pub = readKeyFromFile(name + "public.key");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // return system's public key
+    Key getPublic() {
+        return this.pub;
+    }
+
+    // return base64 of public key
+    String getPublicK() {
+        return "------ BEGIN RSA PUBLIC KEY ------ \n" + Base64.getEncoder().encodeToString(this.pub.getEncoded())
+                + "\n------- END RSA PUBLIC KEY -------";
+    }
+
+    // set system private key
+    void setPrivateKey(String name) {
+        try {
+            this.priv = (PrivateKey) readKeyFromFile(name + "private.key");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // return system's private key
+    PrivateKey getPrivate() {
+        return this.priv;
+    }
+
+    String byteToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X ", b));
+        }
+        return sb.toString();
+    }
+
+    /*
+     * Method to generate public/private RSA keypair when client is launched
+     *
+     * @return keypair - public/private keypair
+     */
+    KeyPair genKP() {
+        KeyPair keyPair = null;
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA"); // set RSA instance
+            keyGen.initialize(2048); // set bit size
+            keyPair = keyGen.genKeyPair(); // generate key pair
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return keyPair;
+    }
+
+    String getClientK() {
+        return "------ BEGIN RSA PUBLIC KEY ------ \n" + Base64.getEncoder().encodeToString(this.clientK.getEncoded())
+                + "\n------- END RSA PUBLIC KEY -------";
+    }
+
+    byte[] objectToByte(Object o) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutput out = null;
+        byte[] b = null;
+        try {
+            out = new ObjectOutputStream(bos);
+            out.writeObject(o);
+            out.flush();
+            b = bos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                bos.close();
+            } catch (IOException ex) {
+            }
+        }
+        return b;
+    }
+
+    void setClient(Object o) {
+        clientK = (PublicKey) o;
+    }
+
+    PublicKey getClient() {
+        return this.clientK;
+    }
+
+    // generate AES key
+    void setAESkey() {
+        SecretKey key = null;
+        try {
+            KeyGenerator keyGen = KeyGenerator.getInstance("AES", "BC");
+            keyGen.init(128);
+            key = keyGen.generateKey();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e2) {
+            e2.printStackTrace();
+        }
+        this.aes = key;
+    }
+
+    void setAESkey(String key) {
+        aes = new SecretKeySpec(decode(key), "AES");
+    }
+
+    SecretKey getAESKey() {
+        return aes;
+    }
+
+    // encryption
+    byte[] encrypt(final String type, final String plaintext, final Key key) {
+        byte[] encrypted = null;
+        try {
+            final Cipher cipher = Cipher.getInstance(type);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            encrypted = cipher.doFinal(plaintext.getBytes());
+        } catch (Exception e) {
+            System.out.println("The Exception is=" + e);
+        }
+        return encrypted;
+    }
+
+    byte[] decode(String key) {
+        return Base64.getDecoder().decode(key);
+    }
+
+    // decryption
+    String decrypt(final String type, final byte[] encrypted, final Key key) {
+        String decryptedValue = null;
+        try {
+            final Cipher cipher = Cipher.getInstance(type);
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            decryptedValue = new String(cipher.doFinal(encrypted));
+        } catch (Exception e) {
+            System.out.println("The Exception is=" + e);
+            e.printStackTrace(System.err);
+        }
+        return decryptedValue;
+    }
+
+    void checkProvider() {
+        if (Security.getProvider("BC") == null) {
+            System.out.println("Error: BC provider not set");
+        } else {
+            System.out.println("Bouncy Castle provider is set");
+        }
+    }
+
+    // String aesToString(SecretKey key) {
+    // return new SecretKeySpec(key, 0, key.length, "AES");
+    // }
+
+    byte[] createChecksum(Key key) {
+        // send SHA256 checksum of symmetric key for verification
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return digest.digest(key.getEncoded());
+    }
+
+    boolean isEqual(byte[] a, byte[] b) {
+        if (a.length != b.length) {
+            return false;
+        }
+        int result = 0;
+        for (int i = 0; i < a.length; i++) {
+            result |= a[i] ^ b[i];
+        }
+        return result == 0;
+    }
+
+    String toString(Key key) {
+        return Base64.getEncoder().encodeToString(key.getEncoded());
+    }
+
+    String toString(byte[] b) {
+        return Base64.getEncoder().encodeToString(b);
+    }
+}
