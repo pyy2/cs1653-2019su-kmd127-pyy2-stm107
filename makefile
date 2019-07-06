@@ -30,14 +30,12 @@ rball:
 
 clean:
 	rm -r build
+	rm -r src/jar
 
 clear:
 	rm -r ./build/*.bin
 	rm -r ./build/*.key
-
-clean_all:
-	rm -r build
-	rm -r src/jar
+	rmdir -p ./build/shared_files/
 
 test:
 	echo $(CURRENT_DIR)

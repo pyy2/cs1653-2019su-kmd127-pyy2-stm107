@@ -28,6 +28,7 @@ class Crypto {
     PrivateKey priv;
     KeyPair KP;
     SecretKey aes;
+    SecureRandom random;
 
     // constructor
     Crypto() {
@@ -35,6 +36,7 @@ class Crypto {
         clientK = null;
         KP = null;
         aes = null;
+        random = new SecureRandom();
     }
 
     // create keys into key files if not generated already
@@ -345,5 +347,27 @@ class Crypto {
 
     String toString(byte[] b) {
         return Base64.getEncoder().encodeToString(b);
+    }
+
+    String getChallenge() {
+        String s = "";
+        try {
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "BC");
+
+            // Get 128 random bytes
+            byte[] randomBytes = new byte[128];
+            random.nextBytes(randomBytes);
+
+            // Get random integer
+            int r = random.nextInt();
+
+            // Get random integer in range
+            s = Integer.toString(random.nextInt(999999999));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e2) {
+            e2.printStackTrace();
+        }
+        return s;
     }
 }

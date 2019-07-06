@@ -16,9 +16,12 @@ import java.security.*;
 import javax.crypto.*;
 import java.security.Signature;
 
-
 public class FileThread extends Thread {
 	private final Socket socket;
+	PublicKey FSpub;
+	PrivateKey FSpri;
+	SecretKey key;
+	PublicKey clientK;
 
 	public FileThread(Socket _socket) {
 		socket = _socket;
@@ -32,14 +35,47 @@ public class FileThread extends Thread {
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 			Envelope response;
 
-			// Gets the clients pubkey (added for now for testing.)
-			PublicKey clientK = (PublicKey) input.readObject(); // get client key from buffer
-			System.out.println("Received client's public key: \n" + clientK);
+			System.out.println("\n\n########### SECURING CLIENT CONNECTION ###########");
 
-			PublicKey dummykey = null;
-			output.writeObject(dummykey);
+			final String path = "./FSpublic.key";
+			final String path2 = "./FSprivate.key";
+			File f1 = new File(path);
+			File f2 = new File(path2);
+			Crypto crypto = new Crypto();
 
-			System.out.println("\n\nWriting a dummy public key...\n\n");
+			// if key files don't exist, something went wrong on initialization, ABORT
+			if (!f1.exists() && !f2.exists()) {
+				System.out.println("FATAL ERROR: FS key NOT found!\n System Exiting");
+				System.exit(1);
+			}
+
+			// set keys
+			if (f1.exists() && f2.exists()) {
+				System.out.println("Setting FS public/private keys");
+				crypto.setPublicKey("FS");
+				crypto.setPrivateKey("FS");
+				FSpub = (PublicKey) crypto.getPublic();
+				FSpri = crypto.getPrivate();
+			}
+			output.writeObject(FSpub); // send file public key
+			output.flush();
+
+			crypto.setClient(input.readObject()); // read client's public key (encoded)
+			clientK = crypto.getClient();
+			System.out.println("Received client's public key: \n" + crypto.toString(clientK));
+			input.readObject(); // get
+
+			System.out.println("\n\n########### CONNECTION W CLIENT SECURE ###########");
+
+			// // Gets the clients pubkey (added for now for testing.)
+			// PublicKey clientK = (PublicKey) input.readObject(); // get client key from
+			// buffer
+			// System.out.println("Received client's public key: \n" + clientK);
+
+			// PublicKey dummykey = null;
+			// output.writeObject(dummykey);
+
+			// System.out.println("\n\nWriting a dummy public key...\n\n");
 
 			do {
 				Envelope e = (Envelope) input.readObject();
@@ -47,7 +83,8 @@ public class FileThread extends Thread {
 
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
-					UserToken yourToken = (UserToken) e.getObjContents().get(0); // Extract token NOTE: This only takes 1 param, the user token.
+					UserToken yourToken = (UserToken) e.getObjContents().get(0); // Extract token NOTE: This only takes
+																					// 1 param, the user token.
 					List<String> groups = yourToken.getGroups(); // get associated groups
 
 					List<ShareFile> sfiles = FileServer.fileList.getFiles();

@@ -26,6 +26,7 @@ public abstract class Client {
 	PrivateKey priv;
 	Crypto crypto = new Crypto();
 	SecretKey sharedKey;
+	PublicKey FSpub;
 
 	// Added extra parameter to determine if type is file server or group server.
 	// type should be "file" or "group"
@@ -35,8 +36,31 @@ public abstract class Client {
 		PublicKey fileK = null;
 
 		// Check if socket is in use
-		if (isConnected())
-			disconnect();
+		// if (isConnected())
+		// disconnect();
+
+		// check if client keys exist
+		final String path = "./" + clientConfig + "public.key";
+		final String path2 = "./" + clientConfig + "private.key";
+		File f = new File(path);
+		File f2 = new File(path2);
+
+		// if key files don't exist, create new ones
+		if (!f.exists() && !f2.exists()) {
+			System.out.println("CL key NOT found!");
+			crypto.setSystemKP(clientConfig);
+		}
+
+		// now they should exist, set public/private key
+		if (f.exists() && f2.exists()) {
+			System.out.println("CL keys found!\nSetting public/private key");
+			crypto.setPublicKey(clientConfig);
+			crypto.setPrivateKey(clientConfig);
+			pub = crypto.getPublic();
+			priv = crypto.getPrivate();
+		}
+		// System.out.println(crypto.getPublic());
+		System.out.println(crypto.getPublicK());
 
 		// Try to create new socket connection
 		try {
@@ -49,32 +73,9 @@ public abstract class Client {
 			output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket
 			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
 
-			// check if client keys exist
-			final String path = "./" + clientConfig + "public.key";
-			final String path2 = "./" + clientConfig + "private.key";
-			File f = new File(path);
-			File f2 = new File(path2);
-
-			// if key files don't exist, create new ones
-			if (!f.exists() && !f2.exists()) {
-				System.out.println("CL key NOT found!");
-				crypto.setSystemKP(clientConfig);
-			}
-
-			// now they should exist, set public/private key
-			if (f.exists() && f2.exists()) {
-				System.out.println("CL keys found!\nSetting public/private key");
-				crypto.setPublicKey(clientConfig);
-				crypto.setPrivateKey(clientConfig);
-				pub = crypto.getPublic();
-				priv = crypto.getPrivate();
-			}
-			// System.out.println(crypto.getPublic());
-			System.out.println(crypto.getPublicK());
-
 			// literally just for testing so the file server doesn't poop out.
 			if (!type.equals("file")) {
-				System.out.println("\n\n########### ATTEMPTING TO SECURE CONNECTION ###########");
+				System.out.println("\n\n########### SECURING GROUP CONNECTION ###########");
 				System.out.println("CL public key -> GS\n");
 				output.writeObject(crypto.getPublic()); // write public key to channel (encoded)
 				output.flush();
@@ -102,10 +103,62 @@ public abstract class Client {
 				// sig.update(_checkSum);
 
 				System.out.println("Verified Signature -> " + crypto.verifySignature(_checkSum, signedChecksum));
-				System.out.println("\n########### CONNECTION IS  SECURE ###########\n\n");
+				System.out.println("\n########### CONNECTION TO GROUP SECURE ###########\n\n");
 
 			} else {
+				System.out.println("\n\n########### SECURING FILESERVER CONNECTION ###########");
 
+				crypto.setClient(input.readObject()); // read fs public key (encoded)
+				FSpub = crypto.getClient();
+				System.out.println("Received FS's public key: \n" + crypto.toString(FSpub));
+
+				// if (my_gs.tcList.pubkeys != null) {
+				// // Check to see if ip:pubkey pair exists yet.
+				// if (my_gs.tcList.pubkeys.containsKey(socket.getInetAddress().toString())) {
+				// // If the ip is there, make sure that the pubkey matches.
+				// PublicKey storedCliKey =
+				// my_gs.tcList.pubkeys.get(socket.getInetAddress().toString());
+				// if (!storedCliKey.equals(clientK)) {
+				// System.out.println("The stored fingerprint does not match the incoming client
+				// key!");
+				// System.out.println("Terminating connection...");
+				// socket.close(); // Close the socket
+				// proceed = false; // End this communication loop
+				// }
+				// // The keys match, it's safe to proceed
+				// else {
+				// System.out.println("Fingerprint verified!");
+				// }
+				// }
+				// // IP does not yet exist in trusted client list. Add it.
+				// else {
+				// System.out.println("This is your first time connecting this client to the
+				// group server.");
+				// System.out.println("Adding client's public key to trusted clients list...");
+				// my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
+				// }
+				// }
+
+				// send client's public key to client
+				output.writeObject(crypto.getPublic());
+				System.out.println("\nClient public key -> FS: " + crypto.toString(crypto.getPublic()));
+
+				// send symmetric key AND CHALLENGE encrypted with fs's public key with padding
+				crypto.setAESkey(); // create AES key
+				String challenge = crypto.getChallenge();
+				System.out.println(challenge);
+
+				SecretKey _aesKey = crypto.getAESKey();
+				output.writeObject(crypto.encrypt("RSA/ECB/PKCS1Padding", crypto.toString(_aesKey) + challenge, FSpub));
+				System.out.println("\nAES key -> Client: " + crypto.toString(_aesKey));
+
+				// send SHA256 checksum of symmetric key for verification
+				// MessageDigest digest = MessageDigest.getInstance("SHA-256");
+				byte[] checksum = crypto.createChecksum(_aesKey);
+				output.writeObject(crypto.createChecksum(_aesKey)); // send checksum
+				System.out.println("Checksum -> Client: " + crypto.toString(checksum));
+
+				System.out.println("\n########### CONNECTION TO FILESERVER SECURE ###########\n\n");
 			}
 
 		} catch (UnknownHostException e) {
