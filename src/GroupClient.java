@@ -20,7 +20,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// Tell the server to return a token.
 			message = new Envelope("GET");
 			// ecnrypt username with symmetric keys
-			byte[] uname = encrypt("AES", username, sharedKey);
+			byte[] uname = crypto.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			output.writeObject(message);
 
@@ -44,14 +44,14 @@ public class GroupClient extends Client implements GroupClientInterface {
 					byte[] signed_data = (byte[]) response.getObjContents().get(2);
 
 					// get the token concated with the public key
-					String tokenAndKey = decrypt("AES", encryptedToken, sharedKey);
+					String tokenAndKey = crypto.decrypt("AES", encryptedToken, sharedKey);
 					// System.out.println("This is the key + token data: " + tokenAndKey);
 					// Remove the public group key to get the token info
 					String gPubKey = Base64.getEncoder().encodeToString(groupK.getEncoded());
 					String tokenString = tokenAndKey.replace(gPubKey, "");
 					UserToken sessionToken = makeTokenFromString(tokenString);
-					return sessionToken;
 					// System.out.println("This is the stringified token data: " + tokenString);
+					return sessionToken;
 
 				}
 			}
@@ -74,8 +74,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope message = null, response = null;
 			message = new Envelope("CPWD");
 			// encrypt username and password with symmetric key
-			byte[] uname = encrypt("AES", username, sharedKey);
-			byte[] pass = encrypt("AES", password, sharedKey);
+			byte[] uname = crypto.encrypt("AES", username, sharedKey);
+			byte[] pass = crypto.encrypt("AES", password, sharedKey);
 			message.addObject(uname); // Add user name string
 			message.addObject(pass);
 			output.writeObject(message);
@@ -99,7 +99,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			message = new Envelope("FLOGIN");
-			byte[] uname = encrypt("AES", username, sharedKey);
+			byte[] uname = crypto.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			output.writeObject(message);
 
@@ -124,8 +124,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope message = null, response = null;
 			message = new Envelope("RPASS");
 			// encrypt username and password with symmetric key
-			byte[] uname = encrypt("AES", username, sharedKey);
-			byte[] pass = encrypt("AES", password, sharedKey);
+			byte[] uname = crypto.encrypt("AES", username, sharedKey);
+			byte[] pass = crypto.encrypt("AES", password, sharedKey);
 
 			// Add HMAC(Username||password, sharedKey) signed with private key so we know it
 			// hasn't been tampered with!
@@ -134,10 +134,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			mac.init(sharedKey);
 			mac.update(verify);
 			byte[] out = mac.doFinal();
-			Signature sign = Signature.getInstance("RSA", "BC");
-			sign.initSign(keyPair.getPrivate());
-			sign.update(out);
-			byte[] signed_data = sign.sign();
+			byte[] signed_data = crypto.signChecksum(out);
 
 			message.addObject(uname);
 			message.addObject(pass);
@@ -172,7 +169,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(token.toString());
 			byte[] reqBytes = createEncryptedString(reqParams);
 			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = sign(out);
+			byte[] signed_data = crypto.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -205,7 +202,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(token.toString());
 			byte[] reqBytes = createEncryptedString(reqParams);
 			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = sign(out);
+			byte[] signed_data = crypto.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -237,7 +234,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(token.toString());
 			byte[] reqBytes = createEncryptedString(reqParams);
 			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = sign(out);
+			byte[] signed_data = crypto.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -269,7 +266,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(token.toString());
 			byte[] reqBytes = createEncryptedString(reqParams);
 			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = sign(out);
+			byte[] signed_data = crypto.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -301,7 +298,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(token.toString());
 			byte[] reqBytes = createEncryptedString(reqParams);
 			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = sign(out);
+			byte[] signed_data = crypto.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -313,7 +310,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// If server indicates success, return the member list
 			if (response.getMessage().equals("OK")) {
 				byte[] enc_memList = (byte[]) response.getObjContents().get(0);
-				String members = decrypt("AES", enc_memList, sharedKey);
+				String members = crypto.decrypt("AES", enc_memList, sharedKey);
 				String[] m_arr = members.split("-");
 				List<String> memList = new ArrayList<>();
 				for (int i = 0; i < m_arr.length; i++) {
@@ -342,7 +339,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(token.toString());
 			byte[] reqBytes = createEncryptedString(reqParams);
 			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = sign(out);
+			byte[] signed_data = crypto.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -374,7 +371,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(token.toString());
 			byte[] reqBytes = createEncryptedString(reqParams);
 			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = sign(out);
+			byte[] signed_data = crypto.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -413,9 +410,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			if (i != params.size() - 1) {
 				concat += "-";
 			}
-
 		}
-		return encrypt("AES", concat, sharedKey);
+		return crypto.encrypt("AES", concat, sharedKey);
 	}
 
 	private byte[] createHmac(byte[] macBytes) {
@@ -430,20 +426,5 @@ public class GroupClient extends Client implements GroupClientInterface {
 			System.out.println("EXCEPTION CREATING HMAC: " + e);
 		}
 		return out;
-	}
-
-	private byte[] sign(byte[] req) {
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider()); // add security provider
-		byte[] signed_data = null;
-		try {
-			Signature sign = Signature.getInstance("RSA", "BC");
-			sign.initSign(keyPair.getPrivate());
-			sign.update(req);
-			signed_data = sign.sign();
-		} catch (Exception e) {
-			System.out.println("EXCEPTION CREATING SIGNATURE: " + e);
-		}
-
-		return signed_data;
 	}
 }

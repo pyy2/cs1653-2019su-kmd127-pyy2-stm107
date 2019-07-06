@@ -6,6 +6,7 @@ import java.util.*;
 
 // security packages
 import java.security.*;
+import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.Mac;
 import javax.crypto.Cipher;
@@ -28,11 +29,12 @@ public abstract class Client {
 	ObjectInputStream tfsStream;
 	ObjectInputStream keyPairStream;
 	KeyPair keyPair;
-	SecretKeySpec sharedKey;
 	PublicKey groupK;
 	public final String clientConfig = "CL";
 	Key pub;
 	PrivateKey priv;
+	Crypto crypto = new Crypto();
+	SecretKey sharedKey;
 
 	// Added extra parameter to determine if type is file server or group server.
 	// type should be "file" or "group"
@@ -61,7 +63,6 @@ public abstract class Client {
 			final String path2 = "./" + clientConfig + "private.key";
 			File f = new File(path);
 			File f2 = new File(path2);
-			Crypto crypto = new Crypto();
 
 			// if key files don't exist, create new ones
 			if (!f.exists() && !f2.exists()) {
@@ -96,6 +97,7 @@ public abstract class Client {
 							crypto.getPrivate()); // AES
 					System.out.println("Received AES key -> " + aesKey);
 					crypto.setAESkey(aesKey);
+					sharedKey = crypto.getAESKey();
 
 					MessageDigest digest = MessageDigest.getInstance("SHA-256");
 					byte[] _checkSum = (byte[]) input.readObject(); // checksum
@@ -105,21 +107,17 @@ public abstract class Client {
 
 					// Verify RSA signature
 					byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
-					Signature sig = Signature.getInstance("SHA256withRSA");
-					sig.initVerify(groupK);
-					sig.update(_checkSum);
+					// Signature sig = Signature.getInstance("SHA256withRSA");
+					// sig.initVerify(groupK);
+					// sig.update(_checkSum);
 
-					System.out.println("Verified Signature -> " + sig.verify(signedChecksum));
+					System.out.println("Verified Signature -> " + crypto.verifySignature(_checkSum, signedChecksum));
 					System.out.println("\n########### CONNECTION IS  SECURE ###########\n\n");
 
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				} catch (NoSuchAlgorithmException e2) {
 					e2.printStackTrace();
-				} catch (InvalidKeyException e3) {
-					e3.printStackTrace();
-				} catch (SignatureException e4) {
-					e4.printStackTrace();
 				}
 			}
 			// only read in trusted file servers file if this is a file server connection.

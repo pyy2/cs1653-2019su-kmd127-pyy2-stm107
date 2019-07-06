@@ -156,11 +156,6 @@ class Crypto {
         return keyPair;
     }
 
-    String getClientK() {
-        return "------ BEGIN RSA PUBLIC KEY ------ \n" + Base64.getEncoder().encodeToString(this.clientK.getEncoded())
-                + "\n------- END RSA PUBLIC KEY -------";
-    }
-
     byte[] objectToByte(Object o) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutput out = null;
@@ -256,7 +251,6 @@ class Crypto {
     // }
 
     byte[] createChecksum(Key key) {
-        // send SHA256 checksum of symmetric key for verification
         MessageDigest digest = null;
         try {
             digest = MessageDigest.getInstance("SHA-256");
@@ -264,6 +258,74 @@ class Crypto {
             e.printStackTrace();
         }
         return digest.digest(key.getEncoded());
+    }
+
+    boolean verifySignature(byte[] checksum, byte[] signChecksum) {
+        boolean verify = false;
+        try {
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            sig.initVerify(clientK);
+            sig.update(checksum);
+            verify = sig.verify(signChecksum);
+        } catch (Exception e) {
+            System.out.println("EXCEPTION VERIFYING SIGNATURE: " + e);
+        }
+        if (verify) {
+            System.out.printf("Signature verified!\n");
+        } else {
+            System.out.println("Unable to verify signature!\n");
+        }
+        return verify;
+    }
+
+    byte[] signChecksum(byte[] checksum) {
+        // Signature sig = Signature.getInstance("SHA256withRSA"); // sign
+        // sig.initSign(crypto.getPrivate()); // use group server private key
+        // sig.update(checksum); // input checksum
+        byte[] sigBytes = null;
+        try {
+            Signature sig = Signature.getInstance("SHA256withRSA"); // sign
+            sig.initSign(getPrivate()); // use group server private key
+            sig.update(checksum); // input checksum
+            sigBytes = sig.sign(); // sign
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (SignatureException e2) {
+            e2.printStackTrace();
+        } catch (InvalidKeyException e3) {
+            e3.printStackTrace();
+        }
+        return sigBytes;
+    }
+
+    boolean verifyHmac(byte[] reverify, byte[] reOut) {
+        byte[] out = null;
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256", "BC");
+            mac.init(aes);
+            mac.update(reverify);
+            out = mac.doFinal();
+        } catch (Exception e) {
+            System.out.println("EXCEPTION VERIFYING HMAC: " + e);
+        }
+        if (Arrays.equals(reOut, out)) {
+            System.out.println("HMAC Successfully verified!\n");
+            return true;
+        } else {
+            System.out.println("Unable to verify HMAC. Is there a man in the middle??\n\n");
+            return false;
+        }
+    }
+
+    byte[] createEncryptedString(ArrayList<String> params) {
+        String concat = new String();
+        for (int i = 0; i < params.size(); i++) {
+            concat += params.get(i);
+            if (i != params.size() - 1) {
+                concat += "-";
+            }
+        }
+        return encrypt("AES", concat, aes);
     }
 
     boolean isEqual(byte[] a, byte[] b) {
