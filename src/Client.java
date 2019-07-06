@@ -7,6 +7,7 @@ import java.util.*;
 // security packages
 import java.security.*;
 import javax.crypto.spec.*;
+import javax.crypto.Mac;
 import javax.crypto.Cipher;
 import java.security.Signature;
 
@@ -27,6 +28,8 @@ public abstract class Client {
 	ObjectInputStream tfsStream;
 	ObjectInputStream keyPairStream;
 	KeyPair keyPair;
+	SecretKeySpec sharedKey;
+	PublicKey groupK;
 
 	// Added extra parameter to determine if type is file server or group server.
 	// type should be "file" or "group"
@@ -80,12 +83,18 @@ public abstract class Client {
 				output.writeObject(keyPair.getPublic()); // write public key to channel
 
 				try {
-					PublicKey groupK = (PublicKey) input.readObject(); // group public key
+					groupK = (PublicKey) input.readObject(); // group public key
 					String aesKey = decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), keyPair.getPrivate()); // AES
 					MessageDigest digest = MessageDigest.getInstance("SHA-256");
 					byte[] _checkSum = (byte[]) input.readObject(); // checksum
 					byte[] checkSum = digest.digest(Base64.getDecoder().decode(aesKey));
 					byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
+
+					// Get the shared AES key
+					byte[] decodedKey = Base64.getDecoder().decode(aesKey);
+					//System.out.println("The aes key: " + new String(Base64.getDecoder().decode(aesKey)));
+					sharedKey = new SecretKeySpec(decodedKey, "AES");
+
 
 					// Verify RSA signature
 					Signature sig = Signature.getInstance("SHA256withRSA");
@@ -97,6 +106,8 @@ public abstract class Client {
 					System.out.println("Checksum -> " + Base64.getEncoder().encodeToString(_checkSum));
 					System.out.println("Computed Checksum -> " + Base64.getEncoder().encodeToString(checkSum));
 					System.out.println("Verified Signature -> " + sig.verify(signedChecksum));
+
+
 
 					if (isEqual(_checkSum, checkSum)) {
 						System.out.println("====Checksum verified====\n\n");
@@ -116,47 +127,47 @@ public abstract class Client {
 				}
 			}
 			// only read in trusted file servers file if this is a file server connection.
-			if(type.equals("file")){
-				// Get the file server pub key and make sure the fingerprint match.
-				// This shouldn't really run right now, since the file server doesn't yet produce keys.
-				// Open the trusted file server list
-				try {
-					FileInputStream fis_tfs = new FileInputStream(tfsFile);
-					tfsStream = new ObjectInputStream(fis_tfs);
-					tfsList = (TrustedFServer) tfsStream.readObject();
-				} catch (FileNotFoundException e) {
-					System.out.println("No Trusted file servers found!");
-					System.out.println("Instantiating Trusted File Server list...");
-					tfsList = new TrustedFServer();
-				} catch (Exception e) {
-					System.out.println("Unable to load list of trusted file servers.");
-					System.out.println("Exception: " + e);
-				}
-				if (tfsList.pubkeys != null) {
-					// Check to see if ip:pubkey pair exists yet.
-					if (tfsList.pubkeys.containsKey(sock.getInetAddress().toString())) {
-						// If the ip is there, make sure that the pubkey matches.
-						PublicKey storedFSKey = tfsList.pubkeys.get(sock.getInetAddress().toString());
-						if (!storedFSKey.equals(fileK)) {
-							System.out.println("The stored fingerprint does not match the incoming file server key!");
-							System.out.println("Terminating connection...");
-							sock.close(); // Close the socket
-						}
-						// The keys match, it's safe to proceed
-						else {
-							System.out.println("Fingerprint verified!");
-						}
-					}
-					// IP does not yet exist in trusted client list. Add it.
-					else {
-						System.out.println("This is your first time connecting this client to this file server.");
-						System.out.println("Adding file server's public key to trusted file servers list...");
-						tfsList.addServer(sock.getInetAddress().toString(), fileK);
-						outStream = new ObjectOutputStream(new FileOutputStream(tfsFile));
-						outStream.writeObject(tfsList);
-					}
-				}
-			}
+			// if(type.equals("file")){
+			// 	// Get the file server pub key and make sure the fingerprint match.
+			// 	// This shouldn't really run right now, since the file server doesn't yet produce keys.
+			// 	// Open the trusted file server list
+			// 	try {
+			// 		FileInputStream fis_tfs = new FileInputStream(tfsFile);
+			// 		tfsStream = new ObjectInputStream(fis_tfs);
+			// 		tfsList = (TrustedFServer) tfsStream.readObject();
+			// 	} catch (FileNotFoundException e) {
+			// 		System.out.println("No Trusted file servers found!");
+			// 		System.out.println("Instantiating Trusted File Server list...");
+			// 		tfsList = new TrustedFServer();
+			// 	} catch (Exception e) {
+			// 		System.out.println("Unable to load list of trusted file servers.");
+			// 		System.out.println("Exception: " + e);
+			// 	}
+			// 	if (tfsList.pubkeys != null) {
+			// 		// Check to see if ip:pubkey pair exists yet.
+			// 		if (tfsList.pubkeys.containsKey(sock.getInetAddress().toString())) {
+			// 			// If the ip is there, make sure that the pubkey matches.
+			// 			PublicKey storedFSKey = tfsList.pubkeys.get(sock.getInetAddress().toString());
+			// 			if (!storedFSKey.equals(fileK)) {
+			// 				System.out.println("The stored fingerprint does not match the incoming file server key!");
+			// 				System.out.println("Terminating connection...");
+			// 				sock.close(); // Close the socket
+			// 			}
+			// 			// The keys match, it's safe to proceed
+			// 			else {
+			// 				System.out.println("Fingerprint verified!");
+			// 			}
+			// 		}
+			// 		// IP does not yet exist in trusted client list. Add it.
+			// 		else {
+			// 			System.out.println("This is your first time connecting this client to this file server.");
+			// 			System.out.println("Adding file server's public key to trusted file servers list...");
+			// 			tfsList.addServer(sock.getInetAddress().toString(), fileK);
+			// 			outStream = new ObjectOutputStream(new FileOutputStream(tfsFile));
+			// 			outStream.writeObject(tfsList);
+			// 		}
+			// 	}
+			// }
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e1) {
@@ -181,7 +192,7 @@ public abstract class Client {
 		return result == 0;
 	}
 
-	private String decrypt(final String type, final byte[] encrypted, final Key key) {
+	protected String decrypt(final String type, final byte[] encrypted, final Key key) {
 		String decryptedValue = null;
 		try {
 			final Cipher cipher = Cipher.getInstance(type);
@@ -192,6 +203,18 @@ public abstract class Client {
 			e.printStackTrace(System.err);
 		}
 		return decryptedValue;
+	}
+
+	protected byte[] encrypt(final String type, final String plaintext, final Key key) {
+		byte[] encrypted = null;
+		try {
+			final Cipher cipher = Cipher.getInstance(type);
+			cipher.init(Cipher.ENCRYPT_MODE, key);
+			encrypted = cipher.doFinal(plaintext.getBytes());
+		} catch (Exception e) {
+			System.out.println("The Exception is=" + e);
+		}
+		return encrypted;
 	}
 
 	/*

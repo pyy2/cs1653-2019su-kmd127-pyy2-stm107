@@ -61,4 +61,16 @@ public class Token implements UserToken, java.io.Serializable {
         return groups;
     }
 
+    public String toString() {
+      String tokenString = issuer + ";" + subject + ";";
+      for(int i = 0; i < groups.size(); i++){
+        tokenString += groups.get(i);
+        if(i != groups.size()-1){
+          tokenString += ";";
+        }
+
+      }
+      return tokenString;
+    }
+
 } // -- end interface UserToken

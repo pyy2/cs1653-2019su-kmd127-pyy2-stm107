@@ -45,7 +45,7 @@ public class ClientDriver{
 
     while(true){
       System.out.println("What would you like to do?");
-      System.out.println("Please select from the following operations (please enter a number 1-13): ");
+      System.out.println("Please select from the following operations (please enter a number 1-14): ");
       System.out.println("1. Log in (Get user token)");
       System.out.println("2. Reset password.");
       System.out.println("3. Create a new user.");

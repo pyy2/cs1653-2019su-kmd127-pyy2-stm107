@@ -2,7 +2,12 @@
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import java.io.ObjectInputStream;
+import javax.crypto.Mac;
+import java.security.Signature;
+import java.security.Security;
+import java.util.Base64;
 
 public class GroupClient extends Client implements GroupClientInterface {
 
@@ -15,7 +20,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			//Tell the server to return a token.
 			message = new Envelope("GET");
-			message.addObject(username); //Add user name string
+			// ecnrypt username with symmetric keys
+			byte[] uname = encrypt("AES", username, sharedKey);
+			message.addObject(uname); //Add user name string
 			output.writeObject(message);
 
 			//Get the response from the server
@@ -28,10 +35,28 @@ public class GroupClient extends Client implements GroupClientInterface {
 				ArrayList<Object> temp = null;
 				temp = response.getObjContents();
 
-				if(temp.size() == 1)
+				if(temp.size() < 3)
 				{
-					token = (UserToken)temp.get(0);
-					return token;
+					System.out.println("Something went wrong!");
+					System.out.println("Missing authentication or encryption data!\n\n");
+					return null;
+				}
+				else{
+					// decrypt and Verify
+					byte[] encryptedToken =(byte[]) response.getObjContents().get(0);
+					byte[] out =(byte[]) response.getObjContents().get(1);
+					byte[] signed_data =(byte[]) response.getObjContents().get(2);
+
+					// get the token concated with the public key
+					String tokenAndKey = decrypt("AES", encryptedToken, sharedKey);
+					//System.out.println("This is the key + token data: " + tokenAndKey);
+					// Remove the public group key to get the token info
+					String gPubKey = Base64.getEncoder().encodeToString(groupK.getEncoded());
+					String tokenString = tokenAndKey.replace(gPubKey, "");
+					UserToken sessionToken = makeTokenFromString(tokenString);
+					return sessionToken;
+					//System.out.println("This is the stringified token data: " + tokenString);
+
 				}
 			}
 
@@ -54,8 +79,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 		 try{
 		 	Envelope message = null, response = null;
 			message = new Envelope("CPWD");
-			message.addObject(username); //Add user name string
-			message.addObject(password);
+			// encrypt username and password with symmetric key
+			byte[] uname = encrypt("AES", username, sharedKey);
+			byte[] pass = encrypt("AES", password, sharedKey);
+			message.addObject(uname); //Add user name string
+			message.addObject(pass);
 			output.writeObject(message);
 
 			response = (Envelope)input.readObject();
@@ -80,7 +108,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 		 try{
 		 	Envelope message = null, response = null;
 			message = new Envelope("FLOGIN");
-			message.addObject(username); //Add user name string
+			byte[] uname = encrypt("AES", username, sharedKey);
+			message.addObject(uname); //Add user name string
 			output.writeObject(message);
 
 			response = (Envelope)input.readObject();
@@ -103,10 +132,29 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	 public boolean resetPassword(String username, String password){
 		 try{
+			Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		 	Envelope message = null, response = null;
 			message = new Envelope("RPASS");
-			message.addObject(username); //Add user name string
-			message.addObject(password); //Add user name string
+			// encrypt username and password with symmetric key
+			byte[] uname = encrypt("AES", username, sharedKey);
+			byte[] pass = encrypt("AES", password, sharedKey);
+
+			// Add HMAC(Username||password, sharedKey) signed with private key so we know it hasn't been tampered with!
+			byte[] verify = (username + password).getBytes();
+			Mac mac = Mac.getInstance("HmacSHA256", "BC");
+			mac.init(sharedKey);
+			mac.update(verify);
+			byte[] out = mac.doFinal();
+			Signature sign = Signature.getInstance("RSA", "BC");
+			sign.initSign(keyPair.getPrivate());
+			sign.update(out);
+			byte[] signed_data = sign.sign();
+
+			message.addObject(uname);
+			message.addObject(pass);
+			message.addObject(signed_data);
+			message.addObject(out);
+
 			output.writeObject(message);
 
 			response = (Envelope)input.readObject();
@@ -134,9 +182,17 @@ public class GroupClient extends Client implements GroupClientInterface {
 				Envelope message = null, response = null;
 				//Tell the server to create a user
 				message = new Envelope("CUSER");
-				message.addObject(username); //Add user name string
-				message.addObject(password);
-				message.addObject(token); //Add the requester's token
+				ArrayList<String> reqParams = new ArrayList<>();
+				reqParams.add(username);
+				reqParams.add(password);
+				reqParams.add(token.toString());
+				byte[] reqBytes = createEncryptedString(reqParams);
+				byte[] out = createHmac(reqBytes);
+				byte[] signed_data = sign(out);
+
+				message.addObject(reqBytes); //Add user name string
+				message.addObject(out);
+				message.addObject(signed_data); //Add the requester's token
 				output.writeObject(message);
 
 				response = (Envelope)input.readObject();
@@ -333,4 +389,57 @@ public class GroupClient extends Client implements GroupClientInterface {
 			}
 	 }
 
+	 private UserToken makeTokenFromString(String tokenString){
+		 String[] tokenComps = tokenString.split(";");
+		 String issuer = tokenComps[0];
+		 String subject = tokenComps[1];
+		 List<String> groups = new ArrayList<>();
+		 for(int i = 2; i < tokenComps.length; i++){
+			 groups.add(tokenComps[i]);
+		 }
+		 return new Token(issuer, subject, groups);
+	 }
+
+	 private byte[] createEncryptedString(ArrayList<String> params){
+		 String concat = new String();
+		 for(int i = 0; i < params.size(); i++){
+			 concat += params.get(i);
+			 if(i != params.size()-1){
+				 concat += "-";
+			 }
+
+		 }
+		 return encrypt("AES", concat, sharedKey);
+	 }
+
+	 private byte[] createHmac(byte[] macBytes){
+		 Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider()); // add security provider
+		 byte[] out = null;
+		 try{
+			 Mac mac = Mac.getInstance("HmacSHA256", "BC");
+			 mac.init(sharedKey);
+			 mac.update(macBytes);
+			 out = mac.doFinal();
+		 }
+		 catch(Exception e){
+			 System.out.println("EXCEPTION CREATING HMAC: " + e);
+		 }
+		 return out;
+	 }
+
+	 private byte[] sign(byte[] req){
+		 Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider()); // add security provider
+		 byte[] signed_data = null;
+		 try{
+			 Signature sign = Signature.getInstance("RSA", "BC");
+			 sign.initSign(keyPair.getPrivate());
+			 sign.update(req);
+			 signed_data = sign.sign();
+		 }
+		 catch(Exception e){
+			 System.out.println("EXCEPTION CREATING SIGNATURE: " + e);
+		 }
+
+		 return signed_data;
+	 }
 }
