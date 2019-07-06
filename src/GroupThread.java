@@ -124,12 +124,16 @@ public class GroupThread extends Thread {
 						output.writeObject(response);
 					} else {
 						UserToken yourToken = createToken(username); // Create a token
+
 						// Respond to the client. On error, the client will receive a null token
 						response = new Envelope("OK");
 
 						// First, stringify everything
 						String pubKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-						String token = yourToken.toString();
+						String token = null;
+						if(yourToken != null){
+							token = yourToken.toString();
+						}
 
 						// Concat token with pubkey and encrypt with shared key.
 						String concatted = pubKey + token;
@@ -292,19 +296,35 @@ public class GroupThread extends Thread {
 				else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
 				{
 
-					if (message.getObjContents().size() < 2) {
+					if (message.getObjContents().size() < 3) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								String username = (String) message.getObjContents().get(0); // Extract the username
-								
-								UserToken yourToken = (UserToken) message.getObjContents().get(1); // Extract the token
+									if (message.getObjContents().get(2) != null) {
+										byte[] enc_params = (byte[]) message.getObjContents().get(0);
+										byte[] hmac = (byte[]) message.getObjContents().get(1);
+										byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-								if (deleteUser(username, yourToken)) {
-									response = new Envelope("OK"); // Success
+										String params = decrypt("AES", enc_params, _aesKey);
+										String[] p_arr = params.split("-");
+
+										String username = p_arr[0];
+										UserToken yourToken = makeTokenFromString(p_arr[1]);
+
+										if(!verifyHmac(enc_params, hmac)){
+											output.writeObject(response);
+											return;
+										}
+										if(!verifySignature(hmac, signed_data)){
+											output.writeObject(response);
+											return;
+										}
+									if (deleteUser(username, yourToken)) {
+										response = new Envelope("OK"); // Success
+									}
 								}
 							}
 						}
@@ -313,17 +333,34 @@ public class GroupThread extends Thread {
 					output.writeObject(response);
 				} else if (message.getMessage().equals("CGROUP")) // Client wants to create a group
 				{
-					if (message.getObjContents().size() < 2) {
+					if (message.getObjContents().size() < 3) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								String groupName = (String) message.getObjContents().get(0); // Extract the groupname
-								UserToken yourToken = (UserToken) message.getObjContents().get(1); // Extract the token
+								if (message.getObjContents().get(2) != null) {
+									byte[] enc_params = (byte[]) message.getObjContents().get(0);
+									byte[] hmac = (byte[]) message.getObjContents().get(1);
+									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-								if (createGroup(groupName, yourToken)) {
-									response = new Envelope("OK"); // Success
+									String params = decrypt("AES", enc_params, _aesKey);
+									String[] p_arr = params.split("-");
+
+									String groupName = p_arr[0];
+									UserToken yourToken = makeTokenFromString(p_arr[1]);
+
+									if(!verifyHmac(enc_params, hmac)){
+										output.writeObject(response);
+										return;
+									}
+									if(!verifySignature(hmac, signed_data)){
+										output.writeObject(response);
+										return;
+									}
+									if (createGroup(groupName, yourToken)) {
+										response = new Envelope("OK"); // Success
+									}
 								}
 							}
 						}
@@ -331,18 +368,35 @@ public class GroupThread extends Thread {
 					output.writeObject(response);
 				} else if (message.getMessage().equals("DGROUP")) // Client wants to delete a group
 				{
-					if (message.getObjContents().size() < 2) {
+					if (message.getObjContents().size() < 3) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								String groupName = (String) message.getObjContents().get(0); // Extract the groupname
-								UserToken yourToken = (UserToken) message.getObjContents().get(1); // Extract the token
+								if (message.getObjContents().get(2) != null) {
+									byte[] enc_params = (byte[]) message.getObjContents().get(0);
+									byte[] hmac = (byte[]) message.getObjContents().get(1);
+									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-								if (deleteGroup(groupName, yourToken)) {
-									response = new Envelope("OK"); // Success
+									String params = decrypt("AES", enc_params, _aesKey);
+									String[] p_arr = params.split("-");
+
+									String groupName = p_arr[0];
+									UserToken yourToken = makeTokenFromString(p_arr[1]);
+
+									if(!verifyHmac(enc_params, hmac)){
+										output.writeObject(response);
+										return;
+									}
+									if(!verifySignature(hmac, signed_data)){
+										output.writeObject(response);
+										return;
+									}
+									if (deleteGroup(groupName, yourToken)) {
+										response = new Envelope("OK"); // Success
+									}
 								}
 							}
 						}
@@ -350,21 +404,40 @@ public class GroupThread extends Thread {
 					output.writeObject(response);
 				} else if (message.getMessage().equals("LMEMBERS")) // Client wants a list of members in a group
 				{
-					if (message.getObjContents().size() < 2) {
+					if (message.getObjContents().size() < 3) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								String groupName = (String) message.getObjContents().get(0); // Extract the groupname
-								UserToken yourToken = (UserToken) message.getObjContents().get(1); // Extract the token
+								if (message.getObjContents().get(2) != null) {
+									byte[] enc_params = (byte[]) message.getObjContents().get(0);
+									byte[] hmac = (byte[]) message.getObjContents().get(1);
+									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-								ArrayList<String> memList = listUsers(groupName, yourToken);
-								if (memList == null)
-									response = new Envelope("FAIL"); // fail
-								else {
-									response = new Envelope("OK"); // Success
-									response.addObject(memList);
+									String params = decrypt("AES", enc_params, _aesKey);
+									String[] p_arr = params.split("-");
+
+									String groupName = p_arr[0];
+									UserToken yourToken = makeTokenFromString(p_arr[1]);
+
+									if(!verifyHmac(enc_params, hmac)){
+										output.writeObject(response);
+										return;
+									}
+									if(!verifySignature(hmac, signed_data)){
+										output.writeObject(response);
+										return;
+									}
+									ArrayList<String> memList = listUsers(groupName, yourToken);
+									if (memList == null)
+										response = new Envelope("FAIL"); // fail
+									else {
+										response = new Envelope("OK"); // Success
+										// probably ok to just encrypt with shared key
+										byte[] enc_memList = createEncryptedString(memList);
+										response.addObject(enc_memList);
+									}
 								}
 							}
 						}
@@ -379,11 +452,25 @@ public class GroupThread extends Thread {
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
-									String userName = (String) message.getObjContents().get(0); // extract the username
-									String groupName = (String) message.getObjContents().get(1); // Extract the
-																									// groupname
-									UserToken yourToken = (UserToken) message.getObjContents().get(2); // Extract the
-																										// token
+									byte[] enc_params = (byte[]) message.getObjContents().get(0);
+									byte[] hmac = (byte[]) message.getObjContents().get(1);
+									byte[] signed_data = (byte[]) message.getObjContents().get(2);
+
+									String params = decrypt("AES", enc_params, _aesKey);
+									String[] p_arr = params.split("-");
+
+									String userName = p_arr[0];
+									String groupName = p_arr[1];
+									UserToken yourToken = makeTokenFromString(p_arr[2]);
+
+									if(!verifyHmac(enc_params, hmac)){
+										output.writeObject(response);
+										return;
+									}
+									if(!verifySignature(hmac, signed_data)){
+										output.writeObject(response);
+										return;
+									}
 									if (addUserToGroup(userName, groupName, yourToken)) {
 										response = new Envelope("OK"); // success
 									}
@@ -401,11 +488,25 @@ public class GroupThread extends Thread {
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
-									String userName = (String) message.getObjContents().get(0); // extract the username
-									String groupName = (String) message.getObjContents().get(1); // Extract the
-																									// groupname
-									UserToken yourToken = (UserToken) message.getObjContents().get(2); // Extract the
-																										// token
+									byte[] enc_params = (byte[]) message.getObjContents().get(0);
+									byte[] hmac = (byte[]) message.getObjContents().get(1);
+									byte[] signed_data = (byte[]) message.getObjContents().get(2);
+
+									String params = decrypt("AES", enc_params, _aesKey);
+									String[] p_arr = params.split("-");
+
+									String userName = p_arr[0];
+									String groupName = p_arr[1];
+									UserToken yourToken = makeTokenFromString(p_arr[2]);
+
+									if(!verifyHmac(enc_params, hmac)){
+										output.writeObject(response);
+										return;
+									}
+									if(!verifySignature(hmac, signed_data)){
+										output.writeObject(response);
+										return;
+									}
 									if (deleteUserFromGroup(userName, groupName, yourToken)) {
 										response = new Envelope("OK"); // success
 									}
@@ -649,6 +750,7 @@ public class GroupThread extends Thread {
 				for (String user : allUsers) {
 					my_gs.userList.removeGroup(user, groupName);
 				}
+				my_gs.userList.removeOwnership(requester, groupName);
 				return my_gs.userList.deleteGroup(groupName);
 			} else
 				return false;
@@ -670,7 +772,7 @@ public class GroupThread extends Thread {
 
 	private boolean addUserToGroup(String user, String groupName, UserToken token) {
 		String requester = token.getSubject();
-		if (my_gs.userList.checkUser(requester)) {
+		if (my_gs.userList.checkUser(requester) && my_gs.userList.checkUser(user)) {
 			ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
 			if (temp.contains(groupName)) {
 				my_gs.userList.addGroup(user, groupName);
@@ -686,10 +788,10 @@ public class GroupThread extends Thread {
 		if (my_gs.userList.checkUser(requester)) {
 			ArrayList<String> temp = my_gs.userList.getUserOwnership(requester);
 			// check to see if the requestor is the group owner
-			if (temp.contains(groupName)) {
+			if (temp.contains(groupName) && my_gs.userList.checkUser(user)) {
 				ArrayList<String> userGroups = my_gs.userList.getUserGroups(user);
 				// check to see if the user(to be removed) is a member of the group
-				if (userGroups.contains(groupName)) {
+				if (userGroups != null && userGroups.contains(groupName)) {
 					my_gs.userList.removeGroup(user, groupName);
 					return true;
 				} else {
@@ -756,5 +858,16 @@ public class GroupThread extends Thread {
 			System.out.println("Unable to verify signature!\n");
 		}
 		return verified;
+	}
+
+	private byte[] createEncryptedString(ArrayList<String> params){
+		String concat = new String();
+		for(int i = 0; i < params.size(); i++){
+			concat += params.get(i);
+			if(i != params.size()-1){
+				concat += "-";
+			}
+		}
+		return encrypt("AES", concat, _aesKey);
 	}
 }

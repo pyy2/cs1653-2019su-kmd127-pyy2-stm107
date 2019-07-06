@@ -134,7 +134,7 @@ import java.math.BigInteger;
 
 		public synchronized ArrayList<String> getUserGroups(String username)
 		{
-			return list.get(username).getGroups();
+				return list.get(username).getGroups();
 		}
 
 		public synchronized ArrayList<String> getUserOwnership(String username)
@@ -144,22 +144,22 @@ import java.math.BigInteger;
 
 		public synchronized void addGroup(String user, String groupname)
 		{
-			list.get(user).addGroup(groupname);
+				list.get(user).addGroup(groupname);
 		}
 
 		public synchronized void removeGroup(String user, String groupname)
 		{
-			list.get(user).removeGroup(groupname);
+				list.get(user).removeGroup(groupname);
 		}
 
 		public synchronized void addOwnership(String user, String groupname)
 		{
-			list.get(user).addOwnership(groupname);
+				list.get(user).addOwnership(groupname);
 		}
 
 		public synchronized void removeOwnership(String user, String groupname)
 		{
-			list.get(user).removeOwnership(groupname);
+				list.get(user).removeOwnership(groupname);
 		}
 
 
@@ -180,7 +180,7 @@ import java.math.BigInteger;
 			ownership = new ArrayList<String>();
 		}
 
-		public void changePassword(String pwd){
+		public synchronized void changePassword(String pwd){
 			byte[] hash;
 			try{
 				MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -195,22 +195,22 @@ import java.math.BigInteger;
 			pwd_hash = hash;
 		}
 
-		public ArrayList<String> getGroups()
+		public synchronized ArrayList<String> getGroups()
 		{
 			return groups;
 		}
 
-		public ArrayList<String> getOwnership()
+		public synchronized ArrayList<String> getOwnership()
 		{
 			return ownership;
 		}
 
-		public void addGroup(String group)
+		public synchronized void addGroup(String group)
 		{
 			groups.add(group);
 		}
 
-		public void removeGroup(String group)
+		public synchronized void removeGroup(String group)
 		{
 			if(!groups.isEmpty())
 			{
@@ -221,12 +221,12 @@ import java.math.BigInteger;
 			}
 		}
 
-		public void addOwnership(String group)
+		public synchronized void addOwnership(String group)
 		{
 			ownership.add(group);
 		}
 
-		public void removeOwnership(String group)
+		public synchronized void removeOwnership(String group)
 		{
 			if(!ownership.isEmpty())
 			{

@@ -190,9 +190,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 				byte[] out = createHmac(reqBytes);
 				byte[] signed_data = sign(out);
 
-				message.addObject(reqBytes); //Add user name string
+				message.addObject(reqBytes);
 				message.addObject(out);
-				message.addObject(signed_data); //Add the requester's token
+				message.addObject(signed_data);
 				output.writeObject(message);
 
 				response = (Envelope)input.readObject();
@@ -221,8 +221,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 				//Tell the server to delete a user
 				message = new Envelope("DUSER");
-				message.addObject(username); //Add user name
-				message.addObject(token);  //Add requester's token
+				ArrayList<String> reqParams = new ArrayList<>();
+				reqParams.add(username);
+				reqParams.add(token.toString());
+				byte[] reqBytes = createEncryptedString(reqParams);
+				byte[] out = createHmac(reqBytes);
+				byte[] signed_data = sign(out);
+
+				message.addObject(reqBytes);
+				message.addObject(out);
+				message.addObject(signed_data);
 				output.writeObject(message);
 
 				response = (Envelope)input.readObject();
@@ -250,8 +258,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 				Envelope message = null, response = null;
 				//Tell the server to create a group
 				message = new Envelope("CGROUP");
-				message.addObject(groupname); //Add the group name string
-				message.addObject(token); //Add the requester's token
+				ArrayList<String> reqParams = new ArrayList<>();
+				reqParams.add(groupname);
+				reqParams.add(token.toString());
+				byte[] reqBytes = createEncryptedString(reqParams);
+				byte[] out = createHmac(reqBytes);
+				byte[] signed_data = sign(out);
+
+				message.addObject(reqBytes);
+				message.addObject(out);
+				message.addObject(signed_data);
 				output.writeObject(message);
 
 				response = (Envelope)input.readObject();
@@ -279,8 +295,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 				Envelope message = null, response = null;
 				//Tell the server to delete a group
 				message = new Envelope("DGROUP");
-				message.addObject(groupname); //Add group name string
-				message.addObject(token); //Add requester's token
+				ArrayList<String> reqParams = new ArrayList<>();
+				reqParams.add(groupname);
+				reqParams.add(token.toString());
+				byte[] reqBytes = createEncryptedString(reqParams);
+				byte[] out = createHmac(reqBytes);
+				byte[] signed_data = sign(out);
+
+				message.addObject(reqBytes);
+				message.addObject(out);
+				message.addObject(signed_data);
 				output.writeObject(message);
 
 				response = (Envelope)input.readObject();
@@ -300,7 +324,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			}
 	 }
 
-	 @SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
 	public List<String> listMembers(String group, UserToken token)
 	 {
 		 try
@@ -308,8 +332,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 			 Envelope message = null, response = null;
 			 //Tell the server to return the member list
 			 message = new Envelope("LMEMBERS");
-			 message.addObject(group); //Add group name string
-			 message.addObject(token); //Add requester's token
+			 ArrayList<String> reqParams = new ArrayList<>();
+			 reqParams.add(group);
+			 reqParams.add(token.toString());
+			 byte[] reqBytes = createEncryptedString(reqParams);
+			 byte[] out = createHmac(reqBytes);
+			 byte[] signed_data = sign(out);
+
+			 message.addObject(reqBytes);
+			 message.addObject(out);
+			 message.addObject(signed_data);
 			 output.writeObject(message);
 
 			 response = (Envelope)input.readObject();
@@ -317,7 +349,14 @@ public class GroupClient extends Client implements GroupClientInterface {
 			 //If server indicates success, return the member list
 			 if(response.getMessage().equals("OK"))
 			 {
-				return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+				byte[] enc_memList = (byte[]) response.getObjContents().get(0);
+				String members = decrypt("AES", enc_memList, sharedKey);
+				String[] m_arr = members.split("-");
+				List<String> memList = new ArrayList<>();
+				for(int i = 0; i < m_arr.length; i++){
+					memList.add(m_arr[i]);
+				}
+				return memList; //This cast creates compiler warnings. Sorry.
 			 }
 
 			 return null;
@@ -338,10 +377,18 @@ public class GroupClient extends Client implements GroupClientInterface {
 				Envelope message = null, response = null;
 				//Tell the server to add a user to the group
 				message = new Envelope("AUSERTOGROUP");
-				message.addObject(username); //Add user name string
-				message.addObject(groupname); //Add group name string
-				message.addObject(token); //Add requester's token
-				output.writeObject(message);
+				ArrayList<String> reqParams = new ArrayList<>();
+				reqParams.add(username);
+  			reqParams.add(groupname);
+ 			  reqParams.add(token.toString());
+ 			  byte[] reqBytes = createEncryptedString(reqParams);
+ 			  byte[] out = createHmac(reqBytes);
+ 			  byte[] signed_data = sign(out);
+
+ 			  message.addObject(reqBytes);
+ 			  message.addObject(out);
+ 			  message.addObject(signed_data);
+ 			  output.writeObject(message);
 
 				response = (Envelope)input.readObject();
 				//If server indicates success, return true
@@ -367,10 +414,18 @@ public class GroupClient extends Client implements GroupClientInterface {
 				Envelope message = null, response = null;
 				//Tell the server to remove a user from the group
 				message = new Envelope("RUSERFROMGROUP");
-				message.addObject(username); //Add user name string
-				message.addObject(groupname); //Add group name string
-				message.addObject(token); //Add requester's token
-				output.writeObject(message);
+				ArrayList<String> reqParams = new ArrayList<>();
+				reqParams.add(username);
+  			reqParams.add(groupname);
+ 			  reqParams.add(token.toString());
+ 			  byte[] reqBytes = createEncryptedString(reqParams);
+ 			  byte[] out = createHmac(reqBytes);
+ 			  byte[] signed_data = sign(out);
+
+ 			  message.addObject(reqBytes);
+ 			  message.addObject(out);
+ 			  message.addObject(signed_data);
+ 			  output.writeObject(message);
 
 				response = (Envelope)input.readObject();
 				//If server indicates success, return true
