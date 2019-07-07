@@ -34,6 +34,10 @@ public class GroupThread extends Thread {
 		socket = _socket;
 		my_gs = _gs;
 		gc = new Crypto();
+		pub = null;
+		priv = null;
+		_aesKey = null;
+		clientK = null;
 	}
 
 	public void run() {
@@ -56,15 +60,14 @@ public class GroupThread extends Thread {
 			if (!f.exists() && !f2.exists()) {
 				System.out.println("FATAL ERROR: GS key NOT found!\nSystem Exiting");
 				System.exit(1);
-			}
-
-			// set keys
-			if (f.exists() && f2.exists()) {
+			} else if ((pub == null) && (priv == null)) {
 				System.out.println("Setting GS public/private keys");
 				gc.setPublicKey("GS");
 				gc.setPrivateKey("GS");
 				pub = gc.getPublic();
 				priv = gc.getPrivate();
+			} else {
+				System.out.println("GS Keys already set!");
 			}
 
 			System.out.println("\n########### ATTEMPT TO SECURE CL CONNECTION ###########");

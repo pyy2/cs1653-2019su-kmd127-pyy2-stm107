@@ -20,7 +20,7 @@ public interface FileClientInterface
      * @return true if the connection succeeds, false otherwise
      *
      */
-    public boolean connect(final String server, final int port, final String type);
+    public boolean connect(final String server, final int port, final String type, final String clientNum);
 
 
     /**

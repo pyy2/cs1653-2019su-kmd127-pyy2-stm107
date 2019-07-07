@@ -1,26 +1,25 @@
 import java.util.List;
 
 /**
- * Interface describing the operations that must be supported by the
- * client application used to talk with the group server.  All methods
- * must be implemented!
+ * Interface describing the operations that must be supported by the client
+ * application used to talk with the group server. All methods must be
+ * implemented!
  *
  */
-public interface GroupClientInterface
-{
+public interface GroupClientInterface {
     /**
-     * Connect to the specified group server.  No other methods should
-     * work until the client is connected to a group server.
+     * Connect to the specified group server. No other methods should work until the
+     * client is connected to a group server.
      *
      * @param server The IP address or hostname of the group server
-     * @param port The port that the group server is listening on
-     * @param type A string indicating if this is the "group" or "file" server connection.
+     * @param port   The port that the group server is listening on
+     * @param type   A string indicating if this is the "group" or "file" server
+     *               connection.
      *
      * @return true if the connection succeeds, false otherwise
      *
      */
-    public boolean connect(final String server, final int port, final String type);
-
+    public boolean connect(final String server, final int port, final String type, final String clientNum);
 
     /**
      * Close down the connection to the group server.
@@ -28,19 +27,17 @@ public interface GroupClientInterface
      */
     public void disconnect();
 
-
     /**
-     * Method used to get a token from the group server.  Right now,
-     * there are no security checks.
+     * Method used to get a token from the group server. Right now, there are no
+     * security checks.
      *
      * @param username The user whose token is being requested
      *
-     * @return A UserToken describing the permissions of "username."
-     *         If this user does not exist, a null value will be returned.
+     * @return A UserToken describing the permissions of "username." If this user
+     *         does not exist, a null value will be returned.
      *
      */
     public UserToken getToken(final String username);
-
 
     /**
      * Method used to determine if the user exists without returning the token.
@@ -52,21 +49,20 @@ public interface GroupClientInterface
      */
     public boolean userExists(final String username);
 
-
     /**
      * Method used to determine if the user's password is correct.
      *
      * @param username The user whose password is being checked
-     * @param pwd The password to verify
+     * @param pwd      The password to verify
      *
      * @return true if password is correct, false if it is not.
      *
      */
     public boolean checkPassword(final String username, final String pwd);
 
-
     /**
-     * Method used to determine if the user's needs to reset their password on first login
+     * Method used to determine if the user's needs to reset their password on first
+     * login
      *
      * @param username The user whose's apssword status is being requested
      *
@@ -75,22 +71,20 @@ public interface GroupClientInterface
      */
     public boolean firstLogin(final String username);
 
-
     /**
      * Method used to change a user's password.
      *
      * @param username The user whose password is being changed
-     * @param pwd The new password
+     * @param pwd      The new password
      *
      * @return true if success, false if fail
      *
      */
     public boolean resetPassword(final String username, final String pwd);
 
-
     /**
-     * Creates a new user.  This method should only succeed if the
-     * user invoking it is a member of the special group "ADMIN".
+     * Creates a new user. This method should only succeed if the user invoking it
+     * is a member of the special group "ADMIN".
      *
      * @param username The name of the user to create
      * @param token    The token of the user requesting the create operation
@@ -100,11 +94,10 @@ public interface GroupClientInterface
      */
     public boolean createUser(final String username, final String password, final UserToken token);
 
-
     /**
-     * Deletes a user.  This method should only succeed if the user
-     * invoking it is a member of the special group "ADMIN".  Deleting
-     * a user should also remove him or her from all existing groups.
+     * Deletes a user. This method should only succeed if the user invoking it is a
+     * member of the special group "ADMIN". Deleting a user should also remove him
+     * or her from all existing groups.
      *
      * @param username The name of the user to delete
      * @param token    The token of the user requesting the delete operation
@@ -114,10 +107,9 @@ public interface GroupClientInterface
      */
     public boolean deleteUser(final String username, final UserToken token);
 
-
     /**
-     * Creates a new group.  Any user may create a group, provided
-     * that it does not already exist.
+     * Creates a new group. Any user may create a group, provided that it does not
+     * already exist.
      *
      * @param groupname The name of the group to create
      * @param token     The token of the user requesting the create operation
@@ -127,10 +119,9 @@ public interface GroupClientInterface
      */
     public boolean createGroup(final String groupname, final UserToken token);
 
-
     /**
-     * Deletes a group.  This method should only succeed if the user
-     * invoking it is the user that originally created the group.
+     * Deletes a group. This method should only succeed if the user invoking it is
+     * the user that originally created the group.
      *
      * @param groupname The name of the group to delete
      * @param token     The token of the user requesting the delete operation
@@ -140,10 +131,9 @@ public interface GroupClientInterface
      */
     public boolean deleteGroup(final String groupname, final UserToken token);
 
-
     /**
-     * Adds a user to some group.  This method should succeed if
-     * the user invoking the operation is the owner of the group.
+     * Adds a user to some group. This method should succeed if the user invoking
+     * the operation is the owner of the group.
      *
      * @param user  The user to add
      * @param group The name of the group to which user should be added
@@ -154,10 +144,9 @@ public interface GroupClientInterface
      */
     public boolean addUserToGroup(final String user, final String group, final UserToken token);
 
-
     /**
-     * Removes a user from some group.  This method should succeed if
-     * the user invoking the operation is the owner of the group.
+     * Removes a user from some group. This method should succeed if the user
+     * invoking the operation is the owner of the group.
      *
      * @param user  The name of the user to remove
      * @param group The name of the group from which user should be removed
@@ -168,20 +157,16 @@ public interface GroupClientInterface
      */
     public boolean deleteUserFromGroup(final String user, final String group, final UserToken token);
 
-
-
     /**
-     * Lists the members of a group.  This method should only succeed
-     * if the user invoking the operation is the owner of the
-     * specified group.
+     * Lists the members of a group. This method should only succeed if the user
+     * invoking the operation is the owner of the specified group.
      *
      * @param group The group whose membership list is requested
      * @param token The token of the user requesting the list
      *
-     * @return A List of group members.  Note that an empty list means
-     *         a group has no members, while a null return indicates
-     *         an error.
+     * @return A List of group members. Note that an empty list means a group has no
+     *         members, while a null return indicates an error.
      */
     public List<String> listMembers(final String group, final UserToken token);
 
-}   //-- end interface GroupClientInterface
+} // -- end interface GroupClientInterface
