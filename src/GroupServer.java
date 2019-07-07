@@ -18,7 +18,7 @@ public class GroupServer extends Server {
 	public static final int SERVER_PORT = 8765;
 	public UserList userList;
 	public TrustedClients tcList;
-	public final String groupConfig = "GroupConfig.bin";
+	public final String groupConfig = "GS";
 
 	public GroupServer() {
 		super(SERVER_PORT, "ALPHA");
@@ -77,11 +77,6 @@ public class GroupServer extends Server {
 			userList.addGroup(username, "ADMIN");
 			userList.addOwnership(username, "ADMIN");
 
-			// if no users exist, it's a new group server so generate key
-			KeyPair kp = generateGroupKeypair();
-			System.out.println(kp.getPublic());
-			System.out.println(kp.getPrivate());
-
 		} catch (IOException e) {
 			System.out.println("Error reading from UserList file");
 			System.exit(-1);
@@ -89,6 +84,28 @@ public class GroupServer extends Server {
 			System.out.println("Error reading from UserList file");
 			System.exit(-1);
 		}
+
+		// check if groupserver keys exist
+		final String path = "./GSpublic.key";
+		final String path2 = "./GSprivate.key";
+		File f = new File(path);
+		File f2 = new File(path2);
+		Crypto crypto = new Crypto();
+
+		// if key files don't exist, create new ones
+		if (!f.exists() && !f2.exists()) {
+			System.out.println("GS key NOT found!");
+			crypto.setSystemKP(groupConfig);
+		}
+		// // now they should exist, set public/private key
+		// if (f.exists() && f2.exists()) {
+		// System.out.println("GS keys found!\nSetting public/private key");
+		// crypto.setPublicKey("GS");
+		// crypto.setPrivateKey("GS");
+		// }
+
+		// System.out.println(crypto.RSAtoString(crypto.getPublic())); // print out
+		// group public key
 
 		// Autosave Daemon. Saves lists every 5 minutes
 		AutoSave aSave = new AutoSave(this);
@@ -99,6 +116,8 @@ public class GroupServer extends Server {
 		try {
 			final ServerSocket serverSock = new ServerSocket(port);
 			System.out.printf("%s up and running\n", this.getClass().getName());
+			System.out.println("###########################################");
+
 			Socket sock = null;
 			GroupThread thread = null;
 
@@ -111,53 +130,6 @@ public class GroupServer extends Server {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 		}
-	}
-
-	protected KeyPair generateGroupKeypair() {
-		KeyPair keyPair = null;
-		// Check if Group server has public/private keypair
-		try {
-			// Try to read the keypair from a file.
-			FileInputStream fis_keys = new FileInputStream(groupConfig);
-			ObjectInputStream keyPairStream = new ObjectInputStream(fis_keys);
-			keyPair = (KeyPair) keyPairStream.readObject();
-		} catch (FileNotFoundException e) {
-			try {
-				// The file doesn't exist, then there's no RSA keys for this client.
-				System.out.println("Generating Client RSA keypair");
-				keyPair = genKeyPair();
-				// save the key pair for future use.
-				ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(groupConfig));
-				outStream.writeObject(keyPair);
-			} catch (IOException e4) {
-				e4.printStackTrace();
-			}
-		} catch (IOException e2) {
-			e2.printStackTrace();
-		} catch (ClassNotFoundException e3) {
-			e3.printStackTrace();
-		}
-		return keyPair;
-	}
-
-	/*
-	 * Method to generate public/private RSA keypair when client is launched
-	 *
-	 * @return keypair - client's public/private keypair
-	 */
-	private KeyPair genKeyPair() {
-		KeyPair keyPair = null;
-		try {
-			Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider()); // add security provider
-			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC"); // set RSA instance
-			keyGen.initialize(2048); // set bit size
-			keyPair = keyGen.genKeyPair(); // generate key pair
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (NoSuchProviderException e2) {
-			e2.printStackTrace();
-		}
-		return keyPair;
 	}
 }
 

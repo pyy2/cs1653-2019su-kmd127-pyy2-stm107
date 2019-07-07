@@ -1,17 +1,9 @@
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.io.*;
-
 import java.util.*;
-
-// security packages
 import java.security.*;
-import javax.crypto.spec.*;
-import javax.crypto.Mac;
-import javax.crypto.Cipher;
-import java.security.Signature;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import javax.crypto.*;
 
 public abstract class Client {
 
@@ -26,148 +18,150 @@ public abstract class Client {
 	String tfsFile = "TrustedFServer.bin";
 	TrustedFServer tfsList;
 	ObjectInputStream tfsStream;
-	ObjectInputStream keyPairStream;
-	KeyPair keyPair;
-	SecretKeySpec sharedKey;
-	PublicKey groupK;
 
-	// Added extra parameter to determine if type is file server or group server.
-	// type should be "file" or "group"
+	// crypto stuff
+	public final String clientConfig = "CL";
+	protected Crypto c;
+	PublicKey pub; // clien'ts publickey
+	PrivateKey priv; // client's private key
+	SecretKey sharedKey; // symmetric AES key
+	PublicKey groupK; // group server public key
+	PublicKey fsPub; // fileserver public key
+	SecretKey fsKey;
+
+	// KeyPair keyPair;
+	// ObjectInputStream keyPairStream;
+
 	public boolean connect(final String server, final int port, final String type) {
 
-		// fileK will come from file server but doesn't exist yet
-		PublicKey fileK = null;
+		// set client key file paths
+		final String path = "./" + clientConfig + "public.key";
+		final String path2 = "./" + clientConfig + "private.key";
+		File f = new File(path);
+		File f2 = new File(path2);
+		c = new Crypto();
 
-		// Check if socket is in use
-		if (isConnected())
-			disconnect();
+		// if key files don't exist, create new ones
+		if (!f.exists() && !f2.exists()) {
+			System.out.println("CL key NOT found!");
+			c.setSystemKP(clientConfig);
+		}
+
+		// now they should exist, set public/private key
+		if (f.exists() && f2.exists()) {
+			System.out.println("CL keys found!\nSetting public/private key");
+			c.setPublicKey(clientConfig);
+			c.setPrivateKey(clientConfig);
+			pub = c.getPublic();
+			priv = c.getPrivate();
+		}
+		System.out.println(c.RSAtoString(pub)); // print out public key base64
+		System.out.println("###########################################");
 
 		// Try to create new socket connection
 		try {
-			System.out.println("Attempting to connect");
 			sock = new Socket(server, port); // create Stream socket then connect to named host @ port #
-			System.out.println("Connected to " + server + " on port " + port);
-
-			// If we instantiate input before output, we get into a weird infinite loop
-			// situation. :shrug:
+			System.out.println("\nConnected to " + server + " on port " + port);
 			output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket
 			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
-			ObjectOutputStream outStream;
 
-			// Only generate a new keypair if there isn't one for this client already.
-			// That way, fingerprinting on the group server can occur and the GS can verify
-			// on subsequent connections.
-			try {
-				// Try to read teh keypair from a file.
-				FileInputStream fis_keys = new FileInputStream(keyFile);
-				keyPairStream = new ObjectInputStream(fis_keys);
-				keyPair = (KeyPair) keyPairStream.readObject();
-			} catch (FileNotFoundException e) {
-				// The file doesn't exist, then there's no RSA keys for this client.
-				System.out.println("Generating Client RSA keypair");
-				keyPair = genKeyPair();
-				System.out.println(keyPair.getPublic());
-				System.out.println(keyPair.getPrivate());
-				// save the key pair for future use.
-				outStream = new ObjectOutputStream(new FileOutputStream(keyFile));
-				outStream.writeObject(keyPair);
-			} catch (Exception e) {
-				System.out.println("Unable to load key pair for this client.");
-				System.out.println("Exception: " + e);
+			// Group Server connection
+			if (!type.equals("file")) {
+				System.out.println("\n\n########### ATTEMPT TO SECURE GS CONNECTION ###########");
+				System.out.println("CL public key -> GS\n");
+				output.writeObject(pub); // write public key to channel (not encoded)
+				output.flush();
+
+				// get gs publickey
+				c.setSysK(input.readObject()); // read gs public key (encoded)
+				groupK = c.getSysK();
+				System.out.println("Received GS's public key: \n" + c.RSAtoString(groupK));
+
+				// decrypt with private key to get aes key
+				String aesKey = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
+				c.setAESKey(aesKey);
+				sharedKey = c.getAESKey();
+				System.out.println("Received AES key -> " + c.toString(sharedKey));
+
+				// verify checksum
+				byte[] _checkSum = (byte[]) input.readObject(); // read checksum
+				System.out.println("Checksum:\n" + c.toString(_checkSum)); // print
+				System.out.println("Checksum verified -> " + c.isEqual(_checkSum, c.createChecksum(aesKey)));
+
+				// verify signature
+				byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
+				System.out.println("Signed Checksum: " + c.toString(signedChecksum));
+				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
+
+			} else {
+
+				System.out.println("\n\n########### ATTEMPT TO SECURE FS CONNECTION ###########");
+
+				c.setSysK(input.readObject()); // read fs public key not encoded
+				fsPub = c.getSysK(); // set FS pub key
+				System.out.println("Received FS's public key: \n" + c.RSAtoString(fsPub));
+
+				// send client's public key to client
+				output.writeObject(pub);
+				System.out.println("\nClient public key -> FS:\n" + c.RSAtoString(pub));
+
+				// if (my_gs.tcList.pubkeys != null) {
+				// // Check to see if ip:pubkey pair exists yet.
+				// if (my_gs.tcList.pubkeys.containsKey(socket.getInetAddress().toString())) {
+				// // If the ip is there, make sure that the pubkey matches.
+				// PublicKey storedCliKey =
+				// my_gs.tcList.pubkeys.get(socket.getInetAddress().toString());
+				// if (!storedCliKey.equals(clientK)) {
+				// System.out.println("The stored fingerprint does not match the incoming client
+				// key!");
+				// System.out.println("Terminating connection...");
+				// socket.close(); // Close the socket
+				// proceed = false; // End this communication loop
+				// }
+				// // The keys match, it's safe to proceed
+				// else {
+				// System.out.println("Fingerprint verified!");
+				// }
+				// }
+				// // IP does not yet exist in trusted client list. Add it.
+				// else {
+				// System.out.println("This is your first time connecting this client to the
+				// group server.");
+				// System.out.println("Adding client's public key to trusted clients list...");
+				// my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
+				// }
+				// }
+
+				// generate aes key + challenge
+				c.genAESKey(); // create AES key
+				fsKey = c.getAESKey();
+				String challenge = c.getChallenge();
+				System.out.println("\nAES key: " + c.toString(fsKey));
+				System.out.println("Challenge: " + challenge);
+
+				// send encrypted aeskey + challenge with fs public key
+				String s = c.toString(fsKey) + challenge;
+				output.writeObject(c.encrypt("RSA/ECB/PKCS1Padding", s, fsPub));
+				output.flush();
+
+				// send SHA256 checksum of symmetric key for verification
+				byte[] checksum = c.createChecksum(s); // create checksum w aes
+														// key
+				output.writeObject(checksum); // send checksum
+				System.out.println("Checksum -> FS:\n" + c.toString(checksum)); // print
+				output.flush();
+
+				// send signed checksum
+				byte[] signedChecksum = c.signChecksum(checksum);
+				output.writeObject(signedChecksum);
+				System.out.println("Signed Checksum -> Client:\n" + c.toString(signedChecksum));
+				output.flush();
+
+				System.out.println("CHALLENGE VALIDATED: "
+						+ c.isEqual(challenge.getBytes(), input.readObject().toString().getBytes()));
+				System.out.println("\n############# CONNETION TO FILESERVER SECURE ############\n");
 			}
 
-			System.out.println("Writing public key to Server\n");
-
-			// literally just for testing so the file server doesn't poop out.
-			if(!type.equals("file")){
-				output.writeObject(keyPair.getPublic()); // write public key to channel
-
-				try {
-					groupK = (PublicKey) input.readObject(); // group public key
-					String aesKey = decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), keyPair.getPrivate()); // AES
-					MessageDigest digest = MessageDigest.getInstance("SHA-256");
-					byte[] _checkSum = (byte[]) input.readObject(); // checksum
-					byte[] checkSum = digest.digest(Base64.getDecoder().decode(aesKey));
-					byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
-
-					// Get the shared AES key
-					byte[] decodedKey = Base64.getDecoder().decode(aesKey);
-					//System.out.println("The aes key: " + new String(Base64.getDecoder().decode(aesKey)));
-					sharedKey = new SecretKeySpec(decodedKey, "AES");
-
-
-					// Verify RSA signature
-					Signature sig = Signature.getInstance("SHA256withRSA");
-					sig.initVerify(groupK);
-					sig.update(_checkSum);
-
-					System.out.println("Group server public key -> " + groupK);
-					System.out.println("Received AES key ->" + aesKey);
-					System.out.println("Checksum -> " + Base64.getEncoder().encodeToString(_checkSum));
-					System.out.println("Computed Checksum -> " + Base64.getEncoder().encodeToString(checkSum));
-					System.out.println("Verified Signature -> " + sig.verify(signedChecksum));
-
-
-
-					if (isEqual(_checkSum, checkSum)) {
-						System.out.println("====Checksum verified====\n\n");
-					} else {
-						System.out.println("INVALID CHECKSUM");
-						return false;
-					}
-
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				} catch (NoSuchAlgorithmException e2) {
-					e2.printStackTrace();
-				} catch (InvalidKeyException e3) {
-					e3.printStackTrace();
-				} catch (SignatureException e4) {
-					e4.printStackTrace();
-				}
-			}
-			// only read in trusted file servers file if this is a file server connection.
-			// if(type.equals("file")){
-			// 	// Get the file server pub key and make sure the fingerprint match.
-			// 	// This shouldn't really run right now, since the file server doesn't yet produce keys.
-			// 	// Open the trusted file server list
-			// 	try {
-			// 		FileInputStream fis_tfs = new FileInputStream(tfsFile);
-			// 		tfsStream = new ObjectInputStream(fis_tfs);
-			// 		tfsList = (TrustedFServer) tfsStream.readObject();
-			// 	} catch (FileNotFoundException e) {
-			// 		System.out.println("No Trusted file servers found!");
-			// 		System.out.println("Instantiating Trusted File Server list...");
-			// 		tfsList = new TrustedFServer();
-			// 	} catch (Exception e) {
-			// 		System.out.println("Unable to load list of trusted file servers.");
-			// 		System.out.println("Exception: " + e);
-			// 	}
-			// 	if (tfsList.pubkeys != null) {
-			// 		// Check to see if ip:pubkey pair exists yet.
-			// 		if (tfsList.pubkeys.containsKey(sock.getInetAddress().toString())) {
-			// 			// If the ip is there, make sure that the pubkey matches.
-			// 			PublicKey storedFSKey = tfsList.pubkeys.get(sock.getInetAddress().toString());
-			// 			if (!storedFSKey.equals(fileK)) {
-			// 				System.out.println("The stored fingerprint does not match the incoming file server key!");
-			// 				System.out.println("Terminating connection...");
-			// 				sock.close(); // Close the socket
-			// 			}
-			// 			// The keys match, it's safe to proceed
-			// 			else {
-			// 				System.out.println("Fingerprint verified!");
-			// 			}
-			// 		}
-			// 		// IP does not yet exist in trusted client list. Add it.
-			// 		else {
-			// 			System.out.println("This is your first time connecting this client to this file server.");
-			// 			System.out.println("Adding file server's public key to trusted file servers list...");
-			// 			tfsList.addServer(sock.getInetAddress().toString(), fileK);
-			// 			outStream = new ObjectOutputStream(new FileOutputStream(tfsFile));
-			// 			outStream.writeObject(tfsList);
-			// 		}
-			// 	}
-			// }
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e1) {
@@ -175,66 +169,12 @@ public abstract class Client {
 		} catch (IllegalArgumentException e2) {
 			System.err.println("Invalid Port # ?");
 			e2.printStackTrace();
+		} catch (ClassNotFoundException e3) {
+			e3.printStackTrace();
 		}
 
 		System.out.println("Connection Status: " + isConnected());
 		return isConnected();
-	}
-
-	private boolean isEqual(byte[] a, byte[] b) {
-		if (a.length != b.length) {
-			return false;
-		}
-		int result = 0;
-		for (int i = 0; i < a.length; i++) {
-			result |= a[i] ^ b[i];
-		}
-		return result == 0;
-	}
-
-	protected String decrypt(final String type, final byte[] encrypted, final Key key) {
-		String decryptedValue = null;
-		try {
-			final Cipher cipher = Cipher.getInstance(type);
-			cipher.init(Cipher.DECRYPT_MODE, key);
-			decryptedValue = new String(cipher.doFinal(encrypted));
-		} catch (Exception e) {
-			System.out.println("The Exception is=" + e);
-			e.printStackTrace(System.err);
-		}
-		return decryptedValue;
-	}
-
-	protected byte[] encrypt(final String type, final String plaintext, final Key key) {
-		byte[] encrypted = null;
-		try {
-			final Cipher cipher = Cipher.getInstance(type);
-			cipher.init(Cipher.ENCRYPT_MODE, key);
-			encrypted = cipher.doFinal(plaintext.getBytes());
-		} catch (Exception e) {
-			System.out.println("The Exception is=" + e);
-		}
-		return encrypted;
-	}
-
-	/*
-	 * Method to generate public/private RSA keypair when client attempts to connect
-	 *
-	 * @return keypair - client's public/private keypair
-	 */
-	private KeyPair genKeyPair() {
-		KeyPair keyPair = null;
-		try {
-			Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider()); // add security provider
-			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC"); // set RSA instance
-			keyGen.initialize(2048); // set bit size
-			keyPair = keyGen.genKeyPair(); // generate key pair
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (NoSuchProviderException e2) {
-			e2.printStackTrace();
-		}
-		return keyPair;
 	}
 
 	public boolean isConnected() {

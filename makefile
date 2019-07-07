@@ -25,15 +25,17 @@ rb:
 	$(JC) $(JFLAGS) -d './build' src/*.java
 
 rball:
-	make clean
+	make clean_all
 	make all
 
 clean:
 	rm -r build
-
-clean_all:
-	rm -r build
 	rm -r src/jar
-	
+
+clear:
+	rm -r ./build/*.bin
+	rm -r ./build/*.key
+	rmdir -p ./build/shared_files/
+
 test:
 	echo $(CURRENT_DIR)

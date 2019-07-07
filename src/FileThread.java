@@ -10,36 +10,87 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.String;
 
 // security packages
 import java.security.*;
 import javax.crypto.*;
 import java.security.Signature;
 
-
 public class FileThread extends Thread {
 	private final Socket socket;
+	PublicKey pub; // fs public key
+	PrivateKey priv; // fs private key
+	SecretKey sharedKey; // shared symmetric key b/w client-fs
+	PublicKey clientK; // client publickey
+	Crypto fc; // filecrypto class
 
 	public FileThread(Socket _socket) {
 		socket = _socket;
+		fc = new Crypto();
 	}
 
 	public void run() {
 		boolean proceed = true;
 		try {
-			System.out.println("*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
+			System.out.println("\n*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
 			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 			Envelope response;
 
-			// Gets the clients pubkey (added for now for testing.)
-			PublicKey clientK = (PublicKey) input.readObject(); // get client key from buffer
-			System.out.println("Received client's public key: \n" + clientK);
+			final String path = "./FSpublic.key";
+			final String path2 = "./FSprivate.key";
+			File f1 = new File(path);
+			File f2 = new File(path2);
 
-			PublicKey dummykey = null;
-			output.writeObject(dummykey);
+			// if key files don't exist, something went wrong on initialization, ABORT
+			if (!f1.exists() && !f2.exists()) {
+				System.out.println("FATAL ERROR: FS key NOT found!\n System Exiting");
+				System.exit(1);
+			}
 
-			System.out.println("\n\nWriting a dummy public key...\n\n");
+			// set keys
+			if (f1.exists() && f2.exists()) {
+				System.out.println("Setting FS public/private keys\n");
+				fc.setPublicKey("FS");
+				fc.setPrivateKey("FS");
+				pub = fc.getPublic();
+				priv = fc.getPrivate();
+			}
+			System.out.println(fc.RSAtoString(pub));
+
+			System.out.println("\n########### SECURING CLIENT CONNECTION ###########");
+
+			System.out.println("FS public key -> Client:\n" + fc.RSAtoString(pub));
+			output.writeObject(pub); // send file public key
+			output.flush();
+
+			fc.setSysK(input.readObject()); // set client's public key (encoded)
+			clientK = fc.getSysK();
+			System.out.println("Received client's public key: \n" + fc.RSAtoString(clientK));
+
+			// get aes key + challenge
+			String s = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
+			String _aesKey = s.substring(0, s.lastIndexOf("-"));
+			String challenge = s.substring(_aesKey.length(), s.length());
+			System.out.println("AESKey: " + _aesKey);
+			System.out.println("Challenge: " + challenge);
+			fc.setAESKey(_aesKey); // set aes key
+			sharedKey = fc.getAESKey();
+
+			// verify checksum
+			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
+			System.out.println("Client checksum:\n" + fc.toString(_checkSum)); // print
+			System.out.println("Checksum verified -> " + fc.isEqual(_checkSum, fc.createChecksum(s)));
+
+			// verify signature
+			byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
+			System.out.println("Signed Checksum:\n" + fc.toString(signedChecksum));
+
+			// respond with challenge
+			output.writeObject(challenge);
+
+			System.out.println("\n########### FS CONNECTION W CLIENT SECURE ###########\n");
 
 			do {
 				Envelope e = (Envelope) input.readObject();
@@ -47,7 +98,8 @@ public class FileThread extends Thread {
 
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
-					UserToken yourToken = (UserToken) e.getObjContents().get(0); // Extract token NOTE: This only takes 1 param, the user token.
+					UserToken yourToken = (UserToken) e.getObjContents().get(0); // Extract token NOTE: This only takes
+																					// 1 param, the user token.
 					List<String> groups = yourToken.getGroups(); // get associated groups
 
 					List<ShareFile> sfiles = FileServer.fileList.getFiles();
