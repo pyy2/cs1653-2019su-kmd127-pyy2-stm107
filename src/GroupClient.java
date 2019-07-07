@@ -65,6 +65,60 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	}
 
+	// // get token for FS {Kg || Token}, [HMAC(Kc, Kg || Token)] Kg-1
+	// public UserToken getFSToken(String username) {
+	// try {
+	// UserToken token = null;
+	// Envelope message = null, response = null;
+
+	// // Tell the server to return a token.
+	// message = new Envelope("GET");
+	// // ecnrypt username with symmetric keys
+	// byte[] uname = c.encrypt("AES", username, sharedKey);
+	// message.addObject(uname); // Add user name string
+	// output.writeObject(message);
+
+	// // Get the response from the server
+	// response = (Envelope) input.readObject();
+
+	// // Successful response
+	// if (response.getMessage().equals("OK")) {
+	// // If there is a token in the Envelope, return it
+	// ArrayList<Object> temp = null;
+	// temp = response.getObjContents();
+
+	// if (temp.size() < 3) {
+	// System.out.println("Something went wrong!");
+	// System.out.println("Missing authentication or encryption data!\n\n");
+	// return null;
+	// } else {
+	// // decrypt and Verify
+	// byte[] encryptedToken = (byte[]) response.getObjContents().get(0);
+	// byte[] out = (byte[]) response.getObjContents().get(1);
+	// byte[] signed_data = (byte[]) response.getObjContents().get(2);
+
+	// // get the token concated with the public key
+	// String tokenAndKey = c.decrypt("AES", encryptedToken, sharedKey);
+	// // System.out.println("This is the key + token data: " + tokenAndKey);
+	// // Remove the public group key to get the token info
+	// String gPubKey = Base64.getEncoder().encodeToString(groupK.getEncoded());
+	// String tokenString = tokenAndKey.replace(gPubKey, "");
+	// UserToken sessionToken = makeTokenFromString(tokenString);
+	// // System.out.println("This is the stringified token data: " + tokenString);
+	// return sessionToken;
+
+	// }
+	// }
+
+	// return null;
+	// } catch (Exception e) {
+	// System.err.println("Error: " + e.getMessage());
+	// e.printStackTrace(System.err);
+	// return null;
+	// }
+
+	// }
+
 	public boolean userExists(String username) {
 		return (getToken(username) != null);
 	}

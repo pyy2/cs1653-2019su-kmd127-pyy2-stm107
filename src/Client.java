@@ -21,13 +21,12 @@ public abstract class Client {
 	ObjectInputStream tfsStream;
 
 	// crypto stuff
+	static PublicKey groupK;
 	protected Crypto c;
 	PublicKey pub; // clien'ts publickey
 	PrivateKey priv; // client's private key
 	SecretKey sharedKey; // symmetric AES key
-	PublicKey groupK; // group server public key
 	PublicKey fsPub; // fileserver public key
-	SecretKey fsKey;
 
 	// KeyPair keyPair;
 	// ObjectInputStream keyPairStream;
@@ -96,7 +95,7 @@ public abstract class Client {
 				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
 			} else {
-
+				System.out.println("Received GS's public key: \n" + c.RSAtoString(groupK));
 				System.out.println("\n\n########### ATTEMPT TO SECURE FS CONNECTION ###########");
 
 				c.setSysK(input.readObject()); // read fs public key not encoded
@@ -137,13 +136,13 @@ public abstract class Client {
 
 				// generate aes key + challenge
 				c.genAESKey(); // create AES key
-				fsKey = c.getAESKey();
+				sharedKey = c.getAESKey();
 				String challenge = c.getChallenge();
-				System.out.println("\nAES key: " + c.toString(fsKey));
+				System.out.println("\nAES key: " + c.toString(sharedKey));
 				System.out.println("Challenge: " + challenge);
 
 				// send encrypted aeskey + challenge with fs public key
-				String s = c.toString(fsKey) + challenge;
+				String s = c.toString(sharedKey) + challenge;
 				output.writeObject(c.encrypt("RSA/ECB/PKCS1Padding", s, fsPub));
 				output.flush();
 

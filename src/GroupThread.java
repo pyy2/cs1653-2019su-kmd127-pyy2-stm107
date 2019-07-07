@@ -128,6 +128,7 @@ public class GroupThread extends Thread {
 			// send signed checksum
 			byte[] signedChecksum = gc.signChecksum(checksum);
 			output.writeObject(signedChecksum);
+			output.flush();
 			System.out.println("Signed Checksum -> Client:\n" + gc.toString(signedChecksum));
 			System.out.println("\n########### GS CONNECTION W CLIENT SECURE ###########\n");
 

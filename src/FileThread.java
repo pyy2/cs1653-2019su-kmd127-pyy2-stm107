@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.String;
+import java.util.StringTokenizer;
 
 // security packages
 import java.security.*;
@@ -21,7 +22,7 @@ public class FileThread extends Thread {
 	private final Socket socket;
 	PublicKey pub; // fs public key
 	PrivateKey priv; // fs private key
-	SecretKey sharedKey; // shared symmetric key b/w client-fs
+	SecretKey _aesKey; // shared symmetric key b/w client-fs
 	PublicKey clientK; // client publickey
 	Crypto fc; // filecrypto class
 
@@ -71,12 +72,12 @@ public class FileThread extends Thread {
 
 			// get aes key + challenge
 			String s = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
-			String _aesKey = s.substring(0, s.lastIndexOf("-"));
-			String challenge = s.substring(_aesKey.length(), s.length());
-			System.out.println("AESKey: " + _aesKey);
+			String aesKey = s.substring(0, s.lastIndexOf("-"));
+			String challenge = s.substring(aesKey.length(), s.length());
+			System.out.println("AESKey: " + aesKey);
 			System.out.println("Challenge: " + challenge);
-			fc.setAESKey(_aesKey); // set aes key
-			sharedKey = fc.getAESKey();
+			fc.setAESKey(aesKey); // set aes key
+			_aesKey = fc.getAESKey();
 
 			// verify checksum
 			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
@@ -98,27 +99,28 @@ public class FileThread extends Thread {
 
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
-					UserToken yourToken = (UserToken) e.getObjContents().get(0); // Extract token NOTE: This only takes
-																					// 1 param, the user token.
-					List<String> groups = yourToken.getGroups(); // get associated groups
+					response = new Envelope("FAIL");
+					if (e.getObjContents().get(0) != null) {
+						String decrypted = fc.decrypt("AES", (byte[]) e.getObjContents().get(0), _aesKey);
+						StringTokenizer st = new StringTokenizer(decrypted, "||");
+						String groupK = st.nextToken();
+						String token = st.nextToken();
 
-					List<ShareFile> sfiles = FileServer.fileList.getFiles();
-					List<String> fileList = new ArrayList<String>();
+						UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
-					for (ShareFile sf : sfiles) {
-						if (groups.contains(sf.getGroup())) {
-							fileList.add(sf.getPath());
+						List<String> groups = yourToken.getGroups(); // get associated groups
+						List<ShareFile> sfiles = FileServer.fileList.getFiles();
+						List<String> fileList = new ArrayList<String>();
+
+						for (ShareFile sf : sfiles) {
+							if (groups.contains(sf.getGroup())) {
+								fileList.add(sf.getPath());
+							}
 						}
+						response = new Envelope("OK");
+						response.addObject(fileList);
 					}
-
-					// JUST FOR CLIENT TESTING
-					response = new Envelope("OK");
-					// String test = "THIS IS A TEST";
-					// List<String> testList = new ArrayList<String>();
-					// testList.add(test);
-					response.addObject(fileList);
 					output.writeObject(response);
-
 				}
 				if (e.getMessage().equals("UPLOADF")) {
 
