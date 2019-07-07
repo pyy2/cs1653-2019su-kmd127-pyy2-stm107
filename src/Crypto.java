@@ -273,6 +273,22 @@ class Crypto {
 
     /*
      * 
+     * ******** TOKEN ********
+     * 
+     */
+
+    UserToken makeTokenFromString(String tokenString) {
+        String[] tokenComps = tokenString.split(";");
+        String issuer = tokenComps[0];
+        String subject = tokenComps[1];
+        List<String> groups = new ArrayList<>();
+        for (int i = 2; i < tokenComps.length; i++) {
+            groups.add(tokenComps[i]);
+        }
+        return new Token(issuer, subject, groups);
+    }
+    /*
+     * 
      * ******** MISC. ********
      * 
      */
