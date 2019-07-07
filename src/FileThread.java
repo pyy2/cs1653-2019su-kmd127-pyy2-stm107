@@ -162,7 +162,32 @@ public class FileThread extends Thread {
 						} else {
 							String remotePath = (String) e.getObjContents().get(0);
 							String group = (String) e.getObjContents().get(1);
-							UserToken yourToken = (UserToken) e.getObjContents().get(2); // Extract token
+							// UserToken yourToken = (UserToken) e.getObjContents().get(2); // Extract token
+							// get objects
+							byte[] tokKey = (byte[]) e.getObjContents().get(2);
+							byte[] sigHmac = (byte[]) e.getObjContents().get(3);
+
+							// decrypt to get token/key
+							String decrypted = fc.decrypt("AES", tokKey, _aesKey);
+							StringTokenizer st = new StringTokenizer(decrypted, "||");
+							String groupK = st.nextToken();
+							String token = st.nextToken();
+
+							// System.out.println(decrypted);
+
+							// get decrypted bytes and an HMAC of it
+							byte[] bconcatted = decrypted.getBytes();
+							Mac mac = Mac.getInstance("HmacSHA256", "BC");
+							mac.init(fc.getSysK()); // client key
+							mac.update(bconcatted);
+							byte[] out = mac.doFinal();
+
+							// create an HMAC from the tokkey byte using client's public key
+							if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+								return;
+							}
+
+							UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
 							if (FileServer.fileList.checkFile(remotePath)) {
 								System.out.printf("Error: file already exists at %s\n", remotePath);
@@ -205,7 +230,33 @@ public class FileThread extends Thread {
 				} else if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
 					String remotePath = (String) e.getObjContents().get(0);
-					Token t = (Token) e.getObjContents().get(1);
+					// Token t = (Token) e.getObjContents().get(1);
+					// get objects
+					byte[] tokKey = (byte[]) e.getObjContents().get(1);
+					byte[] sigHmac = (byte[]) e.getObjContents().get(2);
+
+					// decrypt to get token/key
+					String decrypted = fc.decrypt("AES", tokKey, _aesKey);
+					StringTokenizer st = new StringTokenizer(decrypted, "||");
+					String groupK = st.nextToken();
+					String token = st.nextToken();
+
+					// System.out.println(decrypted);
+
+					// get decrypted bytes and an HMAC of it
+					byte[] bconcatted = decrypted.getBytes();
+					Mac mac = Mac.getInstance("HmacSHA256", "BC");
+					mac.init(fc.getSysK()); // client key
+					mac.update(bconcatted);
+					byte[] out = mac.doFinal();
+
+					// create an HMAC from the tokkey byte using client's public key
+					if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+						output.writeObject(e);
+						return;
+					}
+
+					UserToken t = (UserToken) fc.makeTokenFromString(token);
 					ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
 					if (sf == null) {
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
@@ -283,7 +334,32 @@ public class FileThread extends Thread {
 				} else if (e.getMessage().compareTo("DELETEF") == 0) {
 
 					String remotePath = (String) e.getObjContents().get(0);
-					Token t = (Token) e.getObjContents().get(1);
+					byte[] tokKey = (byte[]) e.getObjContents().get(1);
+					byte[] sigHmac = (byte[]) e.getObjContents().get(2);
+
+					// decrypt to get token/key
+					String decrypted = fc.decrypt("AES", tokKey, _aesKey);
+					StringTokenizer st = new StringTokenizer(decrypted, "||");
+					String groupK = st.nextToken();
+					String token = st.nextToken();
+
+					// System.out.println(decrypted);
+
+					// get decrypted bytes and an HMAC of it
+					byte[] bconcatted = decrypted.getBytes();
+					Mac mac = Mac.getInstance("HmacSHA256", "BC");
+					mac.init(fc.getSysK()); // client key
+					mac.update(bconcatted);
+					byte[] out = mac.doFinal();
+
+					// create an HMAC from the tokkey byte using client's public key
+					if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+						output.writeObject(e);
+						return;
+					}
+
+					UserToken t = (UserToken) fc.makeTokenFromString(token);
+
 					ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
 					if (sf == null) {
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);

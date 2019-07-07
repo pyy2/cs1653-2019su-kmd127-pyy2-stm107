@@ -23,7 +23,15 @@ public class FileClient extends Client implements FileClientInterface {
 		}
 		Envelope env = new Envelope("DELETEF"); // Success
 		env.addObject(remotePath);
-		env.addObject(token);
+		// env.addObject(token);
+		String pubKey = c.toString(groupK);
+		String concatted = pubKey + token;
+
+		byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+
+		env.addObject(encryptedToken); // Add encrypted token/key
+		env.addObject(fsMac); // add signed data
+
 		try {
 			output.writeObject(env);
 			env = (Envelope) input.readObject();
@@ -57,7 +65,16 @@ public class FileClient extends Client implements FileClientInterface {
 
 				Envelope env = new Envelope("DOWNLOADF"); // Success
 				env.addObject(sourceFile);
-				env.addObject(token);
+				// env.addObject(token);
+				// message.addObject(token); // Add requester's token
+				String pubKey = c.toString(groupK);
+				String concatted = pubKey + token;
+
+				byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+
+				env.addObject(encryptedToken); // Add encrypted token/key
+				env.addObject(fsMac); // add signed data
+
 				output.writeObject(env);
 
 				env = (Envelope) input.readObject();
@@ -147,7 +164,14 @@ public class FileClient extends Client implements FileClientInterface {
 			message = new Envelope("UPLOADF");
 			message.addObject(destFile);
 			message.addObject(group);
-			message.addObject(token); // Add requester's token
+			// message.addObject(token); // Add requester's token
+			String pubKey = c.toString(groupK);
+			String concatted = pubKey + token;
+
+			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+
+			message.addObject(encryptedToken); // Add encrypted token/key
+			message.addObject(fsMac); // add signed data
 			output.writeObject(message);
 
 			FileInputStream fis = new FileInputStream(sourceFile);
