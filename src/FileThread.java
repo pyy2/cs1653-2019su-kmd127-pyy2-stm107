@@ -101,26 +101,42 @@ public class FileThread extends Thread {
 				if (e.getMessage().equals("LFILES")) {
 					response = new Envelope("FAIL");
 					if (e.getObjContents().get(0) != null) {
-						String decrypted = fc.decrypt("AES", (byte[]) e.getObjContents().get(0), _aesKey);
-						StringTokenizer st = new StringTokenizer(decrypted, "||");
-						String groupK = st.nextToken();
-						String token = st.nextToken();
+						if (e.getObjContents().get(1) != null) {
 
-						UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
+							// get objects
+							byte[] tokKey = (byte[]) e.getObjContents().get(0);
+							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
-						List<String> groups = yourToken.getGroups(); // get associated groups
-						List<ShareFile> sfiles = FileServer.fileList.getFiles();
-						List<String> fileList = new ArrayList<String>();
+							// split token/key
+							String decrypted = fc.decrypt("AES", tokKey, _aesKey);
+							StringTokenizer st = new StringTokenizer(decrypted, "-");
+							String groupK = st.nextToken();
+							String token = st.nextToken();
 
-						for (ShareFile sf : sfiles) {
-							if (groups.contains(sf.getGroup())) {
-								fileList.add(sf.getPath());
+							// // create an HMAC from the tokkey byte using client's public key
+							// if (!fc.verifySignature(fc.createHmac(tokKey, true), sigHmac,
+							// fc.stringToPK(groupK))) {
+							// output.writeObject(response);
+							// return;
+							// }
+
+							UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
+
+							List<String> groups = yourToken.getGroups(); // get associated groups
+							List<ShareFile> sfiles = FileServer.fileList.getFiles();
+							List<String> fileList = new ArrayList<String>();
+
+							for (ShareFile sf : sfiles) {
+								if (groups.contains(sf.getGroup())) {
+									fileList.add(sf.getPath());
+								}
 							}
+							response = new Envelope("OK");
+							response.addObject(fileList);
 						}
-						response = new Envelope("OK");
-						response.addObject(fileList);
 					}
 					output.writeObject(response);
+
 				}
 				if (e.getMessage().equals("UPLOADF")) {
 
