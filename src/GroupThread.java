@@ -28,10 +28,12 @@ public class GroupThread extends Thread {
 	PrivateKey priv; // group's private key
 	SecretKey _aesKey; // AES symmetric key
 	PublicKey clientK; // client's public key
+	Crypto gc;
 
 	public GroupThread(Socket _socket, GroupServer _gs) {
 		socket = _socket;
 		my_gs = _gs;
+		gc = new Crypto();
 	}
 
 	public void run() {
@@ -49,7 +51,6 @@ public class GroupThread extends Thread {
 			final String path2 = "./GSprivate.key";
 			File f = new File(path);
 			File f2 = new File(path2);
-			Crypto crypto = new Crypto();
 
 			// if key files don't exist, something went wrong on initialization, ABORT
 			if (!f.exists() && !f2.exists()) {
@@ -60,16 +61,16 @@ public class GroupThread extends Thread {
 			// set keys
 			if (f.exists() && f2.exists()) {
 				System.out.println("Setting GS public/private keys");
-				crypto.setPublicKey("GS");
-				crypto.setPrivateKey("GS");
-				pub = crypto.getPublic();
-				priv = crypto.getPrivate();
+				gc.setPublicKey("GS");
+				gc.setPrivateKey("GS");
+				pub = gc.getPublic();
+				priv = gc.getPrivate();
 			}
 
 			System.out.println("\n########### ATTEMPT TO SECURE CL CONNECTION ###########");
-			crypto.setClient(input.readObject()); // read client public key (not encoded)
-			clientK = crypto.getClient();
-			System.out.println("Received client's public key: \n" + crypto.RSAtoString(clientK));
+			gc.setSysK(input.readObject()); // read client public key (not encoded)
+			clientK = gc.getSysK();
+			System.out.println("Received client's public key: \n" + gc.RSAtoString(clientK));
 
 			if (my_gs.tcList.pubkeys != null) {
 				// Check to see if ip:pubkey pair exists yet.
@@ -97,24 +98,24 @@ public class GroupThread extends Thread {
 
 			// send group server public key to client
 			output.writeObject(pub);
-			System.out.println("\nGS public key -> client:\n" + crypto.RSAtoString(pub));
+			System.out.println("\nGS public key -> client:\n" + gc.RSAtoString(pub));
 
 			// send symmetric key encrypted with client's public key with padding
-			crypto.setAESkey(); // create AES key
-			_aesKey = crypto.getAESKey();
-			output.writeObject(crypto.encrypt("RSA/ECB/PKCS1Padding", crypto.toString(_aesKey), clientK));
-			System.out.println("\nAES key -> Client:\n" + crypto.toString(_aesKey));
+			gc.genAESKey(); // create AES key
+			_aesKey = gc.getAESKey();
+			output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", gc.toString(_aesKey), clientK));
+			System.out.println("\nAES key -> Client:\n" + gc.toString(_aesKey));
 
 			// send SHA256 checksum of symmetric key for verification
-			byte[] checksum = crypto.createChecksum(_aesKey); // create checksum w aes key
+			byte[] checksum = gc.createChecksum(gc.toString(_aesKey)); // create checksum w aes key
 			output.writeObject(checksum); // send checksum
-			System.out.println("Checksum -> Client:\n" + crypto.toString(checksum)); // print
+			System.out.println("Checksum -> Client:\n" + gc.toString(checksum)); // print
 
 			// send signed checksum
-			byte[] signedChecksum = crypto.signChecksum(checksum);
+			byte[] signedChecksum = gc.signChecksum(checksum);
 			output.writeObject(signedChecksum);
-			System.out.println("Signed Checksum -> Client:\n" + crypto.toString(signedChecksum));
-			System.out.println("\n########### CONNECTION IS  SECURE ###########\n\n");
+			System.out.println("Signed Checksum -> Client:\n" + gc.toString(signedChecksum));
+			System.out.println("\n########### GS CONNECTION W CLIENT SECURE ###########\n");
 
 			do {
 				Envelope message = (Envelope) input.readObject();
@@ -124,7 +125,7 @@ public class GroupThread extends Thread {
 				if (message.getMessage().equals("GET"))// Client wants a token
 				{
 					byte[] uname = (byte[]) message.getObjContents().get(0);
-					String username = crypto.decrypt("AES", uname, _aesKey);
+					String username = gc.decrypt("AES", uname, _aesKey);
 					if (username == null) {
 						response = new Envelope("FAIL");
 						response.addObject(null);
@@ -136,7 +137,7 @@ public class GroupThread extends Thread {
 						response = new Envelope("OK");
 
 						// First, stringify everything
-						String pubKey = crypto.toString(crypto.getPublic());
+						String pubKey = gc.toString(gc.getPublic());
 						String token = null;
 						if (yourToken != null) {
 							token = yourToken.toString();
@@ -147,14 +148,14 @@ public class GroupThread extends Thread {
 						byte[] bconcatted = concatted.getBytes();
 
 						// Encrypt with shared key
-						byte[] encryptedToken = crypto.encrypt("AES", concatted, _aesKey);
+						byte[] encryptedToken = gc.encrypt("AES", concatted, _aesKey);
 
 						// Then HMAC(pubkey || token, ClientKey) and sign
 						Mac mac = Mac.getInstance("HmacSHA256", "BC");
 						mac.init(clientK);
 						mac.update(bconcatted);
 						byte[] out = mac.doFinal();
-						byte[] signed_data = crypto.signChecksum(out);
+						byte[] signed_data = gc.signChecksum(out);
 
 						response.addObject(encryptedToken);
 						response.addObject(out);
@@ -175,18 +176,18 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = crypto.decrypt("AES", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String username = p_arr[0];
 									String password = p_arr[1];
 									UserToken yourToken = makeTokenFromString(p_arr[2]);
 
-									if (!crypto.verifyHmac(enc_params, hmac)) {
+									if (!gc.verifyHmac(enc_params, hmac)) {
 										output.writeObject(response);
 										return;
 									}
-									if (!crypto.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data)) {
 										output.writeObject(response);
 										return;
 									}
@@ -211,8 +212,8 @@ public class GroupThread extends Thread {
 							if (message.getObjContents().get(1) != null) {
 								byte[] uname = (byte[]) message.getObjContents().get(0);
 								byte[] pass = (byte[]) message.getObjContents().get(1);
-								String username = crypto.decrypt("AES", uname, _aesKey); // Extract the username
-								String password = crypto.decrypt("AES", pass, _aesKey);
+								String username = gc.decrypt("AES", uname, _aesKey); // Extract the username
+								String password = gc.decrypt("AES", pass, _aesKey);
 
 								if (checkPassword(username, password)) {
 									response = new Envelope("OK"); // Success
@@ -230,7 +231,7 @@ public class GroupThread extends Thread {
 
 						if (message.getObjContents().get(0) != null) {
 							byte[] uname = (byte[]) message.getObjContents().get(0);
-							String username = crypto.decrypt("AES", uname, _aesKey);
+							String username = gc.decrypt("AES", uname, _aesKey);
 
 							if (firstLogin(username)) {
 								response = new Envelope("OK"); // Success
@@ -254,8 +255,8 @@ public class GroupThread extends Thread {
 										byte[] pass = (byte[]) message.getObjContents().get(1);
 										byte[] signed_data = (byte[]) message.getObjContents().get(2);
 										byte[] verify = (byte[]) message.getObjContents().get(3);
-										String username = crypto.decrypt("AES", uname, _aesKey); // Extract the username
-										String password = crypto.decrypt("AES", pass, _aesKey);
+										String username = gc.decrypt("AES", uname, _aesKey); // Extract the username
+										String password = gc.decrypt("AES", pass, _aesKey);
 
 										// Verify the message hasn't been tampered with in transit!
 										// (no man in the middle)
@@ -309,17 +310,17 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = crypto.decrypt("AES", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String username = p_arr[0];
 									UserToken yourToken = makeTokenFromString(p_arr[1]);
 
-									if (!crypto.verifyHmac(enc_params, hmac)) {
+									if (!gc.verifyHmac(enc_params, hmac)) {
 										output.writeObject(response);
 										return;
 									}
-									if (!crypto.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data)) {
 										output.writeObject(response);
 										return;
 									}
@@ -345,17 +346,17 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = crypto.decrypt("AES", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String groupName = p_arr[0];
 									UserToken yourToken = makeTokenFromString(p_arr[1]);
 
-									if (!crypto.verifyHmac(enc_params, hmac)) {
+									if (!gc.verifyHmac(enc_params, hmac)) {
 										output.writeObject(response);
 										return;
 									}
-									if (!crypto.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data)) {
 										output.writeObject(response);
 										return;
 									}
@@ -381,17 +382,17 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = crypto.decrypt("AES", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String groupName = p_arr[0];
 									UserToken yourToken = makeTokenFromString(p_arr[1]);
 
-									if (!crypto.verifyHmac(enc_params, hmac)) {
+									if (!gc.verifyHmac(enc_params, hmac)) {
 										output.writeObject(response);
 										return;
 									}
-									if (!crypto.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data)) {
 										output.writeObject(response);
 										return;
 									}
@@ -416,17 +417,17 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = crypto.decrypt("AES", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String groupName = p_arr[0];
 									UserToken yourToken = makeTokenFromString(p_arr[1]);
 
-									if (!crypto.verifyHmac(enc_params, hmac)) {
+									if (!gc.verifyHmac(enc_params, hmac)) {
 										output.writeObject(response);
 										return;
 									}
-									if (!crypto.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data)) {
 										output.writeObject(response);
 										return;
 									}
@@ -436,7 +437,7 @@ public class GroupThread extends Thread {
 									else {
 										response = new Envelope("OK"); // Success
 										// probably ok to just encrypt with shared key
-										byte[] enc_memList = crypto.createEncryptedString(memList);
+										byte[] enc_memList = gc.createEncryptedString(memList);
 										response.addObject(enc_memList);
 									}
 								}
@@ -457,18 +458,18 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = crypto.decrypt("AES", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String userName = p_arr[0];
 									String groupName = p_arr[1];
 									UserToken yourToken = makeTokenFromString(p_arr[2]);
 
-									if (!crypto.verifyHmac(enc_params, hmac)) {
+									if (!gc.verifyHmac(enc_params, hmac)) {
 										output.writeObject(response);
 										return;
 									}
-									if (!crypto.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data)) {
 										output.writeObject(response);
 										return;
 									}
@@ -493,18 +494,18 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = crypto.decrypt("AES", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String userName = p_arr[0];
 									String groupName = p_arr[1];
 									UserToken yourToken = makeTokenFromString(p_arr[2]);
 
-									if (!crypto.verifyHmac(enc_params, hmac)) {
+									if (!gc.verifyHmac(enc_params, hmac)) {
 										output.writeObject(response);
 										return;
 									}
-									if (!crypto.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data)) {
 										output.writeObject(response);
 										return;
 									}

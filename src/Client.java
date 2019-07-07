@@ -18,8 +18,10 @@ public abstract class Client {
 	String tfsFile = "TrustedFServer.bin";
 	TrustedFServer tfsList;
 	ObjectInputStream tfsStream;
+
+	// crypto stuff
 	public final String clientConfig = "CL";
-	protected Crypto crypto = new Crypto();
+	protected Crypto c;
 	PublicKey pub; // clien'ts publickey
 	PrivateKey priv; // client's private key
 	SecretKey sharedKey; // symmetric AES key
@@ -37,22 +39,23 @@ public abstract class Client {
 		final String path2 = "./" + clientConfig + "private.key";
 		File f = new File(path);
 		File f2 = new File(path2);
+		c = new Crypto();
 
 		// if key files don't exist, create new ones
 		if (!f.exists() && !f2.exists()) {
 			System.out.println("CL key NOT found!");
-			crypto.setSystemKP(clientConfig);
+			c.setSystemKP(clientConfig);
 		}
 
 		// now they should exist, set public/private key
 		if (f.exists() && f2.exists()) {
 			System.out.println("CL keys found!\nSetting public/private key");
-			crypto.setPublicKey(clientConfig);
-			crypto.setPrivateKey(clientConfig);
-			pub = crypto.getPublic();
-			priv = crypto.getPrivate();
+			c.setPublicKey(clientConfig);
+			c.setPrivateKey(clientConfig);
+			pub = c.getPublic();
+			priv = c.getPrivate();
 		}
-		System.out.println(crypto.RSAtoString(pub)); // print out public key base64
+		System.out.println(c.RSAtoString(pub)); // print out public key base64
 		System.out.println("###########################################");
 
 		// Try to create new socket connection
@@ -70,37 +73,37 @@ public abstract class Client {
 				output.flush();
 
 				// get gs publickey
-				crypto.setClient(input.readObject()); // read gs public key (encoded)
-				groupK = crypto.getClient();
-				System.out.println("Received GS's public key: \n" + crypto.RSAtoString(groupK));
+				c.setSysK(input.readObject()); // read gs public key (encoded)
+				groupK = c.getSysK();
+				System.out.println("Received GS's public key: \n" + c.RSAtoString(groupK));
 
 				// decrypt with private key to get aes key
-				String aesKey = crypto.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
-				crypto.setAESkey(aesKey);
-				sharedKey = crypto.getAESKey();
-				System.out.println("Received AES key -> " + crypto.toString(sharedKey));
+				String aesKey = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
+				c.setAESKey(aesKey);
+				sharedKey = c.getAESKey();
+				System.out.println("Received AES key -> " + c.toString(sharedKey));
 
 				// verify checksum
 				byte[] _checkSum = (byte[]) input.readObject(); // read checksum
-				System.out.println(crypto.toString(_checkSum)); // print
-				System.out.println(
-						"Checksum verified -> " + crypto.isEqual(_checkSum, crypto.createChecksum(crypto.getAESKey())));
+				System.out.println("Checksum:\n" + c.toString(_checkSum)); // print
+				System.out.println("Checksum verified -> " + c.isEqual(_checkSum, c.createChecksum(aesKey)));
 
 				// verify signature
 				byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
-				System.out.println("Signed Checksum: " + crypto.toString(signedChecksum));
-				System.out.println("############## CONNECTION TO GROUP SECURE ##############\n");
+				System.out.println("Signed Checksum: " + c.toString(signedChecksum));
+				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
 			} else {
+
 				System.out.println("\n\n########### ATTEMPT TO SECURE FS CONNECTION ###########");
 
-				crypto.setFS(input.readObject()); // read fs public key not encoded
-				fsPub = crypto.getFS(); // set FS pub key
-				System.out.println("Received FS's public key: \n" + crypto.RSAtoString(fsPub));
+				c.setSysK(input.readObject()); // read fs public key not encoded
+				fsPub = c.getSysK(); // set FS pub key
+				System.out.println("Received FS's public key: \n" + c.RSAtoString(fsPub));
 
 				// send client's public key to client
 				output.writeObject(pub);
-				System.out.println("\nClient public key -> FS:\n" + crypto.RSAtoString(pub));
+				System.out.println("\nClient public key -> FS:\n" + c.RSAtoString(pub));
 
 				// if (my_gs.tcList.pubkeys != null) {
 				// // Check to see if ip:pubkey pair exists yet.
@@ -129,33 +132,33 @@ public abstract class Client {
 				// }
 				// }
 
-				// generate aes key
-				crypto.setAESkey(); // create AES key
-				fsKey = crypto.getAESKey();
-				String challenge = crypto.getChallenge();
-				System.out.println("\nAES key: " + crypto.toString(fsKey));
+				// generate aes key + challenge
+				c.genAESKey(); // create AES key
+				fsKey = c.getAESKey();
+				String challenge = c.getChallenge();
+				System.out.println("\nAES key: " + c.toString(fsKey));
 				System.out.println("Challenge: " + challenge);
 
 				// send encrypted aeskey + challenge with fs public key
-				String s = crypto.toString(fsKey) + challenge;
-				output.writeObject(crypto.encrypt("RSA/ECB/PKCS1Padding", s, fsPub));
+				String s = c.toString(fsKey) + challenge;
+				output.writeObject(c.encrypt("RSA/ECB/PKCS1Padding", s, fsPub));
 				output.flush();
 
 				// send SHA256 checksum of symmetric key for verification
-				byte[] checksum = crypto.createChecksum(s); // create checksum w aes
-															// key
+				byte[] checksum = c.createChecksum(s); // create checksum w aes
+														// key
 				output.writeObject(checksum); // send checksum
-				System.out.println("Checksum -> FS:\n" + crypto.toString(checksum)); // print
+				System.out.println("Checksum -> FS:\n" + c.toString(checksum)); // print
 				output.flush();
 
 				// send signed checksum
-				byte[] signedChecksum = crypto.signChecksum(checksum);
+				byte[] signedChecksum = c.signChecksum(checksum);
 				output.writeObject(signedChecksum);
-				System.out.println("Signed Checksum -> Client:\n" + crypto.toString(signedChecksum));
+				System.out.println("Signed Checksum -> Client:\n" + c.toString(signedChecksum));
 				output.flush();
 
 				System.out.println("CHALLENGE VALIDATED: "
-						+ crypto.isEqual(challenge.getBytes(), input.readObject().toString().getBytes()));
+						+ c.isEqual(challenge.getBytes(), input.readObject().toString().getBytes()));
 				System.out.println("\n############# CONNETION TO FILESERVER SECURE ############\n");
 			}
 

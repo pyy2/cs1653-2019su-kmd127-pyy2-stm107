@@ -24,23 +24,29 @@ import java.util.concurrent.ThreadLocalRandom;
 
 class Crypto {
 
-    PublicKey clientK;
+    PublicKey sysK; // public key of whoever it's talking to
+
     PublicKey pub;
-    PublicKey fs;
     PrivateKey priv;
+
     SecretKey aes;
     SecureRandom random;
 
     // constructor
     Crypto() {
         Security.addProvider(new BouncyCastleProvider());
-        clientK = null;
+        sysK = null;
         pub = null;
-        fs = null;
         priv = null;
         aes = null;
         random = new SecureRandom();
     }
+
+    /*
+     * 
+     * ******** RSA Public/Private Keys ********
+     * 
+     */
 
     // create keys into key files if not generated already
     void setSystemKP(String filename) {
@@ -67,42 +73,7 @@ class Crypto {
         }
     }
 
-    // save keys to public/private .key file
-    private void saveToFile(String fileName, BigInteger mod, BigInteger exp) throws IOException {
-        System.out.println("Creating file: " + fileName);
-        ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(fileName)));
-        try {
-            oos.writeObject(mod);
-            oos.writeObject(exp);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            oos.close();
-        }
-    }
-
-    // Return the saved key from file
-    Key readKeyFromFile(String filename) throws IOException {
-        InputStream in = new FileInputStream(filename);
-        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
-        Key key = null;
-        try {
-            BigInteger m = (BigInteger) oin.readObject();
-            BigInteger e = (BigInteger) oin.readObject();
-            KeyFactory fact = KeyFactory.getInstance("RSA");
-            if (filename.contains("public"))
-                key = fact.generatePublic(new RSAPublicKeySpec(m, e));
-            else
-                key = fact.generatePrivate(new RSAPrivateKeySpec(m, e));
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            oin.close();
-        }
-        return key;
-    }
-
-    // set system public key
+    // set host public key
     void setPublicKey(String name) {
         try {
             this.pub = (PublicKey) readKeyFromFile(name + "public.key");
@@ -111,12 +82,7 @@ class Crypto {
         }
     }
 
-    // return system's public key
-    PublicKey getPublic() {
-        return this.pub;
-    }
-
-    // set system private key
+    // set host private key
     void setPrivateKey(String name) {
         try {
             this.priv = (PrivateKey) readKeyFromFile(name + "private.key");
@@ -125,74 +91,33 @@ class Crypto {
         }
     }
 
-    // return system's private key
+    // return host public key
+    PublicKey getPublic() {
+        return this.pub;
+    }
+
+    // return host private key
     PrivateKey getPrivate() {
         return this.priv;
     }
 
-    String byteToHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02X ", b));
-        }
-        return sb.toString();
+    // set public key of whoever host is talking to
+    void setSysK(Object o) {
+        sysK = (PublicKey) o;
+    }
+
+    PublicKey getSysK() {
+        return this.sysK;
     }
 
     /*
-     * Method to generate public/private RSA keypair when client is launched
-     *
-     * @return keypair - public/private keypair
+     * 
+     * ******** AES Symmetric Keys ********
+     * 
      */
-    KeyPair genKP() {
-        KeyPair keyPair = null;
-        try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA"); // set RSA instance
-            keyGen.initialize(2048); // set bit size
-            keyPair = keyGen.genKeyPair(); // generate key pair
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return keyPair;
-    }
-
-    byte[] objectToByte(Object o) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutput out = null;
-        byte[] b = null;
-        try {
-            out = new ObjectOutputStream(bos);
-            out.writeObject(o);
-            out.flush();
-            b = bos.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                bos.close();
-            } catch (IOException ex) {
-            }
-        }
-        return b;
-    }
-
-    void setClient(Object o) {
-        clientK = (PublicKey) o;
-    }
-
-    PublicKey getClient() {
-        return this.clientK;
-    }
-
-    void setFS(Object o) {
-        fs = (PublicKey) o;
-    }
-
-    PublicKey getFS() {
-        return this.fs;
-    }
 
     // generate AES key
-    void setAESkey() {
+    void genAESKey() {
         SecretKey key = null;
         try {
             KeyGenerator keyGen = KeyGenerator.getInstance("AES", "BC");
@@ -206,13 +131,19 @@ class Crypto {
         this.aes = key;
     }
 
-    void setAESkey(String key) {
+    void setAESKey(String key) {
         aes = new SecretKeySpec(decode(key), "AES");
     }
 
     SecretKey getAESKey() {
         return aes;
     }
+
+    /*
+     * 
+     * ******** Encryption/Decryption ********
+     * 
+     */
 
     // encryption
     byte[] encrypt(final String type, final String plaintext, final Key key) {
@@ -245,37 +176,22 @@ class Crypto {
         return decryptedValue;
     }
 
-    void checkProvider() {
-        if (Security.getProvider("BC") == null) {
-            System.out.println("Error: BC provider not set");
-        } else {
-            System.out.println("Bouncy Castle provider is set");
+    byte[] createEncryptedString(ArrayList<String> params) {
+        String concat = new String();
+        for (int i = 0; i < params.size(); i++) {
+            concat += params.get(i);
+            if (i != params.size() - 1) {
+                concat += "-";
+            }
         }
+        return encrypt("AES", concat, aes);
     }
 
-    // String aesToString(SecretKey key) {
-    // return new SecretKeySpec(key, 0, key.length, "AES");
-    // }
-
-    byte[] createChecksum(Key key) {
-        MessageDigest digest = null;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return digest.digest(key.getEncoded());
-    }
-
-    byte[] createChecksum(SecretKey key) {
-        MessageDigest digest = null;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return digest.digest(key.getEncoded());
-    }
+    /*
+     * 
+     * ******** SHA256/Signature/HMAC ********
+     * 
+     */
 
     byte[] createChecksum(String data) {
         byte[] hash = null;
@@ -288,11 +204,28 @@ class Crypto {
         return hash;
     }
 
+    byte[] signChecksum(byte[] checksum) {
+        byte[] sigBytes = null;
+        try {
+            Signature sig = Signature.getInstance("SHA256withRSA"); // sign
+            sig.initSign(priv); // sign with private key
+            sig.update(checksum); // input checksum
+            sigBytes = sig.sign(); // sign
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (SignatureException e2) {
+            e2.printStackTrace();
+        } catch (InvalidKeyException e3) {
+            e3.printStackTrace();
+        }
+        return sigBytes;
+    }
+
     boolean verifySignature(byte[] checksum, byte[] signChecksum) {
         boolean verify = false;
         try {
             Signature sig = Signature.getInstance("SHA256withRSA");
-            sig.initVerify(clientK);
+            sig.initVerify(sysK);
             sig.update(checksum);
             verify = sig.verify(signChecksum);
         } catch (Exception e) {
@@ -306,24 +239,17 @@ class Crypto {
         return verify;
     }
 
-    byte[] signChecksum(byte[] checksum) {
-        // Signature sig = Signature.getInstance("SHA256withRSA"); // sign
-        // sig.initSign(crypto.getPrivate()); // use group server private key
-        // sig.update(checksum); // input checksum
-        byte[] sigBytes = null;
+    byte[] createHmac(byte[] macBytes) {
+        byte[] out = null;
         try {
-            Signature sig = Signature.getInstance("SHA256withRSA"); // sign
-            sig.initSign(getPrivate()); // use group server private key
-            sig.update(checksum); // input checksum
-            sigBytes = sig.sign(); // sign
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (SignatureException e2) {
-            e2.printStackTrace();
-        } catch (InvalidKeyException e3) {
-            e3.printStackTrace();
+            Mac mac = Mac.getInstance("HmacSHA256", "BC");
+            mac.init(aes);
+            mac.update(macBytes);
+            out = mac.doFinal();
+        } catch (Exception e) {
+            System.out.println("EXCEPTION CREATING HMAC: " + e);
         }
-        return sigBytes;
+        return out;
     }
 
     boolean verifyHmac(byte[] reverify, byte[] reOut) {
@@ -345,16 +271,11 @@ class Crypto {
         }
     }
 
-    byte[] createEncryptedString(ArrayList<String> params) {
-        String concat = new String();
-        for (int i = 0; i < params.size(); i++) {
-            concat += params.get(i);
-            if (i != params.size() - 1) {
-                concat += "-";
-            }
-        }
-        return encrypt("AES", concat, aes);
-    }
+    /*
+     * 
+     * ******** MISC. ********
+     * 
+     */
 
     boolean isEqual(byte[] a, byte[] b) {
         if (a.length != b.length) {
@@ -382,5 +303,70 @@ class Crypto {
 
     String getChallenge() {
         return Integer.toString(ThreadLocalRandom.current().nextInt(Integer.MIN_VALUE, -1));
+    }
+
+    /*
+     * 
+     * 
+     * ******** Helper Methods ********
+     * 
+     * 
+     */
+
+    // Save keys to file
+    private void saveToFile(String fileName, BigInteger mod, BigInteger exp) throws IOException {
+        System.out.println("Creating file: " + fileName);
+        ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(fileName)));
+        try {
+            oos.writeObject(mod);
+            oos.writeObject(exp);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            oos.close();
+        }
+    }
+
+    // generate RSA keypair
+    private KeyPair genKP() {
+        KeyPair keyPair = null;
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA"); // set RSA instance
+            keyGen.initialize(2048); // set bit size
+            keyPair = keyGen.genKeyPair(); // generate key pair
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return keyPair;
+    }
+
+    // check to make sure BC is provider
+    private void checkProvider() {
+        if (Security.getProvider("BC") == null) {
+            System.out.println("Error: BC provider not set");
+        } else {
+            System.out.println("Bouncy Castle provider is set");
+        }
+    }
+
+    // Return the saved key from file
+    private Key readKeyFromFile(String filename) throws IOException {
+        InputStream in = new FileInputStream(filename);
+        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
+        Key key = null;
+        try {
+            BigInteger m = (BigInteger) oin.readObject();
+            BigInteger e = (BigInteger) oin.readObject();
+            KeyFactory fact = KeyFactory.getInstance("RSA");
+            if (filename.contains("public"))
+                key = fact.generatePublic(new RSAPublicKeySpec(m, e));
+            else
+                key = fact.generatePrivate(new RSAPrivateKeySpec(m, e));
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            oin.close();
+        }
+        return key;
     }
 }

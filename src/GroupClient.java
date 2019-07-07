@@ -20,7 +20,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// Tell the server to return a token.
 			message = new Envelope("GET");
 			// ecnrypt username with symmetric keys
-			byte[] uname = crypto.encrypt("AES", username, sharedKey);
+			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			output.writeObject(message);
 
@@ -44,7 +44,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 					byte[] signed_data = (byte[]) response.getObjContents().get(2);
 
 					// get the token concated with the public key
-					String tokenAndKey = crypto.decrypt("AES", encryptedToken, sharedKey);
+					String tokenAndKey = c.decrypt("AES", encryptedToken, sharedKey);
 					// System.out.println("This is the key + token data: " + tokenAndKey);
 					// Remove the public group key to get the token info
 					String gPubKey = Base64.getEncoder().encodeToString(groupK.getEncoded());
@@ -74,8 +74,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope message = null, response = null;
 			message = new Envelope("CPWD");
 			// encrypt username and password with symmetric key
-			byte[] uname = crypto.encrypt("AES", username, sharedKey);
-			byte[] pass = crypto.encrypt("AES", password, sharedKey);
+			byte[] uname = c.encrypt("AES", username, sharedKey);
+			byte[] pass = c.encrypt("AES", password, sharedKey);
 			message.addObject(uname); // Add user name string
 			message.addObject(pass);
 			output.writeObject(message);
@@ -99,7 +99,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			message = new Envelope("FLOGIN");
-			byte[] uname = crypto.encrypt("AES", username, sharedKey);
+			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			output.writeObject(message);
 
@@ -124,8 +124,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope message = null, response = null;
 			message = new Envelope("RPASS");
 			// encrypt username and password with symmetric key
-			byte[] uname = crypto.encrypt("AES", username, sharedKey);
-			byte[] pass = crypto.encrypt("AES", password, sharedKey);
+			byte[] uname = c.encrypt("AES", username, sharedKey);
+			byte[] pass = c.encrypt("AES", password, sharedKey);
 
 			// Add HMAC(Username||password, sharedKey) signed with private key so we know it
 			// hasn't been tampered with!
@@ -134,7 +134,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			mac.init(sharedKey);
 			mac.update(verify);
 			byte[] out = mac.doFinal();
-			byte[] signed_data = crypto.signChecksum(out);
+			byte[] signed_data = c.signChecksum(out);
 
 			message.addObject(uname);
 			message.addObject(pass);
@@ -167,9 +167,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(username);
 			reqParams.add(password);
 			reqParams.add(token.toString());
-			byte[] reqBytes = createEncryptedString(reqParams);
-			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = crypto.signChecksum(out);
+			byte[] reqBytes = c.createEncryptedString(reqParams);
+			byte[] out = c.createHmac(reqBytes);
+			byte[] signed_data = c.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -200,9 +200,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(username);
 			reqParams.add(token.toString());
-			byte[] reqBytes = createEncryptedString(reqParams);
-			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = crypto.signChecksum(out);
+			byte[] reqBytes = c.createEncryptedString(reqParams);
+			byte[] out = c.createHmac(reqBytes);
+			byte[] signed_data = c.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -232,9 +232,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(groupname);
 			reqParams.add(token.toString());
-			byte[] reqBytes = createEncryptedString(reqParams);
-			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = crypto.signChecksum(out);
+			byte[] reqBytes = c.createEncryptedString(reqParams);
+			byte[] out = c.createHmac(reqBytes);
+			byte[] signed_data = c.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -264,9 +264,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(groupname);
 			reqParams.add(token.toString());
-			byte[] reqBytes = createEncryptedString(reqParams);
-			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = crypto.signChecksum(out);
+			byte[] reqBytes = c.createEncryptedString(reqParams);
+			byte[] out = c.createHmac(reqBytes);
+			byte[] signed_data = c.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -296,9 +296,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(group);
 			reqParams.add(token.toString());
-			byte[] reqBytes = createEncryptedString(reqParams);
-			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = crypto.signChecksum(out);
+			byte[] reqBytes = c.createEncryptedString(reqParams);
+			byte[] out = c.createHmac(reqBytes);
+			byte[] signed_data = c.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -310,7 +310,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// If server indicates success, return the member list
 			if (response.getMessage().equals("OK")) {
 				byte[] enc_memList = (byte[]) response.getObjContents().get(0);
-				String members = crypto.decrypt("AES", enc_memList, sharedKey);
+				String members = c.decrypt("AES", enc_memList, sharedKey);
 				String[] m_arr = members.split("-");
 				List<String> memList = new ArrayList<>();
 				for (int i = 0; i < m_arr.length; i++) {
@@ -337,9 +337,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(username);
 			reqParams.add(groupname);
 			reqParams.add(token.toString());
-			byte[] reqBytes = createEncryptedString(reqParams);
-			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = crypto.signChecksum(out);
+			byte[] reqBytes = c.createEncryptedString(reqParams);
+			byte[] out = c.createHmac(reqBytes);
+			byte[] signed_data = c.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -369,9 +369,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			reqParams.add(username);
 			reqParams.add(groupname);
 			reqParams.add(token.toString());
-			byte[] reqBytes = createEncryptedString(reqParams);
-			byte[] out = createHmac(reqBytes);
-			byte[] signed_data = crypto.signChecksum(out);
+			byte[] reqBytes = c.createEncryptedString(reqParams);
+			byte[] out = c.createHmac(reqBytes);
+			byte[] signed_data = c.signChecksum(out);
 
 			message.addObject(reqBytes);
 			message.addObject(out);
@@ -401,30 +401,5 @@ public class GroupClient extends Client implements GroupClientInterface {
 			groups.add(tokenComps[i]);
 		}
 		return new Token(issuer, subject, groups);
-	}
-
-	private byte[] createEncryptedString(ArrayList<String> params) {
-		String concat = new String();
-		for (int i = 0; i < params.size(); i++) {
-			concat += params.get(i);
-			if (i != params.size() - 1) {
-				concat += "-";
-			}
-		}
-		return crypto.encrypt("AES", concat, sharedKey);
-	}
-
-	private byte[] createHmac(byte[] macBytes) {
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider()); // add security provider
-		byte[] out = null;
-		try {
-			Mac mac = Mac.getInstance("HmacSHA256", "BC");
-			mac.init(sharedKey);
-			mac.update(macBytes);
-			out = mac.doFinal();
-		} catch (Exception e) {
-			System.out.println("EXCEPTION CREATING HMAC: " + e);
-		}
-		return out;
 	}
 }
