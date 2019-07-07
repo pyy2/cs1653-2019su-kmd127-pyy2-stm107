@@ -73,14 +73,15 @@ public class FileServer extends Server {
 			System.out.println("FS key NOT found!");
 			crypto.setSystemKP(fileConfig);
 		}
-		// now they should exist, set public/private key
-		if (f.exists() && f2.exists()) {
-			System.out.println("FS keys found!\nSetting public/private key");
-			crypto.setPublicKey("FS");
-			crypto.setPrivateKey("FS");
-		}
+		// // now they should exist, set public/private key
+		// if (f.exists() && f2.exists()) {
+		// System.out.println("FS keys found!\nSetting public/private key");
+		// crypto.setPublicKey("FS");
+		// crypto.setPrivateKey("FS");
+		// }
 
-		System.out.println(crypto.getPublicK());
+		// System.out.println(crypto.RSAtoString(crypto.getPublic())); // print out
+		// group public key
 
 		// Autosave Daemon. Saves lists every 5 minutes
 		AutoSaveFS aSave = new AutoSaveFS();
@@ -92,6 +93,7 @@ public class FileServer extends Server {
 		try {
 			final ServerSocket serverSock = new ServerSocket(port);
 			System.out.printf("%s up and running\n", this.getClass().getName());
+			System.out.println("###########################################");
 
 			Socket sock = null;
 			Thread thread = null;

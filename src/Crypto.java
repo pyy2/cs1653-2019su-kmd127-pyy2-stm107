@@ -20,13 +20,14 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import java.util.concurrent.ThreadLocalRandom;
 
 class Crypto {
 
     PublicKey clientK;
-    Key pub;
+    PublicKey pub;
+    PublicKey fs;
     PrivateKey priv;
-    KeyPair KP;
     SecretKey aes;
     SecureRandom random;
 
@@ -34,7 +35,9 @@ class Crypto {
     Crypto() {
         Security.addProvider(new BouncyCastleProvider());
         clientK = null;
-        KP = null;
+        pub = null;
+        fs = null;
+        priv = null;
         aes = null;
         random = new SecureRandom();
     }
@@ -42,7 +45,7 @@ class Crypto {
     // create keys into key files if not generated already
     void setSystemKP(String filename) {
         System.out.println("No key files found! Generating " + filename + " RSA keypair file");
-        KP = genKP();
+        KeyPair KP = genKP();
         PublicKey publicKey = KP.getPublic();
         PrivateKey privateKey = KP.getPrivate();
         System.out.println("Keypairs generated: Saving to file...");
@@ -102,21 +105,15 @@ class Crypto {
     // set system public key
     void setPublicKey(String name) {
         try {
-            this.pub = readKeyFromFile(name + "public.key");
+            this.pub = (PublicKey) readKeyFromFile(name + "public.key");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     // return system's public key
-    Key getPublic() {
+    PublicKey getPublic() {
         return this.pub;
-    }
-
-    // return base64 of public key
-    String getPublicK() {
-        return "------ BEGIN RSA PUBLIC KEY ------ \n" + Base64.getEncoder().encodeToString(this.pub.getEncoded())
-                + "\n------- END RSA PUBLIC KEY -------";
     }
 
     // set system private key
@@ -184,6 +181,14 @@ class Crypto {
 
     PublicKey getClient() {
         return this.clientK;
+    }
+
+    void setFS(Object o) {
+        fs = (PublicKey) o;
+    }
+
+    PublicKey getFS() {
+        return this.fs;
     }
 
     // generate AES key
@@ -260,6 +265,27 @@ class Crypto {
             e.printStackTrace();
         }
         return digest.digest(key.getEncoded());
+    }
+
+    byte[] createChecksum(SecretKey key) {
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return digest.digest(key.getEncoded());
+    }
+
+    byte[] createChecksum(String data) {
+        byte[] hash = null;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            hash = digest.digest(data.getBytes("UTF-8"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return hash;
     }
 
     boolean verifySignature(byte[] checksum, byte[] signChecksum) {
@@ -349,25 +375,12 @@ class Crypto {
         return Base64.getEncoder().encodeToString(b);
     }
 
+    String RSAtoString(Key key) {
+        return "------ BEGIN RSA PUBLIC KEY ------ \n" + Base64.getEncoder().encodeToString(key.getEncoded())
+                + "\n------- END RSA PUBLIC KEY -------";
+    }
+
     String getChallenge() {
-        String s = "";
-        try {
-            SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "BC");
-
-            // Get 128 random bytes
-            byte[] randomBytes = new byte[128];
-            random.nextBytes(randomBytes);
-
-            // Get random integer
-            int r = random.nextInt();
-
-            // Get random integer in range
-            s = Integer.toString(random.nextInt(999999999));
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e2) {
-            e2.printStackTrace();
-        }
-        return s;
+        return Integer.toString(ThreadLocalRandom.current().nextInt(Integer.MIN_VALUE, -1));
     }
 }

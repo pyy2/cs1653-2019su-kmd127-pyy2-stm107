@@ -24,10 +24,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 public class GroupThread extends Thread {
 	private final Socket socket;
 	protected GroupServer my_gs;
-	SecretKey _aesKey;
-	PublicKey clientK;
-	Key pub;
-	PrivateKey priv;
+	PublicKey pub; // group public key
+	PrivateKey priv; // group's private key
+	SecretKey _aesKey; // AES symmetric key
+	PublicKey clientK; // client's public key
 
 	public GroupThread(Socket _socket, GroupServer _gs) {
 		socket = _socket;
@@ -39,11 +39,12 @@ public class GroupThread extends Thread {
 
 		try {
 			// Announces connection and opens object streams
-			System.out.println("*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
+			System.out.println("\n*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
 
 			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 
+			// set gs key file paths
 			final String path = "./GSpublic.key";
 			final String path2 = "./GSprivate.key";
 			File f = new File(path);
@@ -52,7 +53,7 @@ public class GroupThread extends Thread {
 
 			// if key files don't exist, something went wrong on initialization, ABORT
 			if (!f.exists() && !f2.exists()) {
-				System.out.println("FATAL ERROR: GS key NOT found!\n System Exiting");
+				System.out.println("FATAL ERROR: GS key NOT found!\nSystem Exiting");
 				System.exit(1);
 			}
 
@@ -65,9 +66,10 @@ public class GroupThread extends Thread {
 				priv = crypto.getPrivate();
 			}
 
-			crypto.setClient(input.readObject()); // read client public key (encoded)
+			System.out.println("\n########### ATTEMPT TO SECURE CL CONNECTION ###########");
+			crypto.setClient(input.readObject()); // read client public key (not encoded)
 			clientK = crypto.getClient();
-			System.out.println("Received client's public key: \n" + crypto.toString(clientK));
+			System.out.println("Received client's public key: \n" + crypto.RSAtoString(clientK));
 
 			if (my_gs.tcList.pubkeys != null) {
 				// Check to see if ip:pubkey pair exists yet.
@@ -93,38 +95,26 @@ public class GroupThread extends Thread {
 				}
 			}
 
-			System.out.println("\n\n########### ATTEMPTING TO SECURE CONNECTION ###########");
 			// send group server public key to client
-			output.writeObject(crypto.getPublic());
-			System.out.println("\nGS public key -> client: " + crypto.getPublic());
+			output.writeObject(pub);
+			System.out.println("\nGS public key -> client:\n" + crypto.RSAtoString(pub));
 
 			// send symmetric key encrypted with client's public key with padding
 			crypto.setAESkey(); // create AES key
 			_aesKey = crypto.getAESKey();
 			output.writeObject(crypto.encrypt("RSA/ECB/PKCS1Padding", crypto.toString(_aesKey), clientK));
-			System.out.println("\nAES key -> Client: " + crypto.toString(_aesKey));
+			System.out.println("\nAES key -> Client:\n" + crypto.toString(_aesKey));
 
 			// send SHA256 checksum of symmetric key for verification
-			// MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			byte[] checksum = crypto.createChecksum(_aesKey);
-			output.writeObject(crypto.createChecksum(_aesKey)); // send checksum
-			System.out.println("Checksum -> Client: " + crypto.toString(checksum));
+			byte[] checksum = crypto.createChecksum(_aesKey); // create checksum w aes key
+			output.writeObject(checksum); // send checksum
+			System.out.println("Checksum -> Client:\n" + crypto.toString(checksum)); // print
 
 			// send signed checksum
-			// Signature sig = Signature.getInstance("SHA256withRSA"); // sign
-			// sig.initSign(crypto.getPrivate()); // use group server private key
-			// sig.update(checksum); // input checksum
-			// byte[] sigBytes = sig.sign(); // sign
-			output.writeObject(crypto.signChecksum(checksum));
-			System.out.println("Sent Signed Checksum");
+			byte[] signedChecksum = crypto.signChecksum(checksum);
+			output.writeObject(signedChecksum);
+			System.out.println("Signed Checksum -> Client:\n" + crypto.toString(signedChecksum));
 			System.out.println("\n########### CONNECTION IS  SECURE ###########\n\n");
-
-			// Mac mac = Mac.getInstance("HmacSHA256");
-			// mac.init(clientK); // initialize HMAC with client key
-			// byte[] _hmac = mac.doFinal(Base64.getDecoder().decode(aesKey));
-			// String hmac = Base64.getEncoder().encodeToString(_hmac);
-			// System.out.println("Generated HMAC: " + hmac);
-			// output.writeObject("HMAC");
 
 			do {
 				Envelope message = (Envelope) input.readObject();

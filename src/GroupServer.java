@@ -97,14 +97,15 @@ public class GroupServer extends Server {
 			System.out.println("GS key NOT found!");
 			crypto.setSystemKP(groupConfig);
 		}
-		// now they should exist, set public/private key
-		if (f.exists() && f2.exists()) {
-			System.out.println("GS keys found!\nSetting public/private key");
-			crypto.setPublicKey("GS");
-			crypto.setPrivateKey("GS");
-		}
+		// // now they should exist, set public/private key
+		// if (f.exists() && f2.exists()) {
+		// System.out.println("GS keys found!\nSetting public/private key");
+		// crypto.setPublicKey("GS");
+		// crypto.setPrivateKey("GS");
+		// }
 
-		System.out.println(crypto.getPublicK());
+		// System.out.println(crypto.RSAtoString(crypto.getPublic())); // print out
+		// group public key
 
 		// Autosave Daemon. Saves lists every 5 minutes
 		AutoSave aSave = new AutoSave(this);
@@ -115,6 +116,8 @@ public class GroupServer extends Server {
 		try {
 			final ServerSocket serverSock = new ServerSocket(port);
 			System.out.printf("%s up and running\n", this.getClass().getName());
+			System.out.println("###########################################");
+
 			Socket sock = null;
 			GroupThread thread = null;
 

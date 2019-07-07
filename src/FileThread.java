@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.String;
 
 // security packages
 import java.security.*;
@@ -18,9 +19,9 @@ import java.security.Signature;
 
 public class FileThread extends Thread {
 	private final Socket socket;
-	PublicKey FSpub;
-	PrivateKey FSpri;
-	SecretKey key;
+	PublicKey pub;
+	PrivateKey priv;
+	SecretKey aesKey;
 	PublicKey clientK;
 
 	public FileThread(Socket _socket) {
@@ -30,12 +31,10 @@ public class FileThread extends Thread {
 	public void run() {
 		boolean proceed = true;
 		try {
-			System.out.println("*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
+			System.out.println("\n*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
 			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 			Envelope response;
-
-			System.out.println("\n\n########### SECURING CLIENT CONNECTION ###########");
 
 			final String path = "./FSpublic.key";
 			final String path2 = "./FSprivate.key";
@@ -54,28 +53,43 @@ public class FileThread extends Thread {
 				System.out.println("Setting FS public/private keys");
 				crypto.setPublicKey("FS");
 				crypto.setPrivateKey("FS");
-				FSpub = (PublicKey) crypto.getPublic();
-				FSpri = crypto.getPrivate();
+				pub = crypto.getPublic();
+				priv = crypto.getPrivate();
 			}
-			output.writeObject(FSpub); // send file public key
+			System.out.println(crypto.RSAtoString(pub));
+
+			System.out.println("\n\n########### SECURING CLIENT CONNECTION ###########");
+
+			System.out.println("FS public key -> Client:\n" + crypto.RSAtoString(pub));
+			output.writeObject(pub); // send file public key
 			output.flush();
 
-			crypto.setClient(input.readObject()); // read client's public key (encoded)
+			crypto.setClient(input.readObject()); // set client's public key (encoded)
 			clientK = crypto.getClient();
-			System.out.println("Received client's public key: \n" + crypto.toString(clientK));
-			input.readObject(); // get
+			System.out.println("Received client's public key: \n" + crypto.RSAtoString(clientK));
 
-			System.out.println("\n\n########### CONNECTION W CLIENT SECURE ###########");
+			// get aes key + challenge
+			String s = crypto.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
+			String _aesKey = s.substring(0, s.lastIndexOf("-"));
+			String challenge = s.substring(_aesKey.length(), s.length());
+			System.out.println("AESKey: " + _aesKey);
+			System.out.println("Challenge: " + challenge);
+			crypto.setAESkey(_aesKey); // set aes key
+			aesKey = crypto.getAESKey();
 
-			// // Gets the clients pubkey (added for now for testing.)
-			// PublicKey clientK = (PublicKey) input.readObject(); // get client key from
-			// buffer
-			// System.out.println("Received client's public key: \n" + clientK);
+			// verify checksum
+			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
+			System.out.println(crypto.toString(_checkSum)); // print
+			System.out.println("Checksum verified -> " + crypto.isEqual(_checkSum, crypto.createChecksum(s)));
 
-			// PublicKey dummykey = null;
-			// output.writeObject(dummykey);
+			// verify signature
+			byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
+			System.out.println("Signed Checksum: " + crypto.toString(signedChecksum));
 
-			// System.out.println("\n\nWriting a dummy public key...\n\n");
+			// respond with challenge
+			output.writeObject(challenge);
+
+			System.out.println("\n########### CONNECTION W CLIENT SECURE ###########");
 
 			do {
 				Envelope e = (Envelope) input.readObject();
