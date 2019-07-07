@@ -2,8 +2,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.io.*;
 import java.util.*;
-import java.security.*;
-import javax.crypto.*;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import javax.crypto.SecretKey;
 
 public abstract class Client {
 
@@ -20,7 +21,6 @@ public abstract class Client {
 	ObjectInputStream tfsStream;
 
 	// crypto stuff
-	public final String clientConfig = "CL";
 	protected Crypto c;
 	PublicKey pub; // clien'ts publickey
 	PrivateKey priv; // client's private key
@@ -32,7 +32,9 @@ public abstract class Client {
 	// KeyPair keyPair;
 	// ObjectInputStream keyPairStream;
 
-	public boolean connect(final String server, final int port, final String type) {
+	public boolean connect(final String server, final int port, final String type, final String clientNum) {
+
+		String clientConfig = "CL" + clientNum;
 
 		// set client key file paths
 		final String path = "./" + clientConfig + "public.key";
@@ -103,6 +105,7 @@ public abstract class Client {
 
 				// send client's public key to client
 				output.writeObject(pub);
+				output.flush();
 				System.out.println("\nClient public key -> FS:\n" + c.RSAtoString(pub));
 
 				// if (my_gs.tcList.pubkeys != null) {
@@ -190,6 +193,7 @@ public abstract class Client {
 			try {
 				Envelope message = new Envelope("DISCONNECT");
 				output.writeObject(message);
+				output.flush();
 			} catch (Exception e) {
 				System.err.println("Error: " + e.getMessage());
 				e.printStackTrace(System.err);

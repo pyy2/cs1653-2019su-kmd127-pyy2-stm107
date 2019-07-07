@@ -29,11 +29,16 @@ public class GroupThread extends Thread {
 	SecretKey _aesKey; // AES symmetric key
 	PublicKey clientK; // client's public key
 	Crypto gc;
+	Scanner in = new Scanner(System.in);
 
 	public GroupThread(Socket _socket, GroupServer _gs) {
 		socket = _socket;
 		my_gs = _gs;
 		gc = new Crypto();
+		pub = null;
+		priv = null;
+		_aesKey = null;
+		clientK = null;
 	}
 
 	public void run() {
@@ -56,15 +61,14 @@ public class GroupThread extends Thread {
 			if (!f.exists() && !f2.exists()) {
 				System.out.println("FATAL ERROR: GS key NOT found!\nSystem Exiting");
 				System.exit(1);
-			}
-
-			// set keys
-			if (f.exists() && f2.exists()) {
+			} else if ((pub == null) && (priv == null)) {
 				System.out.println("Setting GS public/private keys");
 				gc.setPublicKey("GS");
 				gc.setPrivateKey("GS");
 				pub = gc.getPublic();
 				priv = gc.getPrivate();
+			} else {
+				System.out.println("GS Keys already set!");
 			}
 
 			System.out.println("\n########### ATTEMPT TO SECURE CL CONNECTION ###########");
@@ -78,10 +82,20 @@ public class GroupThread extends Thread {
 					// If the ip is there, make sure that the pubkey matches.
 					PublicKey storedCliKey = my_gs.tcList.pubkeys.get(socket.getInetAddress().toString());
 					if (!storedCliKey.equals(clientK)) {
-						System.out.println("The stored fingerprint does not match the incoming client key!");
-						System.out.println("Terminating connection...");
-						socket.close(); // Close the socket
-						proceed = false; // End this communication loop
+						// prompt group client to see if they want to add ip:pubkey pair
+						// modified to let multiple clients connect if gs allows the connection
+						// or else it blocks because the keypairs generated for each client is different
+						Scanner in = new Scanner(System.in);
+						System.out.println("Warning: stored fingerprint do not match the incoming client key!");
+						System.out.println("Continue letting client connect? (y/n)");
+						if (in.next().charAt(0) == 'y') {
+							System.out.println("Adding client's public key to trusted clients list...");
+							my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
+						} else {
+							System.out.println("Terminating connection...");
+							socket.close(); // Close the socket
+							proceed = false; // End this communication loop
+						}
 					}
 					// The keys match, it's safe to proceed
 					else {
