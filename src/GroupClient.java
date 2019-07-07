@@ -41,6 +41,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 					// decrypt and Verify
 					byte[] encryptedToken = (byte[]) response.getObjContents().get(0);
 					byte[] out = (byte[]) response.getObjContents().get(1);
+
 					// when requesting a "GET" request, create an HMAC instance in case client
 					// wants to send to FS [HMAC(Kc, Kg || Token)]Kg-1
 					fsMac = (byte[]) response.getObjContents().get(2);

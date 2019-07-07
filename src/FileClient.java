@@ -103,11 +103,18 @@ public class FileClient extends Client implements FileClientInterface {
 	public List<String> listFiles(UserToken token) {
 		try {
 			Envelope message = null, e = null;
-			// Tell the server to return the member list
+
 			message = new Envelope("LFILES");
-			byte[] encTokKey = c.encrypt("AES", (c.toString(groupK) + "-" + token.toString()), sharedKey);
-			message.addObject(encTokKey); // Add encrypted token/key
-			// System.out.println("hi" + c.toString(fsMac));
+
+			String pubKey = c.toString(groupK);
+
+			String concatted = pubKey + token;
+			// System.out.println(concatted);
+
+			// Encrypt with shared key
+			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+
+			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
 			output.writeObject(message);
 

@@ -153,18 +153,20 @@ public class GroupThread extends Thread {
 
 						// First, stringify everything
 						String pubKey = gc.toString(gc.getPublic());
+						// System.out.println("OUTPUT" + pubKey);
 						String token = null;
 						if (yourToken != null) {
 							token = yourToken.toString();
 						}
 
 						// Concat token with pubkey and encrypt with shared key.
-						String concatted = pubKey + token;
+						String concatted = pubKey + "||" + token;
 						byte[] bconcatted = concatted.getBytes();
 
 						// Encrypt with shared key
 						byte[] encryptedToken = gc.encrypt("AES", concatted, _aesKey);
 
+						System.out.println(concatted);
 						// Then HMAC(pubkey || token, ClientKey) and sign
 						Mac mac = Mac.getInstance("HmacSHA256", "BC");
 						mac.init(clientK);

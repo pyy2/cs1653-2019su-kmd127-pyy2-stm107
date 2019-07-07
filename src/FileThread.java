@@ -107,18 +107,26 @@ public class FileThread extends Thread {
 							byte[] tokKey = (byte[]) e.getObjContents().get(0);
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
-							// split token/key
+							// decrypt to get token/key
 							String decrypted = fc.decrypt("AES", tokKey, _aesKey);
-							StringTokenizer st = new StringTokenizer(decrypted, "-");
+							StringTokenizer st = new StringTokenizer(decrypted, "||");
 							String groupK = st.nextToken();
 							String token = st.nextToken();
 
-							// // create an HMAC from the tokkey byte using client's public key
-							// if (!fc.verifySignature(fc.createHmac(tokKey, true), sigHmac,
-							// fc.stringToPK(groupK))) {
-							// output.writeObject(response);
-							// return;
-							// }
+							// System.out.println(decrypted);
+
+							// get decrypted bytes and an HMAC of it
+							byte[] bconcatted = decrypted.getBytes();
+							Mac mac = Mac.getInstance("HmacSHA256", "BC");
+							mac.init(fc.getSysK()); // client key
+							mac.update(bconcatted);
+							byte[] out = mac.doFinal();
+
+							// create an HMAC from the tokkey byte using client's public key
+							if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+								output.writeObject(response);
+								return;
+							}
 
 							UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
