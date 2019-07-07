@@ -105,10 +105,11 @@ public class FileClient extends Client implements FileClientInterface {
 			Envelope message = null, e = null;
 			// Tell the server to return the member list
 			message = new Envelope("LFILES");
-			byte[] encTokKey = c.encrypt("AES", (c.toString(groupK) + "||" + token.toString()), sharedKey);
+			byte[] encTokKey = c.encrypt("AES", (c.toString(groupK) + "-" + token.toString()), sharedKey);
 			message.addObject(encTokKey); // Add encrypted token/key
+			// System.out.println("hi" + c.toString(fsMac));
+			message.addObject(fsMac); // add signed data
 			output.writeObject(message);
-			System.out.println("Client message sent");
 
 			e = (Envelope) input.readObject();
 

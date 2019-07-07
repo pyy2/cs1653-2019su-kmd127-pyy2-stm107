@@ -5,6 +5,7 @@ import java.util.*;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import javax.crypto.SecretKey;
+import javax.crypto.Mac;
 
 public abstract class Client {
 
@@ -21,17 +22,21 @@ public abstract class Client {
 	ObjectInputStream tfsStream;
 
 	// crypto stuff
-	static PublicKey groupK;
+
 	protected Crypto c;
 	PublicKey pub; // clien'ts publickey
 	PrivateKey priv; // client's private key
 	SecretKey sharedKey; // symmetric AES key
 	PublicKey fsPub; // fileserver public key
 
+	// accessible in FileClient thread
+	static PublicKey groupK;
+	static byte[] fsMac;
 	// KeyPair keyPair;
 	// ObjectInputStream keyPairStream;
 
 	public boolean connect(final String server, final int port, final String type, final String clientNum) {
+		fsMac = null;
 
 		String clientConfig = "CL" + clientNum;
 

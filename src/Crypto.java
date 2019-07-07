@@ -21,6 +21,7 @@ import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Base64;
 
 class Crypto {
 
@@ -89,6 +90,22 @@ class Crypto {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    PublicKey stringToPK(String s) {
+        PublicKey k = null;
+
+        try {
+            byte[] data = Base64.getDecoder().decode((s.getBytes()));
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
+            KeyFactory fact = KeyFactory.getInstance("RSA");
+            k = fact.generatePublic(spec);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e2) {
+            e2.printStackTrace();
+        }
+        return k;
     }
 
     // return host public key
@@ -269,6 +286,38 @@ class Crypto {
             System.out.println("Unable to verify HMAC. Is there a man in the middle??\n\n");
             return false;
         }
+    }
+
+    // used for fs client to verify that group sent
+    byte[] createHmac(byte[] macBytes, Boolean t) {
+        byte[] out = null;
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256", "BC");
+            mac.init(sysK); // use client's key
+            mac.update(macBytes);
+            out = mac.doFinal();
+        } catch (Exception e) {
+            System.out.println("EXCEPTION CREATING HMAC: " + e);
+        }
+        return out;
+    }
+
+    boolean verifySignature(byte[] checksum, byte[] signChecksum, PublicKey k) {
+        boolean verify = false;
+        try {
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            sig.initVerify(k);
+            sig.update(checksum);
+            verify = sig.verify(signChecksum);
+        } catch (Exception e) {
+            System.out.println("EXCEPTION VERIFYING SIGNATURE: " + e);
+        }
+        if (verify) {
+            System.out.printf("Signature verified!\n");
+        } else {
+            System.out.println("Unable to verify signature!\n");
+        }
+        return verify;
     }
 
     /*
