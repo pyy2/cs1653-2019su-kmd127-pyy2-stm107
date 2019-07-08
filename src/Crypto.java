@@ -35,7 +35,7 @@ class Crypto {
 
     // constructor
     Crypto() {
-        Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         sysK = null;
         pub = null;
         priv = null;
