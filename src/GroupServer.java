@@ -56,7 +56,7 @@ public class GroupServer extends Server {
 			System.out.println("Unable to load list of trusted clients.");
 			System.out.println("Exception: " + e);
 		}
-		
+
 		// Open user file to get user list
 		try {
 			FileInputStream fis = new FileInputStream(userFile);
@@ -74,6 +74,14 @@ public class GroupServer extends Server {
 			// ADMIN group.
 			userList = new UserList();
 			userList.addUser(username, password);
+			while(!userList.checkUser(username)){
+				System.out.println("Please try again.");
+				System.out.print("Enter your username: ");
+				username = console.next();
+				System.out.print("Enter your password: ");
+				password = console.next();
+				userList.addUser(username, password);
+			}
 			userList.addGroup(username, "ADMIN");
 			userList.addOwnership(username, "ADMIN");
 

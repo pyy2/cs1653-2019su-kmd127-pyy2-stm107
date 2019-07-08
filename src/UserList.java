@@ -45,23 +45,41 @@ import java.math.BigInteger;
 
 		public synchronized void addUser(String username, String password)
 		{
-			byte[] pwd_hash;
-			try{
-				MessageDigest md = MessageDigest.getInstance("SHA-256");
-				// add password hash and boolean for passwordNeedsChanged (true on creation, set to false on first login)
-				md.update(password.getBytes());
-				pwd_hash = md.digest();
+			// Check the username requirements
+			if(isValidUsername(username)){
+				if(isValidPassword(password)){
+					byte[] pwd_hash;
+					try{
+						MessageDigest md = MessageDigest.getInstance("SHA-256");
+						// add password hash and boolean for passwordNeedsChanged (true on creation, set to false on first login)
+						md.update(password.getBytes());
+						pwd_hash = md.digest();
+					}
+					catch(Exception e){
+						System.out.println("Error generating password hash: " + e);
+						return;
+					}
+
+					User newUser = new User();
+					newUser.pwd_hash = pwd_hash;
+					newUser.passwordNeedsChanged = true;
+					list.put(username, newUser);
+					System.out.println("This is the user: " + list.get(username));
+				}
+				else{
+					System.out.println("Invalid Password.");
+					System.out.println("Passwords must be at least 8 characters long and contain one number, one upper case letter, one lower case letter.");
+					System.out.println("Some special characters are not allowed");
+					return;
+
+				}
 			}
-			catch(Exception e){
-				System.out.println("Error generating password hash: " + e);
+			else{
+				System.out.println("Invalid Username.");
+				System.out.println("Usernames must be at least 4 characters long and contain only letters and numbers.");
 				return;
 			}
 
-			User newUser = new User();
-			newUser.pwd_hash = pwd_hash;
-			newUser.passwordNeedsChanged = true;
-			list.put(username, newUser);
-			System.out.println("This is the user: " + list.get(username));
 		}
 
 		public synchronized void deleteUser(String username)
@@ -112,6 +130,9 @@ import java.math.BigInteger;
 		public synchronized boolean resetPassword(String username, String password){
       byte[] pwd_hash;
 			byte[] old_pwd;
+			if(!isValidPassword(password)){
+				return false;
+			}
 			try{
 				MessageDigest md = MessageDigest.getInstance("SHA-256");
 				md.update(password.getBytes());
@@ -160,6 +181,38 @@ import java.math.BigInteger;
 		public synchronized void removeOwnership(String user, String groupname)
 		{
 				list.get(user).removeOwnership(groupname);
+		}
+
+		public boolean isValidPassword(String password){
+			boolean onelower = false;
+			boolean oneupper = false;
+			boolean onenum = false;
+			if(password.length() < 8) return false;
+			for(char ch: password.toCharArray()){
+				if(Character.isUpperCase(ch)){
+					oneupper = true;
+				}
+				else if(Character.isLowerCase(ch)){
+					onelower = true;
+				}
+				else if(Character.isDigit(ch)){
+					onenum = true;
+				}
+				// predetermined invalid characters
+				else if(ch == ' ' || ch == '*' || ch == ';' || ch =='\\' || ch == '-'){
+					return false;
+				}
+			}
+			return (onelower && oneupper && onenum);
+		}
+		public boolean isValidUsername(String username){
+			if(username.length() < 3) return false;
+			for(char ch: username.toCharArray()){
+				if(!Character.isLetterOrDigit(ch)){
+					return false;
+				}
+			}
+			return true;
 		}
 
 
