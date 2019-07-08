@@ -6,10 +6,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.io.ObjectInputStream;
 import javax.crypto.Mac;
 import java.security.Signature;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.Base64;
 
 public class FileClient extends Client implements FileClientInterface {
@@ -23,7 +25,6 @@ public class FileClient extends Client implements FileClientInterface {
 		}
 		Envelope env = new Envelope("DELETEF"); // Success
 		env.addObject(remotePath);
-		// env.addObject(token);
 		String pubKey = c.toString(groupK);
 		String concatted = pubKey + token;
 
@@ -64,39 +65,37 @@ public class FileClient extends Client implements FileClientInterface {
 				FileOutputStream fos = new FileOutputStream(file);
 
 				Envelope env = new Envelope("DOWNLOADF"); // Success
-				env.addObject(sourceFile);
-				// env.addObject(token);
-				// message.addObject(token); // Add requester's token
-				String pubKey = c.toString(groupK);
-				String concatted = pubKey + token;
 
+				// prepare metadata request
+				String pubKey = c.toString(groupK);
+				String concatted = pubKey + token + "||" + sourceFile;
 				byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
 
 				env.addObject(encryptedToken); // Add encrypted token/key
 				env.addObject(fsMac); // add signed data
-
 				output.writeObject(env);
 
 				env = (Envelope) input.readObject();
-
-				while (env.getMessage().compareTo("CHUNK") == 0) {
-					fos.write((byte[]) env.getObjContents().get(0), 0, (Integer) env.getObjContents().get(1));
-					System.out.printf(".");
-					env = new Envelope("DOWNLOADF"); // Success
-					output.writeObject(env);
-					env = (Envelope) input.readObject();
-				}
-				fos.close();
-
-				if (env.getMessage().compareTo("EOF") == 0) {
+				if (env.getMessage().equals("READY")) {
+					while (env.getMessage().compareTo("CHUNK") == 0) {
+						fos.write((byte[]) env.getObjContents().get(0), 0, (Integer) env.getObjContents().get(1));
+						System.out.printf(".");
+						env = new Envelope("DOWNLOADF"); // Success
+						output.writeObject(env);
+						env = (Envelope) input.readObject();
+					}
 					fos.close();
-					System.out.printf("\nTransfer successful file %s\n", sourceFile);
-					env = new Envelope("OK"); // Success
-					output.writeObject(env);
-				} else {
-					System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
-					file.delete();
-					return false;
+
+					if (env.getMessage().compareTo("EOF") == 0) {
+						fos.close();
+						System.out.printf("\nTransfer successful file %s\n", sourceFile);
+						env = new Envelope("OK"); // Success
+						output.writeObject(env);
+					} else {
+						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
+						file.delete();
+						return false;
+					}
 				}
 			}
 
@@ -116,17 +115,15 @@ public class FileClient extends Client implements FileClientInterface {
 		return true;
 	}
 
-	@SuppressWarnings("unchecked")
 	public List<String> listFiles(UserToken token) {
 		try {
 			Envelope message = null, e = null;
 
-			message = new Envelope("LFILES");
+			message = new Envelope("LFILES"); // Success
 
+			// prepare request
 			String pubKey = c.toString(groupK);
-
 			String concatted = pubKey + token;
-			// System.out.println(concatted);
 
 			// Encrypt with shared key
 			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
@@ -139,11 +136,14 @@ public class FileClient extends Client implements FileClientInterface {
 
 			// If server indicates success, return the member list
 			if (e.getMessage().equals("OK")) {
-				return (List<String>) e.getObjContents().get(0); // This cast creates compiler warnings. Sorry.
+				byte[] flist = (byte[]) e.getObjContents().get(0);
+
+				if (flist != null) {
+					String[] filenames = c.decrypt("AES", flist, sharedKey).split("\\|\\|");
+					return Arrays.asList(filenames);
+				}
 			}
-
 			return null;
-
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
@@ -158,16 +158,13 @@ public class FileClient extends Client implements FileClientInterface {
 		}
 
 		try {
-
 			Envelope message = null, env = null;
 			// Tell the server to return the member list
-			message = new Envelope("UPLOADF");
-			message.addObject(destFile);
-			message.addObject(group);
-			// message.addObject(token); // Add requester's token
-			String pubKey = c.toString(groupK);
-			String concatted = pubKey + token;
+			message = new Envelope("UPLOADF"); // Success
 
+			// prepare metadata request
+			String pubKey = c.toString(groupK);
+			String concatted = pubKey + token + "||" + destFile + "||" + group;
 			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
 
 			message.addObject(encryptedToken); // Add encrypted token/key
@@ -181,9 +178,7 @@ public class FileClient extends Client implements FileClientInterface {
 			// If server indicates success, return the member list
 			if (env.getMessage().equals("READY")) {
 				System.out.printf("Meta data upload successful\n");
-
 			} else {
-
 				System.out.printf("Upload failed: %s\n", env.getMessage());
 				return false;
 			}

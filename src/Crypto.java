@@ -289,11 +289,11 @@ class Crypto {
     }
 
     // used for fs client to verify that group sent
-    byte[] createHmac(byte[] macBytes, Boolean t) {
+    byte[] createClientHmac(byte[] macBytes, PublicKey k) {
         byte[] out = null;
         try {
             Mac mac = Mac.getInstance("HmacSHA256", "BC");
-            mac.init(sysK); // use client's key
+            mac.init(k); // use client's key
             mac.update(macBytes);
             out = mac.doFinal();
         } catch (Exception e) {
@@ -336,6 +336,7 @@ class Crypto {
         }
         return new Token(issuer, subject, groups);
     }
+
     /*
      *
      * ******** MISC. ********
