@@ -5,6 +5,8 @@ import java.lang.Thread;
 import java.net.Socket;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.*;
+import java.util.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -39,25 +41,9 @@ public class FileThread extends Thread {
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 			Envelope response;
 
-			final String path = "./FSpublic.key";
-			final String path2 = "./FSprivate.key";
-			File f1 = new File(path);
-			File f2 = new File(path2);
+			pub = FileServer.pub;
+			priv = FileServer.priv;
 
-			// if key files don't exist, something went wrong on initialization, ABORT
-			if (!f1.exists() && !f2.exists()) {
-				System.out.println("FATAL ERROR: FS key NOT found!\n System Exiting");
-				System.exit(1);
-			}
-
-			// set keys
-			if (f1.exists() && f2.exists()) {
-				System.out.println("Setting FS public/private keys\n");
-				fc.setPublicKey("FS");
-				fc.setPrivateKey("FS");
-				pub = fc.getPublic();
-				priv = fc.getPrivate();
-			}
 			System.out.println(fc.RSAtoString(pub));
 
 			System.out.println("\n########### SECURING CLIENT CONNECTION ###########");

@@ -44,9 +44,9 @@ class Crypto {
     }
 
     /*
-     * 
+     *
      * ******** RSA Public/Private Keys ********
-     * 
+     *
      */
 
     // create keys into key files if not generated already
@@ -128,9 +128,9 @@ class Crypto {
     }
 
     /*
-     * 
+     *
      * ******** AES Symmetric Keys ********
-     * 
+     *
      */
 
     // generate AES key
@@ -157,9 +157,9 @@ class Crypto {
     }
 
     /*
-     * 
+     *
      * ******** Encryption/Decryption ********
-     * 
+     *
      */
 
     // encryption
@@ -205,9 +205,9 @@ class Crypto {
     }
 
     /*
-     * 
+     *
      * ******** SHA256/Signature/HMAC ********
-     * 
+     *
      */
 
     byte[] createChecksum(String data) {
@@ -321,9 +321,9 @@ class Crypto {
     }
 
     /*
-     * 
+     *
      * ******** TOKEN ********
-     * 
+     *
      */
 
     UserToken makeTokenFromString(String tokenString) {
@@ -337,9 +337,9 @@ class Crypto {
         return new Token(issuer, subject, groups);
     }
     /*
-     * 
+     *
      * ******** MISC. ********
-     * 
+     *
      */
 
     boolean isEqual(byte[] a, byte[] b) {
@@ -371,11 +371,11 @@ class Crypto {
     }
 
     /*
-     * 
-     * 
+     *
+     *
      * ******** Helper Methods ********
-     * 
-     * 
+     *
+     *
      */
 
     // Save keys to file

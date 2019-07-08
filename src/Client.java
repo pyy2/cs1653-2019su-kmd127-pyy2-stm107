@@ -16,7 +16,7 @@ public abstract class Client {
 	protected Socket sock;
 	protected ObjectOutputStream output;
 	protected ObjectInputStream input;
-	String keyFile = "ClientKeyPair.bin";
+	//String keyFile = "ClientKeyPair.bin";
 	String tfsFile = "TrustedFServer.bin";
 	TrustedFServer tfsList;
 	ObjectInputStream tfsStream;
@@ -62,6 +62,20 @@ public abstract class Client {
 			priv = c.getPrivate();
 		}
 		System.out.println(c.RSAtoString(pub)); // print out public key base64
+
+		// Open the trusted file servers list
+		try {
+			FileInputStream fis_tfs = new FileInputStream(tfsFile);
+			tfsStream = new ObjectInputStream(fis_tfs);
+			tfsList = (TrustedFServer) tfsStream.readObject();
+		} catch (FileNotFoundException e) {
+			System.out.println("No Trusted File Servers found!");
+			System.out.println("Instantiating Trusted File Servers list...");
+			tfsList = new TrustedFServer();
+		} catch (Exception e) {
+			System.out.println("Unable to load list of trusted file servers.");
+			System.out.println("Exception: " + e);
+		}
 		System.out.println("###########################################");
 
 		// Try to create new socket connection
@@ -112,32 +126,50 @@ public abstract class Client {
 				output.flush();
 				System.out.println("\nClient public key -> FS:\n" + c.RSAtoString(pub));
 
-				// if (my_gs.tcList.pubkeys != null) {
-				// // Check to see if ip:pubkey pair exists yet.
-				// if (my_gs.tcList.pubkeys.containsKey(socket.getInetAddress().toString())) {
-				// // If the ip is there, make sure that the pubkey matches.
-				// PublicKey storedCliKey =
-				// my_gs.tcList.pubkeys.get(socket.getInetAddress().toString());
-				// if (!storedCliKey.equals(clientK)) {
-				// System.out.println("The stored fingerprint does not match the incoming client
-				// key!");
-				// System.out.println("Terminating connection...");
-				// socket.close(); // Close the socket
-				// proceed = false; // End this communication loop
-				// }
-				// // The keys match, it's safe to proceed
-				// else {
-				// System.out.println("Fingerprint verified!");
-				// }
-				// }
-				// // IP does not yet exist in trusted client list. Add it.
-				// else {
-				// System.out.println("This is your first time connecting this client to the
-				// group server.");
-				// System.out.println("Adding client's public key to trusted clients list...");
-				// my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
-				// }
-				// }
+				if(tfsList == null){
+					tfsList = new TrustedFServer();
+				}
+				if (tfsList.pubkeys != null) {
+					// Check to see if ip:pubkey pair exists yet.
+					if (tfsList.pubkeys.containsKey(sock.getInetAddress().toString())) {
+					// If the ip is there, make sure that the pubkey matches.
+					List<PublicKey> storedFSKeys = tfsList.pubkeys.get(sock.getInetAddress().toString());
+					tfsList.pubkeys.get(sock.getInetAddress().toString());
+						if (!storedFSKeys.contains(fsPub)) {
+							Scanner in = new Scanner(System.in);
+							System.out.println("Warning: stored fingerprint do not match the incoming file server key!");
+							System.out.println("Continue connecting to file server? (y/n)");
+							if (in.next().charAt(0) == 'y') {
+								System.out.println("Adding file server's public key to trusted file servers list...");
+								tfsList.addServer(sock.getInetAddress().toString(), fsPub);
+							}
+							else{
+								System.out.println("Terminating connection...");
+								sock.close(); // Close the socket
+							}
+						}
+						// The keys match, it's safe to proceed
+						else {
+							System.out.println("File Server Fingerprint verified!");
+						}
+					}
+					// IP does not yet exist in trusted client list. Add it.
+					else {
+						System.out.println("This is your first time connecting this client to the file server.");
+						System.out.println("Adding server's public key to trusted file server list...");
+						tfsList.addServer(sock.getInetAddress().toString(), fsPub);
+					}
+				}
+
+				// Save the Trusted File Server List
+				ObjectOutputStream outStream;
+				try {
+					outStream = new ObjectOutputStream(new FileOutputStream(tfsFile));
+					outStream.writeObject(tfsList);
+				} catch (Exception e) {
+					System.err.println("Error: " + e.getMessage());
+					e.printStackTrace(System.err);
+				}
 
 				// generate aes key + challenge
 				c.genAESKey(); // create AES key

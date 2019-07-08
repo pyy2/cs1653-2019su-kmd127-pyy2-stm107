@@ -1,6 +1,8 @@
 
 /* FileServer loads files from FileList.bin.  Stores files in shared_files directory. */
 
+import java.io.*;
+import java.util.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -11,10 +13,17 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+// security packages
+import java.security.*;
+import javax.crypto.*;
+
 public class FileServer extends Server {
 
 	public static final int SERVER_PORT = 4321;
 	public static FileList fileList;
+	public static PublicKey pub; // fs public key
+	public static PrivateKey priv; // fs private key
+	Crypto fc; // filecrypto class
 	public final String fileConfig = "FS";
 
 	public FileServer() {
@@ -26,6 +35,36 @@ public class FileServer extends Server {
 	}
 
 	public void start() {
+		fc = new Crypto();
+		// So 2 different servers don't use same keyfile
+		Scanner kb = new Scanner(System.in);
+		System.out.println("File Server #: ");
+		String fsNum = Integer.toString(kb.nextInt());
+		fsNum = fsNum.replaceAll("[^a-zA-Z0-9]", "");
+		String flush = kb.nextLine();
+
+		final String path = "./FS"+fsNum+"public.key";
+		final String path2 = "./FS"+fsNum+"private.key";
+		File f1 = new File(path);
+		File f2 = new File(path2);
+
+		// if key files don't exist, something went wrong on initialization, ABORT
+		if (!f1.exists() && !f2.exists()) {
+			System.out.println("FS key NOT found!\n Generating FS Keys");
+			Crypto crypto = new Crypto();
+			crypto.setSystemKP("FS"+fsNum);
+			//System.exit(1);
+		}
+
+		// set keys
+		if (f1.exists() && f2.exists()) {
+			System.out.println("Setting FS public/private keys\n");
+			fc.setPublicKey("FS"+fsNum);
+			fc.setPrivateKey("FS"+fsNum);
+			pub = fc.getPublic();
+			priv = fc.getPrivate();
+		}
+
 		String fileFile = "FileList.bin";
 		ObjectInputStream fileStream;
 
@@ -61,18 +100,18 @@ public class FileServer extends Server {
 			System.out.println("Error creating shared_files directory");
 		}
 
-		// check if groupserver keys exist
-		final String path = "./FSpublic.key";
-		final String path2 = "./FSprivate.key";
-		File f = new File(path);
-		File f2 = new File(path2);
-		Crypto crypto = new Crypto();
-
-		// if key files don't exist, create new ones
-		if (!f.exists() && !f2.exists()) {
-			System.out.println("FS key NOT found!");
-			crypto.setSystemKP(fileConfig);
-		}
+		// // check if groupserver keys exist
+		// final String path = "./FSpublic.key";
+		// final String path2 = "./FSprivate.key";
+		// File f = new File(path);
+		// File f2 = new File(path2);
+		// Crypto crypto = new Crypto();
+		//
+		// // if key files don't exist, create new ones
+		// if (!f.exists() && !f2.exists()) {
+		// 	System.out.println("FS key NOT found!");
+		// 	crypto.setSystemKP(fileConfig);
+		// }
 		// // now they should exist, set public/private key
 		// if (f.exists() && f2.exists()) {
 		// System.out.println("FS keys found!\nSetting public/private key");

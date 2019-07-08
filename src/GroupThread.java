@@ -80,8 +80,11 @@ public class GroupThread extends Thread {
 				// Check to see if ip:pubkey pair exists yet.
 				if (my_gs.tcList.pubkeys.containsKey(socket.getInetAddress().toString())) {
 					// If the ip is there, make sure that the pubkey matches.
-					PublicKey storedCliKey = my_gs.tcList.pubkeys.get(socket.getInetAddress().toString());
-					if (!storedCliKey.equals(clientK)) {
+					// System.out.println("This is the contents of the trusted client file: ");
+					// System.out.println(my_gs.tcList.pubkeys);
+					// System.out.println("\n\n\n");
+					List<PublicKey> storedCliKeys = my_gs.tcList.pubkeys.get(socket.getInetAddress().toString());
+					if (!storedCliKeys.contains(clientK)) {
 						// prompt group client to see if they want to add ip:pubkey pair
 						// modified to let multiple clients connect if gs allows the connection
 						// or else it blocks because the keypairs generated for each client is different
@@ -91,6 +94,9 @@ public class GroupThread extends Thread {
 						if (in.next().charAt(0) == 'y') {
 							System.out.println("Adding client's public key to trusted clients list...");
 							my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
+							// System.out.println("This is the contents of the trusted client file AFTER ADDING: ");
+							// System.out.println(my_gs.tcList.pubkeys);
+							// System.out.println("\n\n\n");
 						} else {
 							System.out.println("Terminating connection...");
 							socket.close(); // Close the socket
@@ -99,7 +105,7 @@ public class GroupThread extends Thread {
 					}
 					// The keys match, it's safe to proceed
 					else {
-						System.out.println("Fingerprint verified!");
+						System.out.println("Client Fingerprint verified!");
 					}
 				}
 				// IP does not yet exist in trusted client list. Add it.
