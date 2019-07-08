@@ -4,6 +4,7 @@ JFLAGS2 = -cp '../src/jar/bcprov-ext-jdk15on-162.jar:.'
 JAR = https://www.bouncycastle.org/download/bcprov-ext-jdk15on-162.jar
 CURRENT_DIR = $(PWD)
 
+
 default: all
 
 all:
@@ -13,13 +14,16 @@ all:
 	$(JC) $(JFLAGS) -d './build' src/*.java
 
 gs:
-	cd build && java $(JFLAGS2) RunGroupServer 8765
+	cd build && java $(JFLAGS2) RunGroupServer $(GPORT)
 
 fs:
-	cd build && java $(JFLAGS2) RunFileServer 4321
+	cd build && java $(JFLAGS2) RunFileServer $(FPORT)
 
 cl:
 	cd build && java $(JFLAGS2) ClientDriver
+
+gui:
+	cd build && java $(JFLAGS2) ClientGui
 
 rb:
 	$(JC) $(JFLAGS) -d './build' src/*.java

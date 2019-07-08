@@ -4,6 +4,6 @@ From root of working dir
 
 # Running
 From root of working dir
-- Enter 'make gs'
-- Open new terminal and from root of working dir enter 'make fs'
+- Enter 'make gs GPORT=<port>'
+- Open new terminal and from root of working dir enter 'make fs FPORT=<port>'
 - Open new terminal and from root of working dir enter 'make cl'

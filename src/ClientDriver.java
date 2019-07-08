@@ -55,7 +55,7 @@ public class ClientDriver {
 
     while (true) {
       System.out.println("What would you like to do?");
-      System.out.println("Please select from the following operations (please enter a number 1-14): ");
+      System.out.println("Please select from the following operations (please enter a number 1-15): ");
       System.out.println("1. Log in (Get user token)");
       System.out.println("2. Reset password.");
       System.out.println("3. Create a new user.");
@@ -69,7 +69,8 @@ public class ClientDriver {
       System.out.println("11. Upload a file.");
       System.out.println("12. Download a file.");
       System.out.println("13. Delete a file.");
-      System.out.println("14. Exit");
+      System.out.println("14. Logout");
+      System.out.println("15. Exit");
       System.out.print(">> ");
 
       String command = kb.nextLine();
@@ -115,9 +116,10 @@ public class ClientDriver {
         deleteFile();
         break;
       case "14":
+        logout();
+        break();
+      case "15":
         exit();
-      // case "000":
-      //   unlockUser();
       default:
         System.out.println("\nI'm sorry, I didn't understand your input. Let's try again.\n");
       }
@@ -176,6 +178,12 @@ public class ClientDriver {
       System.out.println("Error when logging in with the requested user.\n");
       return false;
     }
+  }
+
+  private static boolean logout(){
+    utkn = null;
+    System.out.println("Logged out.\n\n");
+    printMenu();
   }
 
   // TODO: Implement account locking.
