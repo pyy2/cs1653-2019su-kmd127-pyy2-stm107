@@ -224,7 +224,8 @@ class Crypto {
     byte[] signChecksum(byte[] checksum) {
         byte[] sigBytes = null;
         try {
-            Signature sig = Signature.getInstance("SHA256withRSA"); // sign
+          //TODO: Should be SHA256withRSA
+            Signature sig = Signature.getInstance("RSA"); // sign
             sig.initSign(priv); // sign with private key
             sig.update(checksum); // input checksum
             sigBytes = sig.sign(); // sign
@@ -241,7 +242,8 @@ class Crypto {
     boolean verifySignature(byte[] checksum, byte[] signChecksum) {
         boolean verify = false;
         try {
-            Signature sig = Signature.getInstance("SHA256withRSA");
+          //TODO: Should be SHA256withRSA
+            Signature sig = Signature.getInstance("RSA");
             sig.initVerify(sysK);
             sig.update(checksum);
             verify = sig.verify(signChecksum);
@@ -305,7 +307,8 @@ class Crypto {
     boolean verifySignature(byte[] checksum, byte[] signChecksum, PublicKey k) {
         boolean verify = false;
         try {
-            Signature sig = Signature.getInstance("SHA256withRSA");
+          //TODO: Should be SHA256withRSA
+            Signature sig = Signature.getInstance("RSA");
             sig.initVerify(k);
             sig.update(checksum);
             verify = sig.verify(signChecksum);

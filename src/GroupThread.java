@@ -379,7 +379,7 @@ public class GroupThread extends Thread {
 										output.writeObject(response);
 										return;
 									}
-									if (!gc.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data, clientK)) {
 										output.writeObject(response);
 										return;
 									}
@@ -450,7 +450,7 @@ public class GroupThread extends Thread {
 										output.writeObject(response);
 										return;
 									}
-									if (!gc.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data, clientK)) {
 										output.writeObject(response);
 										return;
 									}
@@ -492,7 +492,7 @@ public class GroupThread extends Thread {
 										output.writeObject(response);
 										return;
 									}
-									if (!gc.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data, clientK)) {
 										output.writeObject(response);
 										return;
 									}
@@ -528,7 +528,7 @@ public class GroupThread extends Thread {
 										output.writeObject(response);
 										return;
 									}
-									if (!gc.verifySignature(hmac, signed_data)) {
+									if (!gc.verifySignature(hmac, signed_data, clientK)) {
 										output.writeObject(response);
 										return;
 									}
