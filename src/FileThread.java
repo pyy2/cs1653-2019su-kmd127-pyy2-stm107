@@ -13,7 +13,6 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.String;
-import java.util.StringTokenizer;
 
 // security packages
 import java.security.*;
@@ -48,31 +47,33 @@ public class FileThread extends Thread {
 
 			System.out.println("\n########### SECURING CLIENT CONNECTION ###########");
 
-			System.out.println("FS public key -> Client:\n" + fc.RSAtoString(pub));
+			// System.out.println("FS public key -> Client:\n" + fc.RSAtoString(pub));
 			output.writeObject(pub); // send file public key
 			output.flush();
 
 			fc.setSysK(input.readObject()); // set client's public key (encoded)
 			clientK = fc.getSysK();
-			System.out.println("Received client's public key: \n" + fc.RSAtoString(clientK));
+			// System.out.println("Received client's public key: \n" +
+			// fc.RSAtoString(clientK));
 
 			// get aes key + challenge
 			String s = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
 			String aesKey = s.substring(0, s.lastIndexOf("-"));
 			String challenge = s.substring(aesKey.length(), s.length());
-			System.out.println("AESKey: " + aesKey);
-			System.out.println("Challenge: " + challenge);
+			// System.out.println("AESKey: " + aesKey);
+			// System.out.println("Challenge: " + challenge);
 			fc.setAESKey(aesKey); // set aes key
 			_aesKey = fc.getAESKey();
 
 			// verify checksum
 			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
-			System.out.println("Client checksum:\n" + fc.toString(_checkSum)); // print
-			System.out.println("Checksum verified -> " + fc.isEqual(_checkSum, fc.createChecksum(s)));
+			// System.out.println("Client checksum:\n" + fc.toString(_checkSum)); // print
+			// System.out.println("Checksum verified -> " + fc.isEqual(_checkSum,
+			// fc.createChecksum(s)));
 
 			// verify signature
 			byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
-			System.out.println("Signed Checksum:\n" + fc.toString(signedChecksum));
+			// System.out.println("Signed Checksum:\n" + fc.toString(signedChecksum));
 
 			// respond with challenge
 			output.writeObject(challenge);
@@ -81,60 +82,13 @@ public class FileThread extends Thread {
 
 			do {
 				Envelope e = (Envelope) input.readObject();
+				response = null;
 				System.out.println("Request received: " + e.getMessage());
 
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
-					response = new Envelope("FAIL");
-					if (e.getObjContents().get(0) != null) {
-						if (e.getObjContents().get(1) != null) {
 
-							// get objects
-							byte[] tokKey = (byte[]) e.getObjContents().get(0);
-							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
-
-							// decrypt to get token/key
-							String decrypted = fc.decrypt("AES", tokKey, _aesKey);
-							StringTokenizer st = new StringTokenizer(decrypted, "||");
-							String groupK = st.nextToken();
-							String token = st.nextToken();
-
-							// System.out.println(decrypted);
-
-							// get decrypted bytes and an HMAC of it
-							byte[] bconcatted = decrypted.getBytes();
-							Mac mac = Mac.getInstance("HmacSHA256", "BC");
-							mac.init(fc.getSysK()); // client key
-							mac.update(bconcatted);
-							byte[] out = mac.doFinal();
-
-							// create an HMAC from the tokkey byte using client's public key
-							if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-								output.writeObject(response);
-								return;
-							}
-
-							UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
-
-							List<String> groups = yourToken.getGroups(); // get associated groups
-							List<ShareFile> sfiles = FileServer.fileList.getFiles();
-							List<String> fileList = new ArrayList<String>();
-
-							for (ShareFile sf : sfiles) {
-								if (groups.contains(sf.getGroup())) {
-									fileList.add(sf.getPath());
-								}
-							}
-							response = new Envelope("OK");
-							response.addObject(fileList);
-						}
-					}
-					output.writeObject(response);
-
-				}
-				if (e.getMessage().equals("UPLOADF")) {
-
-					if (e.getObjContents().size() < 3) {
+					if (e.getObjContents().size() < 2) {
 						response = new Envelope("FAIL-BADCONTENTS");
 					} else {
 						if (e.getObjContents().get(0) == null) {
@@ -142,181 +96,228 @@ public class FileThread extends Thread {
 						}
 						if (e.getObjContents().get(1) == null) {
 							response = new Envelope("FAIL-BADGROUP");
-						}
-						if (e.getObjContents().get(2) == null) {
-							response = new Envelope("FAIL-BADTOKEN");
 						} else {
-							String remotePath = (String) e.getObjContents().get(0);
-							String group = (String) e.getObjContents().get(1);
-							// UserToken yourToken = (UserToken) e.getObjContents().get(2); // Extract token
-							// get objects
-							byte[] tokKey = (byte[]) e.getObjContents().get(2);
-							byte[] sigHmac = (byte[]) e.getObjContents().get(3);
+							// base case
+							response = new Envelope("FAIL-BADHMAC");
+							// get user token||key and signed hmac by gs
+							byte[] tokKey = (byte[]) e.getObjContents().get(0);
+							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
 							// decrypt to get token/key
 							String decrypted = fc.decrypt("AES", tokKey, _aesKey);
-							StringTokenizer st = new StringTokenizer(decrypted, "||");
-							String groupK = st.nextToken();
-							String token = st.nextToken();
+							String[] st = decrypted.split("\\|\\|");
+							String groupK = st[0];
+							String token = st[1];
 
-							// System.out.println(decrypted);
+							// create hmac using client's publickey
+							byte[] out = fc.createClientHmac(decrypted.getBytes(), fc.getSysK());
 
-							// get decrypted bytes and an HMAC of it
-							byte[] bconcatted = decrypted.getBytes();
-							Mac mac = Mac.getInstance("HmacSHA256", "BC");
-							mac.init(fc.getSysK()); // client key
-							mac.update(bconcatted);
-							byte[] out = mac.doFinal();
-
-							// create an HMAC from the tokkey byte using client's public key
+							// verify groupkey signature
 							if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-								return;
-							}
-
-							UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
-
-							if (FileServer.fileList.checkFile(remotePath)) {
-								System.out.printf("Error: file already exists at %s\n", remotePath);
-								response = new Envelope("FAIL-FILEEXISTS"); // Success
-							} else if (!yourToken.getGroups().contains(group)) {
-								System.out.printf("Error: user missing valid token for group %s\n", group);
-								response = new Envelope("FAIL-UNAUTHORIZED"); // Success
+								response = new Envelope("FAIL-BADHMAC");
 							} else {
-								File file = new File("shared_files/" + remotePath.replace('/', '_'));
-								file.createNewFile();
-								FileOutputStream fos = new FileOutputStream(file);
-								System.out.printf("Successfully created file %s\n", remotePath.replace('/', '_'));
+								UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
-								response = new Envelope("READY"); // Success
-								output.writeObject(response);
+								List<String> groups = yourToken.getGroups(); // get associated groups
+								List<ShareFile> sfiles = FileServer.fileList.getFiles();
+								ArrayList<String> fileList = new ArrayList<String>();
 
-								e = (Envelope) input.readObject();
-								while (e.getMessage().compareTo("CHUNK") == 0) {
-									fos.write((byte[]) e.getObjContents().get(0), 0,
-											(Integer) e.getObjContents().get(1));
-									response = new Envelope("READY"); // Success
-									output.writeObject(response);
-									e = (Envelope) input.readObject();
+								for (ShareFile sf : sfiles) {
+									if (groups.contains(sf.getGroup())) {
+										fileList.add(sf.getPath());
+									}
 								}
 
-								if (e.getMessage().compareTo("EOF") == 0) {
-									System.out.printf("Transfer successful file %s\n", remotePath);
-									FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath);
-									response = new Envelope("OK"); // Success
-								} else {
-									System.out.printf("Error reading file %s from client\n", remotePath);
-									response = new Envelope("ERROR-TRANSFER"); // Success
-								}
-								fos.close();
+								// return encrypted arraylist
+								response = new Envelope("OK");
+								response.addObject(fc.createEncryptedString(fileList));
 							}
 						}
 					}
+					output.writeObject(response);
+				} else if (e.getMessage().equals("UPLOADF")) {
+					if (e.getObjContents().size() < 2) {
+						response = new Envelope("FAIL-BADCONTENTS");
+					} else {
+						if (e.getObjContents().get(0) == null) {
+							response = new Envelope("FAIL-BADREQUEST");
+						} else if (e.getObjContents().get(1) == null) {
+							response = new Envelope("FAIL-BADGROUP");
+						} else {
+							byte[] req = (byte[]) e.getObjContents().get(0);
+							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
+							// decrypt to get request (gsPK, token, destFile, group)
+							String decrypted = fc.decrypt("AES", req, _aesKey);
+							String[] st = decrypted.split("\\|\\|");
+
+							if (st.length != 4) {
+								response = new Envelope("FAIL-BADFIELDS");
+							} else {
+								String groupK = st[0];
+								String token = st[1];
+								String remotePath = st[2];
+								String group = st[3];
+
+								// create hmac from clientk
+								byte[] concatted = (groupK + "||" + token).getBytes();
+								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
+
+								// verify signature is from gs
+								if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+									response = new Envelope("FAIL-BADGSSIG");
+								} else {
+									UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
+
+									if (FileServer.fileList.checkFile(remotePath)) {
+										System.out.printf("Error: file already exists at %s\n", remotePath);
+										response = new Envelope("FAIL-FILEEXISTS"); // Success
+									} else if (!yourToken.getGroups().contains(group)) {
+										System.out.printf("Error: user missing valid token for group %s\n", group);
+										response = new Envelope("FAIL-UNAUTHORIZED"); // Success
+									} else {
+										File file = new File("shared_files/" + remotePath.replace('/', '_'));
+										file.createNewFile();
+										FileOutputStream fos = new FileOutputStream(file);
+										System.out.printf("Successfully created file %s\n",
+												remotePath.replace('/', '_'));
+
+										response = new Envelope("READY"); // Success
+										output.writeObject(response);
+
+										e = (Envelope) input.readObject();
+										while (e.getMessage().compareTo("CHUNK") == 0) {
+											fos.write((byte[]) e.getObjContents().get(0), 0,
+													(Integer) e.getObjContents().get(1));
+											response = new Envelope("READY"); // Success
+											output.writeObject(response);
+											e = (Envelope) input.readObject();
+										}
+
+										if (e.getMessage().compareTo("EOF") == 0) {
+											System.out.printf("Transfer successful file %s\n", remotePath);
+											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath);
+											response = new Envelope("OK"); // Success
+										} else {
+											System.out.printf("Error reading file %s from client\n", remotePath);
+											response = new Envelope("ERROR-TRANSFER"); // Success
+										}
+										fos.close();
+									}
+								}
+							}
+						}
+					}
 					output.writeObject(response);
 				} else if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
-					String remotePath = (String) e.getObjContents().get(0);
-					// Token t = (Token) e.getObjContents().get(1);
-					// get objects
-					byte[] tokKey = (byte[]) e.getObjContents().get(1);
-					byte[] sigHmac = (byte[]) e.getObjContents().get(2);
-
-					// decrypt to get token/key
-					String decrypted = fc.decrypt("AES", tokKey, _aesKey);
-					StringTokenizer st = new StringTokenizer(decrypted, "||");
-					String groupK = st.nextToken();
-					String token = st.nextToken();
-
-					// System.out.println(decrypted);
-
-					// get decrypted bytes and an HMAC of it
-					byte[] bconcatted = decrypted.getBytes();
-					Mac mac = Mac.getInstance("HmacSHA256", "BC");
-					mac.init(fc.getSysK()); // client key
-					mac.update(bconcatted);
-					byte[] out = mac.doFinal();
-
-					// create an HMAC from the tokkey byte using client's public key
-					if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-						output.writeObject(e);
-						return;
-					}
-
-					UserToken t = (UserToken) fc.makeTokenFromString(token);
-					ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
-					if (sf == null) {
-						System.out.printf("Error: File %s doesn't exist\n", remotePath);
-						e = new Envelope("ERROR_FILEMISSING");
-						output.writeObject(e);
-
-					} else if (!t.getGroups().contains(sf.getGroup())) {
-						System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
-						e = new Envelope("ERROR_PERMISSION");
-						output.writeObject(e);
+					if (e.getObjContents().size() < 2) {
+						response = new Envelope("FAIL-BADCONTENTS");
 					} else {
+						if (e.getObjContents().get(0) == null) {
+							response = new Envelope("FAIL-BADREQUEST");
+						}
+						if (e.getObjContents().get(1) == null) {
+							response = new Envelope("FAIL-BADHMAC");
+						} else {
+							byte[] req = (byte[]) e.getObjContents().get(0);
+							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
-						try {
-							File f = new File("shared_files/_" + remotePath.replace('/', '_'));
-							if (!f.exists()) {
-								System.out.printf("Error file %s missing from disk\n",
-										"_" + remotePath.replace('/', '_'));
-								e = new Envelope("ERROR_NOTONDISK");
-								output.writeObject(e);
+							// decrypt to get request (gsPK, token, destFile, group)
+							String decrypted = fc.decrypt("AES", req, _aesKey);
+							String[] st = decrypted.split("\\|\\|");
 
+							if (st.length != 3) {
+								response = new Envelope("FAIL-BADFIELDS");
 							} else {
-								FileInputStream fis = new FileInputStream(f);
+								String groupK = st[0];
+								String token = st[1];
+								String remotePath = st[2];
 
-								do {
-									byte[] buf = new byte[4096];
-									if (e.getMessage().compareTo("DOWNLOADF") != 0) {
-										System.out.printf("Server error: %s\n", e.getMessage());
-										break;
-									}
-									e = new Envelope("CHUNK");
-									int n = fis.read(buf); // can throw an IOException
-									if (n > 0) {
-										System.out.printf(".");
-									} else if (n < 0) {
-										System.out.println("Read error");
+								// create hmac from clientk
+								byte[] concatted = (groupK + "||" + token).getBytes();
+								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
 
-									}
-
-									e.addObject(buf);
-									e.addObject(new Integer(n));
-
-									output.writeObject(e);
-
-									e = (Envelope) input.readObject();
-
-								} while (fis.available() > 0);
-
-								// If server indicates success, return the member list
-								if (e.getMessage().compareTo("DOWNLOADF") == 0) {
-
-									e = new Envelope("EOF");
-									output.writeObject(e);
-
-									e = (Envelope) input.readObject();
-									if (e.getMessage().compareTo("OK") == 0) {
-										System.out.printf("File data upload successful\n");
-									} else {
-
-										System.out.printf("Upload failed: %s\n", e.getMessage());
-
-									}
-
+								// verify signature is from gs
+								if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+									response = new Envelope("FAIL-BADGSSIG");
 								} else {
 
-									System.out.printf("Upload failed: %s\n", e.getMessage());
+									UserToken t = (UserToken) fc.makeTokenFromString(token);
+									ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
+									if (sf == null) {
+										System.out.printf("Error: File %s doesn't exist\n", remotePath);
+										response = new Envelope("ERROR_FILEMISSING");
+									} else if (!t.getGroups().contains(sf.getGroup())) {
+										System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
+										response = new Envelope("ERROR_PERMISSION");
+									} else {
 
+										try {
+											File f = new File("shared_files/_" + remotePath.replace('/', '_'));
+											if (!f.exists()) {
+												System.out.printf("Error file %s missing from disk\n",
+														"_" + remotePath.replace('/', '_'));
+												response = new Envelope("ERROR_NOTONDISK");
+											} else {
+												FileInputStream fis = new FileInputStream(f);
+
+												do {
+													byte[] buf = new byte[4096];
+													if (e.getMessage().compareTo("DOWNLOADF") != 0) {
+														System.out.printf("Server error: %s\n", e.getMessage());
+														break;
+													}
+													e = new Envelope("CHUNK");
+													int n = fis.read(buf); // can throw an IOException
+													if (n > 0) {
+														System.out.printf(".");
+													} else if (n < 0) {
+														System.out.println("Read error");
+
+													}
+
+													e.addObject(buf);
+													e.addObject(new Integer(n));
+
+													output.writeObject(e);
+
+													e = (Envelope) input.readObject();
+
+												} while (fis.available() > 0);
+
+												// If server indicates success, return the member list
+												if (e.getMessage().compareTo("DOWNLOADF") == 0) {
+
+													e = new Envelope("EOF");
+													output.writeObject(e);
+
+													e = (Envelope) input.readObject();
+													if (e.getMessage().compareTo("OK") == 0) {
+														System.out.printf("File data upload successful\n");
+													} else {
+
+														System.out.printf("Upload failed: %s\n", e.getMessage());
+
+													}
+
+												} else {
+
+													System.out.printf("Upload failed: %s\n", e.getMessage());
+
+												}
+											}
+										} catch (Exception e1) {
+											System.err.println("Error: " + e1.getMessage());
+											response = new Envelope("FAIL-BADFILE");
+											// e1.printStackTrace(System.err);
+										}
+									}
 								}
 							}
-						} catch (Exception e1) {
-							System.err.println("Error: " + e.getMessage());
-							e1.printStackTrace(System.err);
-
 						}
 					}
+					output.writeObject(response);
 				} else if (e.getMessage().compareTo("DELETEF") == 0) {
 
 					String remotePath = (String) e.getObjContents().get(0);
@@ -325,25 +326,17 @@ public class FileThread extends Thread {
 
 					// decrypt to get token/key
 					String decrypted = fc.decrypt("AES", tokKey, _aesKey);
-					StringTokenizer st = new StringTokenizer(decrypted, "||");
-					String groupK = st.nextToken();
-					String token = st.nextToken();
+					String[] st = decrypted.split("\\|\\|");
+					String groupK = st[0];
+					String token = st[1];
 
-					// System.out.println(decrypted);
-
-					// get decrypted bytes and an HMAC of it
-					byte[] bconcatted = decrypted.getBytes();
-					Mac mac = Mac.getInstance("HmacSHA256", "BC");
-					mac.init(fc.getSysK()); // client key
-					mac.update(bconcatted);
-					byte[] out = mac.doFinal();
-
-					// create an HMAC from the tokkey byte using client's public key
+					// verify signed HMAC created from client's public key of token + key
+					// signed by group client
+					byte[] out = fc.createClientHmac(decrypted.getBytes(), fc.getSysK());
 					if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-						output.writeObject(e);
+						output.writeObject(new Envelope("FAIL-BADHMAC"));
 						return;
 					}
-
 					UserToken t = (UserToken) fc.makeTokenFromString(token);
 
 					ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
@@ -381,7 +374,7 @@ public class FileThread extends Thread {
 					}
 					output.writeObject(e);
 
-				} else if (e.getMessage().equals("DISCONNECT")) {
+				} else if (e.getMessage().equals("DISCONNECT-")) {
 					socket.close();
 					proceed = false;
 				}
