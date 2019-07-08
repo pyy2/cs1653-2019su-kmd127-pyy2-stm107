@@ -10,6 +10,7 @@ public class ClientDriver {
   public static int GPORT = 8765;
   public static int FPORT = 4321;
   private static String clientNum;
+  private static int loginFails = 0;
 
   public static void main(String args[]) {
     kb = new Scanner(System.in);
@@ -115,6 +116,8 @@ public class ClientDriver {
         break;
       case "14":
         exit();
+      // case "000":
+      //   unlockUser();
       default:
         System.out.println("\nI'm sorry, I didn't understand your input. Let's try again.\n");
       }
@@ -135,6 +138,12 @@ public class ClientDriver {
     String username = kb.nextLine();
     System.out.print("Please enter your password: ");
     String password = kb.nextLine();
+    if(loginFails > 2){
+      System.out.println("You have exceeded the maximum falied login attempts!");
+      System.out.println("If you have forgotten your password, please contact an administrator.");
+      System.out.println("Shutting down...\n\n\n");
+      System.exit(0);
+    }
     if (!gcli.userExists(username)) {
       // intentionally non-specific error message.
       System.out.println("Error logging in.\n\n");
@@ -145,6 +154,7 @@ public class ClientDriver {
     if (!gcli.checkPassword(username, password)) {
       // intentionally non-specific error message.
       System.out.println("Error logging in.\n\n");
+      loginFails++;
       return false;
     }
     if (gcli.firstLogin(username)) {
@@ -167,6 +177,39 @@ public class ClientDriver {
       return false;
     }
   }
+
+  // TODO: Implement account locking.
+  // private static void unlockUser(){
+  //   System.out.println("\nLog in\n");
+  //   System.out.print("Please enter Administrator username: ");
+  //   String admin = kb.nextLine();
+  //   System.out.print("Please enter Administrator password: ");
+  //   String adminPass = kb.nextLine();
+  //   if (!gcli.userExists(admin)) {
+  //     // intentionally non-specific error message.
+  //     System.out.println("Could not verify Administrator account.\n\n");
+  //     return;
+  //   }
+  //   // Check for password match
+  //   if (!gcli.checkPassword(admin, adminPass)) {
+  //     // intentionally non-specific error message.
+  //     System.out.println("Could not verify Administrator account.\n\n");
+  //     return;
+  //   }
+  //   utkn = gcli.getToken(admin);
+  //   if(!utkn.getGroups().contains("ADMIN")){
+  //     System.out.println("Insufficient privileges to unlock user accounts!");
+  //     return;
+  //   }
+  //   // Get the user to unlock
+  //   System.out.print("Please enter username to unlock: ");
+  //   String user = kb.nextLine();
+  //   if(gcli.unlockUser(user)){
+  //     System.out.println("User unlocked!");
+  //     return;
+  //   }
+  //   System.out.println("Error unlocking user!");
+  // }
 
   private static void resetPassword() {
     if (!checkLogInStatus())

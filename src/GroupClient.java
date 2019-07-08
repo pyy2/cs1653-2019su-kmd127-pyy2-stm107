@@ -69,6 +69,52 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	}
 
+	public boolean lockUser(String username){
+		try {
+			Envelope message = null, response = null;
+			message = new Envelope("LOCK");
+			byte[] uname = c.encrypt("AES", username, sharedKey);
+			message.addObject(uname); // Add user name string
+			output.writeObject(message);
+
+			response = (Envelope) input.readObject();
+
+			// If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
+			}
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
+
+	public boolean unlockUser(String username){
+		try {
+			Envelope message = null, response = null;
+			message = new Envelope("UNLOCK");
+			byte[] uname = c.encrypt("AES", username, sharedKey);
+			message.addObject(uname); // Add user name string
+			output.writeObject(message);
+
+			response = (Envelope) input.readObject();
+
+			// If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
+			}
+
+			return false;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	}
+
 	public boolean userExists(String username) {
 		return (getToken(username) != null);
 	}

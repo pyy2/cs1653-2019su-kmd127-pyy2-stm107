@@ -318,7 +318,85 @@ public class GroupThread extends Thread {
 					}
 					// Doesn't really need to be encrypted since it's just sending "ok" of "fail"
 					output.writeObject(response);
-				} else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
+				}else if (message.getMessage().equals("UNLOCK")) // Client wants to delete a user
+				{
+
+					if (message.getObjContents().size() < 3) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								if (message.getObjContents().get(2) != null) {
+									byte[] enc_params = (byte[]) message.getObjContents().get(0);
+									byte[] hmac = (byte[]) message.getObjContents().get(1);
+									byte[] signed_data = (byte[]) message.getObjContents().get(2);
+
+									String params = gc.decrypt("AES", enc_params, _aesKey);
+									String[] p_arr = params.split("-");
+
+									String username = p_arr[0];
+									UserToken yourToken = makeTokenFromString(p_arr[1]);
+
+									if (!gc.verifyHmac(enc_params, hmac)) {
+										output.writeObject(response);
+										return;
+									}
+									if (!gc.verifySignature(hmac, signed_data)) {
+										output.writeObject(response);
+										return;
+									}
+									if (unlockUser(username)) {
+										response = new Envelope("OK"); // Success
+									}
+								}
+							}
+						}
+					}
+
+					output.writeObject(response);
+				}
+				else if (message.getMessage().equals("LOCK")) // Client wants to delete a user
+				{
+
+					if (message.getObjContents().size() < 3) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								if (message.getObjContents().get(2) != null) {
+									byte[] enc_params = (byte[]) message.getObjContents().get(0);
+									byte[] hmac = (byte[]) message.getObjContents().get(1);
+									byte[] signed_data = (byte[]) message.getObjContents().get(2);
+
+									String params = gc.decrypt("AES", enc_params, _aesKey);
+									String[] p_arr = params.split("-");
+
+									String username = p_arr[0];
+									UserToken yourToken = makeTokenFromString(p_arr[1]);
+
+									if (!gc.verifyHmac(enc_params, hmac)) {
+										output.writeObject(response);
+										return;
+									}
+									if (!gc.verifySignature(hmac, signed_data)) {
+										output.writeObject(response);
+										return;
+									}
+									if (lockUser(username)) {
+										response = new Envelope("OK"); // Success
+									}
+								}
+							}
+						}
+					}
+
+					output.writeObject(response);
+				}
+				else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
 				{
 
 					if (message.getObjContents().size() < 3) {
@@ -677,6 +755,14 @@ public class GroupThread extends Thread {
 		} else {
 			return false; // requester does not exist
 		}
+	}
+
+	private boolean unlockUser(String username){
+		return my_gs.userList.list.get(username).unlockUser();
+	}
+
+	private boolean lockUser(String username){
+		return my_gs.userList.list.get(username).lockUser();
 	}
 
 	private boolean createGroup(String groupName, UserToken token) {

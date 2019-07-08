@@ -63,6 +63,7 @@ import java.math.BigInteger;
 					User newUser = new User();
 					newUser.pwd_hash = pwd_hash;
 					newUser.passwordNeedsChanged = true;
+					newUser.locked = false;
 					list.put(username, newUser);
 					System.out.println("This is the user: " + list.get(username));
 				}
@@ -226,6 +227,7 @@ import java.math.BigInteger;
 		private ArrayList<String> ownership;
 		private byte[] pwd_hash;
 		private boolean passwordNeedsChanged;
+		private boolean locked;
 
 		public User()
 		{
@@ -251,6 +253,18 @@ import java.math.BigInteger;
 		public synchronized ArrayList<String> getGroups()
 		{
 			return groups;
+		}
+
+		public synchronized boolean unlockUser()
+		{
+			locked = false;
+			return !locked;
+		}
+
+		public synchronized boolean lockUser()
+		{
+			locked = true;
+			return locked;
 		}
 
 		public synchronized ArrayList<String> getOwnership()
