@@ -123,11 +123,12 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			message = new Envelope("CPWD");
+			// concat username and Password
+			String upwd_str = username + ";" + password;
 			// encrypt username and password with symmetric key
-			byte[] uname = c.encrypt("AES", username, sharedKey);
-			byte[] pass = c.encrypt("AES", password, sharedKey);
-			message.addObject(uname); // Add user name string
-			message.addObject(pass);
+
+			byte[] upwd = c.encrypt("AES", upwd_str, sharedKey);
+			message.addObject(upwd); // Add user name string
 			output.writeObject(message);
 
 			response = (Envelope) input.readObject();
@@ -173,9 +174,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 			Envelope message = null, response = null;
 			message = new Envelope("RPASS");
+			String upwd_str = username + ";" + password;
 			// encrypt username and password with symmetric key
-			byte[] uname = c.encrypt("AES", username, sharedKey);
-			byte[] pass = c.encrypt("AES", password, sharedKey);
+			byte[] upwd = c.encrypt("AES", upwd_str, sharedKey);
 
 			// Add HMAC(Username||password, sharedKey) signed with private key so we know it
 			// hasn't been tampered with!
@@ -186,8 +187,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			byte[] out = mac.doFinal();
 			byte[] signed_data = c.signChecksum(out);
 
-			message.addObject(uname);
-			message.addObject(pass);
+			message.addObject(upwd);
 			message.addObject(out);
 			message.addObject(signed_data);
 
