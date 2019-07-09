@@ -51,7 +51,7 @@ To prevent snooping and constant reuse of public/private keys, once verification
 
 **Client-to-Group Server**
 
-![Client-to-Group](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/clien_to_groupserver.png)
+![Client-to-Group](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/client_to_groupserver.png)
 
 1.	Client will send their public key to the group server which will store the client key in a config file.
 2.  Group server will send back its key so that the client can verify that it is actually talking to the group server and not some other server. The group server will also generate an AES key to send that is encrypted with the client's public key as well as a signed checksum of the key to verify that the key is coming from the group server and it has not been tampered with.
