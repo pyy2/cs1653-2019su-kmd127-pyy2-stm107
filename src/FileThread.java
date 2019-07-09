@@ -150,6 +150,7 @@ public class FileThread extends Thread {
 							// decrypt to get request (gsPK, token, destFile, group)
 							String decrypted = fc.decrypt("AES", req, _aesKey);
 							String[] st = decrypted.split("\\|\\|");
+							System.out.println(decrypted);
 
 							if (st.length != 4) {
 								response = new Envelope("FAIL-BADFIELDS");

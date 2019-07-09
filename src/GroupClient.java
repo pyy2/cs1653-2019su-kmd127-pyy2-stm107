@@ -142,8 +142,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			message.addObject(uname);
 			message.addObject(pass);
-			message.addObject(signed_data);
 			message.addObject(out);
+			message.addObject(signed_data);
 
 			output.writeObject(message);
 

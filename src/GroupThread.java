@@ -94,7 +94,8 @@ public class GroupThread extends Thread {
 						if (in.next().charAt(0) == 'y') {
 							System.out.println("Adding client's public key to trusted clients list...");
 							my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
-							// System.out.println("This is the contents of the trusted client file AFTER ADDING: ");
+							// System.out.println("This is the contents of the trusted client file AFTER
+							// ADDING: ");
 							// System.out.println(my_gs.tcList.pubkeys);
 							// System.out.println("\n\n\n");
 						} else {
@@ -118,30 +119,32 @@ public class GroupThread extends Thread {
 
 			// send group server public key to client
 			output.writeObject(pub);
-			System.out.println("\nGS public key -> client:\n" + gc.RSAtoString(pub));
+			// System.out.println("\nGS public key -> client:\n" + gc.RSAtoString(pub));
 
 			// send symmetric key encrypted with client's public key with padding
 			gc.genAESKey(); // create AES key
 			_aesKey = gc.getAESKey();
 			output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", gc.toString(_aesKey), clientK));
-			System.out.println("\nAES key -> Client:\n" + gc.toString(_aesKey));
+			// System.out.println("\nAES key -> Client:\n" + gc.toString(_aesKey));
 
 			// send SHA256 checksum of symmetric key for verification
 			byte[] checksum = gc.createChecksum(gc.toString(_aesKey)); // create checksum w aes key
 			output.writeObject(checksum); // send checksum
-			System.out.println("Checksum -> Client:\n" + gc.toString(checksum)); // print
+			// System.out.println("Checksum -> Client:\n" + gc.toString(checksum)); // print
 
 			// send signed checksum
 			byte[] signedChecksum = gc.signChecksum(checksum);
 			output.writeObject(signedChecksum);
 			output.flush();
-			System.out.println("Signed Checksum -> Client:\n" + gc.toString(signedChecksum));
+			// System.out.println("Signed Checksum -> Client:\n" +
+			// gc.toString(signedChecksum));
 			System.out.println("\n########### GS CONNECTION W CLIENT SECURE ###########\n");
 
 			do {
 				Envelope message = (Envelope) input.readObject();
 				System.out.println("Request received: " + message.getMessage());
 				Envelope response;
+				clientK = gc.getSysK();
 
 				if (message.getMessage().equals("GET"))// Client wants a token
 				{
@@ -172,7 +175,7 @@ public class GroupThread extends Thread {
 						// Encrypt with shared key
 						byte[] encryptedToken = gc.encrypt("AES", concatted, _aesKey);
 
-						System.out.println(concatted);
+						// System.out.println(concatted);
 						// Then HMAC(pubkey || token, ClientKey) and sign
 						Mac mac = Mac.getInstance("HmacSHA256", "BC");
 						mac.init(clientK);
@@ -235,7 +238,8 @@ public class GroupThread extends Thread {
 							if (message.getObjContents().get(1) != null) {
 								byte[] uname = (byte[]) message.getObjContents().get(0);
 								byte[] pass = (byte[]) message.getObjContents().get(1);
-								String username = gc.decrypt("AES", uname, _aesKey); // Extract the username
+								String username = gc.decrypt("AES", uname, _aesKey); // Extract the
+																						// username
 								String password = gc.decrypt("AES", pass, _aesKey);
 
 								if (checkPassword(username, password)) {
@@ -276,35 +280,19 @@ public class GroupThread extends Thread {
 									if (message.getObjContents().get(3) != null) {
 										byte[] uname = (byte[]) message.getObjContents().get(0);
 										byte[] pass = (byte[]) message.getObjContents().get(1);
-										byte[] signed_data = (byte[]) message.getObjContents().get(2);
-										byte[] verify = (byte[]) message.getObjContents().get(3);
-										String username = gc.decrypt("AES", uname, _aesKey); // Extract the username
+										byte[] hmac = (byte[]) message.getObjContents().get(2);
+										byte[] signed_data = (byte[]) message.getObjContents().get(3);
+
+										String username = gc.decrypt("AES", uname, _aesKey); // Extract
+																								// the
+																								// username
 										String password = gc.decrypt("AES", pass, _aesKey);
 
-										// Verify the message hasn't been tampered with in transit!
-										// (no man in the middle)
-										Signature sign = Signature.getInstance("RSA", "BC");
-										sign.initVerify(clientK);
-										sign.update(verify);
-										boolean verified = sign.verify(signed_data);
-										if (verified)
-											System.out.printf("Signature verified!\n");
-										else {
-											System.out.println("Unable to verify signature!\n");
-											// output.writeObject(response);
-											// return;
+										if (!gc.verifyHmac((username + password).getBytes(), hmac)) {
+											output.writeObject(response);
+											return;
 										}
-										// Recalculate the Hmac
-										byte[] reverify = (username + password).getBytes();
-										Mac mac = Mac.getInstance("HmacSHA256", "BC");
-										mac.init(_aesKey);
-										mac.update(reverify);
-										byte[] out = mac.doFinal();
-										if (Arrays.equals(verify, out)) {
-											System.out.println("HMAC Successfully verified!\n");
-										} else {
-											System.out.println(
-													"Unable to verify HMAC. Is there a man in the middle??\n\n");
+										if (!gc.verifySignature(hmac, signed_data)) {
 											output.writeObject(response);
 											return;
 										}
