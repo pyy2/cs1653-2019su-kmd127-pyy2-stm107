@@ -229,22 +229,19 @@ public class GroupThread extends Thread {
 					output.writeObject(response);
 				} else if (message.getMessage().equals("CPWD")) // Client wants to for password match
 				{
-					if (message.getObjContents().size() < 2) {
+					if (message.getObjContents().size() < 1) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
-
 						if (message.getObjContents().get(0) != null) {
-							if (message.getObjContents().get(1) != null) {
-								byte[] uname = (byte[]) message.getObjContents().get(0);
-								byte[] pass = (byte[]) message.getObjContents().get(1);
-								String username = gc.decrypt("AES", uname, _aesKey); // Extract the
-																						// username
-								String password = gc.decrypt("AES", pass, _aesKey);
-
-								if (checkPassword(username, password)) {
-									response = new Envelope("OK"); // Success
-								}
+							byte[] uname = (byte[]) message.getObjContents().get(0);
+							String[] upwd = gc.decrypt("AES", uname, _aesKey).split(";");
+							String username = upwd[0];
+							String password = upwd[1];
+							System.out.println("This is the username: "+ username);
+							System.out.println("This is the password: " + password);
+							if (checkPassword(username, password)) {
+								response = new Envelope("OK"); // Success
 							}
 						}
 					}
@@ -277,28 +274,24 @@ public class GroupThread extends Thread {
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
-									if (message.getObjContents().get(3) != null) {
-										byte[] uname = (byte[]) message.getObjContents().get(0);
-										byte[] pass = (byte[]) message.getObjContents().get(1);
-										byte[] hmac = (byte[]) message.getObjContents().get(2);
-										byte[] signed_data = (byte[]) message.getObjContents().get(3);
+									byte[] uname = (byte[]) message.getObjContents().get(0);
+									byte[] hmac = (byte[]) message.getObjContents().get(1);
+									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-										String username = gc.decrypt("AES", uname, _aesKey); // Extract
-																								// the
-																								// username
-										String password = gc.decrypt("AES", pass, _aesKey);
+									String[] upwd = gc.decrypt("AES", uname, _aesKey).split(";");
+									String username = upwd[0];
+									String password = upwd[1];
 
-										if (!gc.verifyHmac((username + password).getBytes(), hmac)) {
-											output.writeObject(response);
-											return;
-										}
-										if (!gc.verifySignature(hmac, signed_data)) {
-											output.writeObject(response);
-											return;
-										}
-										if (resetPassword(username, password)) {
-											response = new Envelope("OK"); // Success
-										}
+									if (!gc.verifyHmac((username + password).getBytes(), hmac)) {
+										output.writeObject(response);
+										return;
+									}
+									if (!gc.verifySignature(hmac, signed_data)) {
+										output.writeObject(response);
+										return;
+									}
+									if (resetPassword(username, password)) {
+										response = new Envelope("OK"); // Success
 									}
 								}
 							}

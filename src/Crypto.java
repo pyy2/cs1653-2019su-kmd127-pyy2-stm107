@@ -26,12 +26,12 @@ import java.util.Base64;
 class Crypto {
 
     PublicKey sysK; // public key of whoever it's talking to
-
     PublicKey pub;
     PrivateKey priv;
-
     SecretKey aes;
     SecureRandom random;
+    int AES_LENGTH = 128;
+    byte[] iv = new byte[AES_LENGTH / 8];
 
     // constructor
     Crypto() {
@@ -41,6 +41,7 @@ class Crypto {
         priv = null;
         aes = null;
         random = new SecureRandom();
+        random.nextBytes(iv);
     }
 
     /*
@@ -164,6 +165,8 @@ class Crypto {
 
     // encryption
     byte[] encrypt(final String type, final String plaintext, final Key key) {
+        if (type.contains("AES"))
+            return aesEncrypt(plaintext);
         byte[] encrypted = null;
         try {
             final Cipher cipher = Cipher.getInstance(type);
@@ -175,16 +178,48 @@ class Crypto {
         return encrypted;
     }
 
-    byte[] decode(String key) {
-        return Base64.getDecoder().decode(key);
-    }
-
     // decryption
     String decrypt(final String type, final byte[] encrypted, final Key key) {
+        if (type.contains("AES"))
+            return aesDecrypt(encrypted);
         String decryptedValue = null;
         try {
             final Cipher cipher = Cipher.getInstance(type);
             cipher.init(Cipher.DECRYPT_MODE, key);
+            decryptedValue = new String(cipher.doFinal(encrypted));
+        } catch (Exception e) {
+            System.out.println("The Exception is=" + e);
+            e.printStackTrace(System.err);
+        }
+        return decryptedValue;
+    }
+
+    byte[] aesEncrypt(final String plaintext) {
+        byte[] encrypted = null;
+        random.nextBytes(iv);
+        writeBytesToFile(iv, "./iv.txt");
+        try {
+            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.ENCRYPT_MODE, aes, new IvParameterSpec(iv));
+            encrypted = cipher.doFinal(plaintext.getBytes());
+        } catch (Exception e) {
+            System.out.println("The Exception is=" + e);
+        }
+        System.out.println("AES ENCRYPTion DoNE");
+
+        return encrypted;
+    }
+
+    byte[] decode(String key) {
+        return Base64.getDecoder().decode(key);
+    }
+
+    String aesDecrypt(final byte[] encrypted) {
+        iv = readBytesFromFile("./iv.txt");
+        String decryptedValue = null;
+        try {
+            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.DECRYPT_MODE, aes, new IvParameterSpec(iv));
             decryptedValue = new String(cipher.doFinal(encrypted));
         } catch (Exception e) {
             System.out.println("The Exception is=" + e);
@@ -432,5 +467,42 @@ class Crypto {
             oin.close();
         }
         return key;
+    }
+
+    private void writeBytesToFile(byte[] bFile, String fileDest) {
+
+        try (FileOutputStream fileOuputStream = new FileOutputStream(fileDest, false)) {
+            fileOuputStream.write(bFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private byte[] readBytesFromFile(String filePath) {
+
+        FileInputStream fileInputStream = null;
+        byte[] bytesArray = null;
+
+        try {
+
+            File file = new File(filePath);
+            bytesArray = new byte[(int) file.length()];
+
+            // read file into bytes[]
+            fileInputStream = new FileInputStream("./iv.txt");
+            fileInputStream.read(bytesArray);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fileInputStream != null) {
+                try {
+                    fileInputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return bytesArray;
     }
 }
