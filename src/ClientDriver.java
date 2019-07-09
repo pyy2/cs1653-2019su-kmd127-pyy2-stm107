@@ -52,7 +52,11 @@ public class ClientDriver {
       System.out.println("Error connecting to file server. Exiting...");
       System.exit(1);
     }
+    if (login())
+      printMenu();
+  }
 
+  public static void printMenu() {
     while (true) {
       System.out.println("What would you like to do?");
       System.out.println("Please select from the following operations (please enter a number 1-15): ");
@@ -117,7 +121,7 @@ public class ClientDriver {
         break;
       case "14":
         logout();
-        break();
+        break;
       case "15":
         exit();
       default:
@@ -140,7 +144,7 @@ public class ClientDriver {
     String username = kb.nextLine();
     System.out.print("Please enter your password: ");
     String password = kb.nextLine();
-    if(loginFails > 2){
+    if (loginFails > 2) {
       System.out.println("You have exceeded the maximum falied login attempts!");
       System.out.println("If you have forgotten your password, please contact an administrator.");
       System.out.println("Shutting down...\n\n\n");
@@ -180,43 +184,43 @@ public class ClientDriver {
     }
   }
 
-  private static boolean logout(){
+  private static void logout() {
     utkn = null;
     System.out.println("Logged out.\n\n");
-    printMenu();
+    login();
   }
 
   // TODO: Implement account locking.
   // private static void unlockUser(){
-  //   System.out.println("\nLog in\n");
-  //   System.out.print("Please enter Administrator username: ");
-  //   String admin = kb.nextLine();
-  //   System.out.print("Please enter Administrator password: ");
-  //   String adminPass = kb.nextLine();
-  //   if (!gcli.userExists(admin)) {
-  //     // intentionally non-specific error message.
-  //     System.out.println("Could not verify Administrator account.\n\n");
-  //     return;
-  //   }
-  //   // Check for password match
-  //   if (!gcli.checkPassword(admin, adminPass)) {
-  //     // intentionally non-specific error message.
-  //     System.out.println("Could not verify Administrator account.\n\n");
-  //     return;
-  //   }
-  //   utkn = gcli.getToken(admin);
-  //   if(!utkn.getGroups().contains("ADMIN")){
-  //     System.out.println("Insufficient privileges to unlock user accounts!");
-  //     return;
-  //   }
-  //   // Get the user to unlock
-  //   System.out.print("Please enter username to unlock: ");
-  //   String user = kb.nextLine();
-  //   if(gcli.unlockUser(user)){
-  //     System.out.println("User unlocked!");
-  //     return;
-  //   }
-  //   System.out.println("Error unlocking user!");
+  // System.out.println("\nLog in\n");
+  // System.out.print("Please enter Administrator username: ");
+  // String admin = kb.nextLine();
+  // System.out.print("Please enter Administrator password: ");
+  // String adminPass = kb.nextLine();
+  // if (!gcli.userExists(admin)) {
+  // // intentionally non-specific error message.
+  // System.out.println("Could not verify Administrator account.\n\n");
+  // return;
+  // }
+  // // Check for password match
+  // if (!gcli.checkPassword(admin, adminPass)) {
+  // // intentionally non-specific error message.
+  // System.out.println("Could not verify Administrator account.\n\n");
+  // return;
+  // }
+  // utkn = gcli.getToken(admin);
+  // if(!utkn.getGroups().contains("ADMIN")){
+  // System.out.println("Insufficient privileges to unlock user accounts!");
+  // return;
+  // }
+  // // Get the user to unlock
+  // System.out.print("Please enter username to unlock: ");
+  // String user = kb.nextLine();
+  // if(gcli.unlockUser(user)){
+  // System.out.println("User unlocked!");
+  // return;
+  // }
+  // System.out.println("Error unlocking user!");
   // }
 
   private static void resetPassword() {
@@ -234,7 +238,8 @@ public class ClientDriver {
     System.out.print("Please enter new password: ");
     String new_password = kb.nextLine();
     while (!gcli.resetPassword(username, new_password)) {
-      System.out.println("Error changing password! Make sure you follow password requirements and that your new password is not the same as your old password!!\n\n");
+      System.out.println(
+          "Error changing password! Make sure you follow password requirements and that your new password is not the same as your old password!!\n\n");
       return;
     }
     System.out.println("Password changed successfully!\n\n");

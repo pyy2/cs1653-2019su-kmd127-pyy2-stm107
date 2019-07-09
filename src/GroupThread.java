@@ -143,7 +143,7 @@ public class GroupThread extends Thread {
 			do {
 				Envelope message = (Envelope) input.readObject();
 				System.out.println("Request received: " + message.getMessage());
-				Envelope response;
+				Envelope response = null;
 				clientK = gc.getSysK();
 
 				if (message.getMessage().equals("GET"))// Client wants a token
@@ -306,7 +306,7 @@ public class GroupThread extends Thread {
 					}
 					// Doesn't really need to be encrypted since it's just sending "ok" of "fail"
 					output.writeObject(response);
-				}else if (message.getMessage().equals("UNLOCK")) // Client wants to delete a user
+				} else if (message.getMessage().equals("UNLOCK")) // Client wants to delete a user
 				{
 
 					if (message.getObjContents().size() < 3) {
@@ -344,8 +344,7 @@ public class GroupThread extends Thread {
 					}
 
 					output.writeObject(response);
-				}
-				else if (message.getMessage().equals("LOCK")) // Client wants to delete a user
+				} else if (message.getMessage().equals("LOCK")) // Client wants to delete a user
 				{
 
 					if (message.getObjContents().size() < 3) {
@@ -383,8 +382,7 @@ public class GroupThread extends Thread {
 					}
 
 					output.writeObject(response);
-				}
-				else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
+				} else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
 				{
 
 					if (message.getObjContents().size() < 3) {
@@ -745,11 +743,11 @@ public class GroupThread extends Thread {
 		}
 	}
 
-	private boolean unlockUser(String username){
+	private boolean unlockUser(String username) {
 		return my_gs.userList.list.get(username).unlockUser();
 	}
 
-	private boolean lockUser(String username){
+	private boolean lockUser(String username) {
 		return my_gs.userList.list.get(username).lockUser();
 	}
 

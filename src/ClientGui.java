@@ -245,8 +245,8 @@ class ClientGui {
     frame.setVisible(true);
 
     // connect with defaults
-    defaults.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    defaults.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         giptf.setText(GIP);
         gporttf.setText(GPORT);
         fiptf.setText(FIP);
@@ -258,14 +258,14 @@ class ClientGui {
     });
 
     // connect with specified values.
-    connect.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    connect.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         GIP = giptf.getText();
         GPORT = gporttf.getText();
         FIP = fiptf.getText();
         FPORT = fporttf.getText();
         cliNum = numtf.getText();
-        if(GIP.equals("") || FIP.equals("") || GPORT.equals("") || FPORT.equals("")){
+        if (GIP.equals("") || FIP.equals("") || GPORT.equals("") || FPORT.equals("")) {
           ta.setText("\nYou must enter all connection values (ips and ports).\n\n");
           GIP = "127.0.0.1";
           FIP = "127.0.0.1";
@@ -280,8 +280,8 @@ class ClientGui {
     });
 
     // login with username/Password
-    loginbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    loginbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String uname = ulogtf.getText();
         String pass = passlogtf.getText();
         ulogtf.setText("");
@@ -291,8 +291,8 @@ class ClientGui {
     });
 
     // reset password
-    resetbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    resetbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String uname = uRestf.getText();
         String pass = rpasslogtf.getText();
         String npass = npasslogtf.getText();
@@ -304,8 +304,8 @@ class ClientGui {
     });
 
     // Log out by removing token.
-    logout.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    logout.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         utkn = null;
         ta.setText("Logging out...\n");
         ta.append("Logged out successfully.\n\n");
@@ -314,16 +314,16 @@ class ClientGui {
       }
     });
 
-    //Disconnect and Exit
-    exit.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    // Disconnect and Exit
+    exit.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         exit();
       }
     });
 
     // Create user button.
-    cubutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    cubutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String uname = cutf.getText();
         String pass = passcutf.getText();
         cutf.setText("");
@@ -333,8 +333,8 @@ class ClientGui {
     });
 
     // Delete user button.
-    dubutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    dubutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String uname = dutf.getText();
         dutf.setText("");
         deleteUser(uname);
@@ -342,8 +342,8 @@ class ClientGui {
     });
 
     // Create group button.
-    cgbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    cgbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String gname = cgtf.getText();
         cgtf.setText("");
         createGroup(gname);
@@ -351,8 +351,8 @@ class ClientGui {
     });
 
     // Delete group button.
-    dgbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    dgbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String gname = dgtf.getText();
         dgtf.setText("");
         deleteGroup(gname);
@@ -360,8 +360,8 @@ class ClientGui {
     });
 
     // add group member button.
-    agubutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    agubutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String gname = agutf.getText();
         agutf.setText("");
         String uname = autf.getText();
@@ -371,8 +371,8 @@ class ClientGui {
     });
 
     // remove group member button.
-    rgubutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    rgubutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String gname = rgutf.getText();
         rgutf.setText("");
         String uname = rutf.getText();
@@ -382,8 +382,8 @@ class ClientGui {
     });
 
     // list group members button.
-    lmbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    lmbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String gname = lmtf.getText();
         lmtf.setText("");
         listGroupMembers(gname);
@@ -391,15 +391,15 @@ class ClientGui {
     });
 
     // list all files button.
-    lfbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    lfbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         listFiles();
       }
     });
 
     // upload file button.
-    ufbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    ufbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String ufname = ufutf.getText();
         ufutf.setText("");
         String dfname = ufdtf.getText();
@@ -411,8 +411,8 @@ class ClientGui {
     });
 
     // download file button.
-    dfbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    dfbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String ufname = dfutf.getText();
         dfutf.setText("");
         String dfname = dfdtf.getText();
@@ -422,8 +422,8 @@ class ClientGui {
     });
 
     // delete file button.
-    delbutton.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
+    delbutton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
         String dfname = deltf.getText();
         deltf.setText("");
         deleteFile(dfname);
@@ -432,24 +432,25 @@ class ClientGui {
 
   }
 
-  private static void connect(String gip, String fip, int gport, int fport, String cliNum){
+  private static void connect(String gip, String fip, int gport, int fport, String cliNum) {
     boolean gconn = gcli.connect(gip, gport, "group", cliNum);
     boolean fconn = fcli.connect(fip, fport, "file", cliNum);
-    if(!(gconn)){
+    if (!(gconn)) {
       ta.setText("Error connecting to group server.");
     }
-    if(!(fconn)){
+    if (!(fconn)) {
       ta.setText("Error connecting to file server.");
-    }
-    else{
+    } else {
       ta.setText("Connected!\n");
       connected = true;
     }
-    if(!loggedin) ta.append("Please log in.\n\n");
-    else printMenu();
+    if (!loggedin)
+      ta.append("Please log in.\n\n");
+    else
+      printMenu();
   }
 
-  private static void printMenu(){
+  private static void printMenu() {
     ta.append("What would you like to do?\n");
     ta.append("You can complete the following operations: \n\n");
     ta.append("1. Create a new user\t");
@@ -465,149 +466,163 @@ class ClientGui {
     ta.append("11. Delete a file\n");
   }
 
-  private static boolean checkLogInStatus(){
-    if(utkn == null){
+  private static boolean checkLogInStatus() {
+    if (utkn == null) {
       ta.setText("\nNo user session found. Please log in.\n\n");
       return false;
     }
     return true;
   }
 
-  private static void login(String uname, String pass){
-    if(!connected){
+  private static void login(String uname, String pass) {
+    if (!connected) {
       ta.setText("Client not connected.\nPlease connect to group and file servers.\n\n");
       return;
     }
     ta.setText("\nLoggin in...\n");
     // TODO: Add password to this when we introduce password hashing.
-    if(uname.equals("") || uname.equals(" ")){
+    if (uname.equals("") || uname.equals(" ")) {
       ta.setText("\nYou must enter a username.\n\nPlease try again.\n");
       return;
     }
-    if(loginFails > 2){
+    if (loginFails > 2) {
       ta.setText("You have exceeded the maximum falied login attempts!\n\n");
       ta.append("If you have forgotten your password, please contact an administrator.");
       return;
     }
-    if(!gcli.userExists(uname)){
-      //intentionally non-specific error message.
+    if (!gcli.userExists(uname)) {
+      // intentionally non-specific error message.
       ta.setText("Error logging in!\n\n");
       return;
     }
     // Check for password match
     ta.append("Verifying password...");
-    if(!gcli.checkPassword(uname, pass)){
-      //intentionally non-specific error message.
+    if (!gcli.checkPassword(uname, pass)) {
+      // intentionally non-specific error message.
       ta.setText("Error logging in.\n\n");
       loginFails++;
-      if(loginFails > 2){
+      if (loginFails > 2) {
         ta.setText("You have exceeded the maximum falied login attempts!\n\n");
         ta.append("If you have forgotten your password, please contact an administrator.");
       }
       return;
     }
 
-    if(gcli.firstLogin(uname)){
+    if (gcli.firstLogin(uname)) {
       ta.setText("It's your first time logging in. Please change your password.\n\n");
       ta.append("Please change your password using the \"RESET PASSWORD\" section in the GUI above.\n\n");
       return;
     }
     utkn = gcli.getToken(uname);
-    if(utkn != null){
+    if (utkn != null) {
       ta.append("Logged in as " + utkn.getSubject() + "\n\n\n");
       loggedin = true;
       loginFails = 0;
       printMenu();
-    }
-    else{
+    } else {
       ta.append("Error loggin in...\nPlease try again\n\n\n");
       loggedin = false;
       return;
     }
   }
 
-  private static void resetPassword(String uname, String pass, String npass){
+  private static void resetPassword(String uname, String pass, String npass) {
     ta.setText("\nReset Password\n\n");
-    if(gcli.checkPassword(uname, pass)){
+    if (gcli.checkPassword(uname, pass)) {
       boolean reset = gcli.resetPassword(uname, npass);
-      if(!reset) ta.append("An error occurred resetting user password!\n");
-      else ta.append("User " + uname + " successfully reset password!\n\n\n");
+      if (!reset)
+        ta.append("An error occurred resetting user password!\n");
+      else
+        ta.append("User " + uname + " successfully reset password!\n\n\n");
       printMenu();
     }
   }
 
-  private static void createUser(String uname, String pass){
+  private static void createUser(String uname, String pass) {
     ta.setText("\nCreate a new user\n\n");
-    if(checkLogInStatus()){
+    if (checkLogInStatus()) {
       boolean create = gcli.createUser(uname, pass, utkn);
-      if(!create) ta.append("An error occurred creating user " + uname + "\n");
-      else ta.append("User " + uname + " created successfully!\n\n\n");
+      if (!create)
+        ta.append("An error occurred creating user " + uname + "\n");
+      else
+        ta.append("User " + uname + " created successfully!\n\n\n");
       printMenu();
     }
   }
 
-  private static void deleteUser(String uname){
+  private static void deleteUser(String uname) {
     ta.setText("\nDelete a user\n\n");
-    if(checkLogInStatus()){
+    if (checkLogInStatus()) {
       boolean delete = gcli.deleteUser(uname, utkn);
-      if(!delete) ta.append("An error occurred deleting user " + uname + "\n");
-      else ta.append("User " + uname + " deleted successfully!\n\n\n");
+      if (!delete)
+        ta.append("An error occurred deleting user " + uname + "\n");
+      else
+        ta.append("User " + uname + " deleted successfully!\n\n\n");
       printMenu();
     }
   }
 
-  private static void createGroup(String gname){
+  private static void createGroup(String gname) {
     ta.setText("\nCreate a group\n");
-    if(checkLogInStatus()){
+    if (checkLogInStatus()) {
       boolean Gcreate = gcli.createGroup(gname, utkn);
-      if(!Gcreate) ta.append("An error occurred creating group " + gname + "\n\n\n");
-      else ta.append("Group " + gname + " created successfully!\n\n\n");
+      if (!Gcreate)
+        ta.append("An error occurred creating group " + gname + "\n\n\n");
+      else
+        ta.append("Group " + gname + " created successfully!\n\n\n");
       printMenu();
     }
   }
 
-  private static void deleteGroup(String gname){
+  private static void deleteGroup(String gname) {
     ta.setText("\nCreate a group\n");
-    if(checkLogInStatus()){
+    if (checkLogInStatus()) {
       boolean Gdelete = gcli.deleteGroup(gname, utkn);
-      if(!Gdelete) ta.append("An error occurred deleting group " + gname + "\n\n\n");
-      else ta.append("Group " + gname + " deleted successfully!\n\n\n");
+      if (!Gdelete)
+        ta.append("An error occurred deleting group " + gname + "\n\n\n");
+      else
+        ta.append("Group " + gname + " deleted successfully!\n\n\n");
       printMenu();
     }
   }
 
-  private static void addUserToGroup(String uname, String gname){
+  private static void addUserToGroup(String uname, String gname) {
     ta.setText("\nAdd a user to a group\n");
     utkn = bounceToken();
-    if(checkLogInStatus()){
+    if (checkLogInStatus()) {
       boolean addToG = gcli.addUserToGroup(uname, gname, utkn);
-      if(!addToG) ta.append("An error occurred adding user " + uname + " to group " + gname + "\n\n\n");
-      else ta.append("User " + uname + " successfully added to " + gname + "!\n\n\n");
+      if (!addToG)
+        ta.append("An error occurred adding user " + uname + " to group " + gname + "\n\n\n");
+      else
+        ta.append("User " + uname + " successfully added to " + gname + "!\n\n\n");
       printMenu();
     }
   }
 
-  private static void deleteUserFromGroup(String uname, String gname){
+  private static void deleteUserFromGroup(String uname, String gname) {
     ta.setText("\nDelete a user form a group\n");
     utkn = bounceToken();
-    if(checkLogInStatus()){
+    if (checkLogInStatus()) {
       boolean delToG = gcli.deleteUserFromGroup(uname, gname, utkn);
-      if(!delToG) ta.append("An error occurred deleting user " + uname + " from group " + gname + "\n\n\n");
-      else ta.append("User " + uname + " successfully deleted from " + gname + "!\n\n\n");
+      if (!delToG)
+        ta.append("An error occurred deleting user " + uname + " from group " + gname + "\n\n\n");
+      else
+        ta.append("User " + uname + " successfully deleted from " + gname + "!\n\n\n");
       printMenu();
     }
   }
 
-  private static void listGroupMembers(String gname){
+  private static void listGroupMembers(String gname) {
     ta.setText("\nList all members of a group\n");
     utkn = bounceToken();
-    if(checkLogInStatus()){
-      java.util.List<String> mems  = gcli.listMembers(gname, utkn);
-      if(mems == null) ta.append("An error occurred getting users from " + gname + ".\n\n\n");
+    if (checkLogInStatus()) {
+      java.util.List<String> mems = gcli.listMembers(gname, utkn);
+      if (mems == null)
+        ta.append("An error occurred getting users from " + gname + ".\n\n\n");
       else {
         ta.append("Members in Group " + gname + ": \n");
-        for(String mem: mems){
-          ta.append(mem+"\n");
+        for (String mem : mems) {
+          ta.append(mem + "\n");
         }
         ta.append("\n\n\n");
       }
@@ -615,59 +630,65 @@ class ClientGui {
     }
   }
 
-  private static void listFiles(){
+  private static void listFiles() {
     ta.setText("\nList files\n");
-    if(checkLogInStatus()){
+    if (checkLogInStatus()) {
       // FileThread should check the user's groups from the token
       // Bounce the token
       utkn = bounceToken();
-      java.util.List<String> files  = fcli.listFiles(utkn);
+      java.util.List<String> files = fcli.listFiles(utkn);
       ta.append("The files that user " + utkn.getSubject() + " can access are: \n\n\n");
-      for(String f: files){
-        ta.append(f+"\n");
+      for (String f : files) {
+        ta.append(f + "\n");
       }
       ta.append("\n\n\n");
       printMenu();
     }
   }
 
-  private static void upload(String upname, String dname, String group){
+  private static void upload(String upname, String dname, String group) {
     ta.setText("\nUpload a file\n");
     utkn = bounceToken();
-    if(checkLogInStatus()){
-      if(!fcli.upload(upname, dname, group, utkn)) ta.append("Error uploading file to file server.\n\n\n");
-      else ta.append("File successfully uploaded to file server!\n\n\n");
+    if (checkLogInStatus()) {
+      if (!fcli.upload(upname, dname, group, utkn))
+        ta.append("Error uploading file to file server.\n\n\n");
+      else
+        ta.append("File successfully uploaded to file server!\n\n\n");
       printMenu();
     }
   }
 
-  private static void download(String upname, String dname){
+  private static void download(String upname, String dname) {
     ta.setText("\nDownload a file\n");
     utkn = bounceToken();
-    if(checkLogInStatus()){
-      if(!fcli.download(upname, dname, utkn)) ta.append("Error downloading file.\n\n\n");
-      else ta.append("File successfully downloaded!\n\n\n");
+    if (checkLogInStatus()) {
+      if (!fcli.download(upname, dname, utkn))
+        ta.append("Error downloading file.\n\n\n");
+      else
+        ta.append("File successfully downloaded!\n\n\n");
       printMenu();
     }
   }
 
-  private static void deleteFile(String fname){
+  private static void deleteFile(String fname) {
     ta.setText("\nDelete a file\n");
     utkn = bounceToken();
-    if(checkLogInStatus()){
-      if(!fcli.delete(fname, utkn)) ta.append("Error deleting file from file server.\n\n\n");
-      else ta.append("File successfully deleted from file server!\n\n\n");
+    if (checkLogInStatus()) {
+      if (!fcli.delete(fname, utkn))
+        ta.append("Error deleting file from file server.\n\n\n");
+      else
+        ta.append("File successfully deleted from file server!\n\n\n");
       printMenu();
     }
   }
 
-  private static void exit(){
+  private static void exit() {
     gcli.disconnect();
     fcli.disconnect();
     System.exit(0);
   }
 
-  private static UserToken bounceToken(){
+  private static UserToken bounceToken() {
     // Bounce the server connections and re-login
     gcli.disconnect();
     gcli.connect(GIP, Integer.parseInt(GPORT), "group", cliNum);

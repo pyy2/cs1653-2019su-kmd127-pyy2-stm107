@@ -8,10 +8,12 @@ CURRENT_DIR = $(PWD)
 default: all
 
 all:
+	make clean
 	mkdir -p ./build
 	mkdir -p ./src/jar
 	cd ./src/jar && wget -N $(JAR)
 	$(JC) $(JFLAGS) -d './build' src/*.java
+	echo "Hello World!" >> ./build/test.txt
 
 gs:
 	cd build && java $(JFLAGS2) RunGroupServer $(GPORT)
@@ -29,17 +31,17 @@ rb:
 	$(JC) $(JFLAGS) -d './build' src/*.java
 
 rball:
-	make clean_all
-	make all
+	make clear
+	make rb
 
 clean:
 	rm -r build
 	rm -r src/jar
 
 clear:
+	rm -r ./build/shared_files/
 	rm -r ./build/*.bin
 	rm -r ./build/*.key
-	rmdir -p ./build/shared_files/
 
 test:
 	echo $(CURRENT_DIR)
