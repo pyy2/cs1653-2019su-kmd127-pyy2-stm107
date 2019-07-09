@@ -24,9 +24,10 @@ public class FileClient extends Client implements FileClientInterface {
 			remotePath = filename;
 		}
 		Envelope env = new Envelope("DELETEF"); // Success
-		env.addObject(remotePath);
+
+		// prepare request
 		String pubKey = c.toString(groupK);
-		String concatted = pubKey + token;
+		String concatted = remotePath + "||" + pubKey + token;
 
 		byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
 
@@ -78,7 +79,8 @@ public class FileClient extends Client implements FileClientInterface {
 				env = (Envelope) input.readObject();
 				if (env.getMessage().equals("READY")) {
 					while (env.getMessage().compareTo("CHUNK") == 0) {
-						fos.write((byte[]) env.getObjContents().get(0), 0, (Integer) env.getObjContents().get(1));
+						byte[] b = c.decrypt("AES", (byte[]) env.getObjContents().get(0), sharedKey).getBytes();
+						fos.write(b, 0, (Integer) env.getObjContents().get(1));
 						System.out.printf(".");
 						env = new Envelope("DOWNLOADF"); // Success
 						output.writeObject(env);
@@ -198,7 +200,7 @@ public class FileClient extends Client implements FileClientInterface {
 					return false;
 				}
 
-				message.addObject(buf);
+				message.addObject(c.encrypt("AES", new String(buf), sharedKey));
 				message.addObject(new Integer(n));
 
 				output.writeObject(message);
@@ -228,12 +230,13 @@ public class FileClient extends Client implements FileClientInterface {
 				return false;
 			}
 
-		} catch (Exception e1) {
+		} catch (
+
+		Exception e1) {
 			System.err.println("Error: " + e1.getMessage());
 			e1.printStackTrace(System.err);
 			return false;
 		}
 		return true;
 	}
-
 }

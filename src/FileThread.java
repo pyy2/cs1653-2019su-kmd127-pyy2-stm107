@@ -152,6 +152,7 @@ public class FileThread extends Thread {
 							String[] st = decrypted.split("\\|\\|");
 							System.out.println(decrypted);
 
+							// if length doesn't match
 							if (st.length != 4) {
 								response = new Envelope("FAIL-BADFIELDS");
 							} else {
@@ -188,8 +189,9 @@ public class FileThread extends Thread {
 
 										e = (Envelope) input.readObject();
 										while (e.getMessage().compareTo("CHUNK") == 0) {
-											fos.write((byte[]) e.getObjContents().get(0), 0,
-													(Integer) e.getObjContents().get(1));
+											byte[] b = fc.decrypt("AES", (byte[]) e.getObjContents().get(0), _aesKey)
+													.getBytes();
+											fos.write(b, 0, (Integer) e.getObjContents().get(1));
 											response = new Envelope("READY"); // Success
 											output.writeObject(response);
 											e = (Envelope) input.readObject();
@@ -278,7 +280,7 @@ public class FileThread extends Thread {
 
 													}
 
-													e.addObject(buf);
+													e.addObject(fc.encrypt("AES", new String(buf), _aesKey));
 													e.addObject(new Integer(n));
 
 													output.writeObject(e);
@@ -321,15 +323,15 @@ public class FileThread extends Thread {
 					output.writeObject(response);
 				} else if (e.getMessage().compareTo("DELETEF") == 0) {
 
-					String remotePath = (String) e.getObjContents().get(0);
-					byte[] tokKey = (byte[]) e.getObjContents().get(1);
-					byte[] sigHmac = (byte[]) e.getObjContents().get(2);
+					byte[] tokKey = (byte[]) e.getObjContents().get(0);
+					byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
 					// decrypt to get token/key
 					String decrypted = fc.decrypt("AES", tokKey, _aesKey);
 					String[] st = decrypted.split("\\|\\|");
-					String groupK = st[0];
-					String token = st[1];
+					String remotePath = st[0];
+					String groupK = st[1];
+					String token = st[2];
 
 					// verify signed HMAC created from client's public key of token + key
 					// signed by group client
