@@ -8,7 +8,6 @@ CURRENT_DIR = $(PWD)
 default: all
 
 all:
-	make clean
 	mkdir -p ./build
 	mkdir -p ./src/jar
 	cd ./src/jar && wget -N $(JAR)
@@ -29,10 +28,6 @@ gui:
 
 rb:
 	$(JC) $(JFLAGS) -d './build' src/*.java
-
-rball:
-	make clear
-	make rb
 
 clean:
 	rm -r build
