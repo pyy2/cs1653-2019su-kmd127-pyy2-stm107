@@ -20,7 +20,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// Tell the server to return a token.
 			message = new Envelope("GET");
 			// ecnrypt username with symmetric keys
-			byte[] uname = c.encrypt("AES/CBC/PKCS7PADDING", username, sharedKey);
+			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			output.writeObject(message);
 
@@ -47,7 +47,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 					fsMac = (byte[]) response.getObjContents().get(2);
 
 					// get the token concated with the public key
-					String tokenAndKey = c.decrypt("AES/CBC/PKCS7PADDING", encryptedToken, sharedKey);
+					String tokenAndKey = c.decrypt("AES", encryptedToken, sharedKey);
 					// System.out.println("This is the key + token data: " + tokenAndKey);
 					// Remove the public group key to get the token info
 					String gPubKey = Base64.getEncoder().encodeToString(groupK.getEncoded());
@@ -78,8 +78,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope message = null, response = null;
 			message = new Envelope("CPWD");
 			// encrypt username and password with symmetric key
-			byte[] uname = c.encrypt("AES/CBC/PKCS7PADDING", username, sharedKey);
-			byte[] pass = c.encrypt("AES/CBC/PKCS7PADDING", password, sharedKey);
+			byte[] uname = c.encrypt("AES", username, sharedKey);
+			byte[] pass = c.encrypt("AES", password, sharedKey);
 			message.addObject(uname); // Add user name string
 			message.addObject(pass);
 			output.writeObject(message);
@@ -103,7 +103,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			message = new Envelope("FLOGIN");
-			byte[] uname = c.encrypt("AES/CBC/PKCS7PADDING", username, sharedKey);
+			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			output.writeObject(message);
 
@@ -128,8 +128,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope message = null, response = null;
 			message = new Envelope("RPASS");
 			// encrypt username and password with symmetric key
-			byte[] uname = c.encrypt("AES/CBC/PKCS7PADDING", username, sharedKey);
-			byte[] pass = c.encrypt("AES/CBC/PKCS7PADDING", password, sharedKey);
+			byte[] uname = c.encrypt("AES", username, sharedKey);
+			byte[] pass = c.encrypt("AES", password, sharedKey);
 
 			// Add HMAC(Username||password, sharedKey) signed with private key so we know it
 			// hasn't been tampered with!
@@ -142,8 +142,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			message.addObject(uname);
 			message.addObject(pass);
-			message.addObject(signed_data);
 			message.addObject(out);
+			message.addObject(signed_data);
 
 			output.writeObject(message);
 
@@ -314,7 +314,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// If server indicates success, return the member list
 			if (response.getMessage().equals("OK")) {
 				byte[] enc_memList = (byte[]) response.getObjContents().get(0);
-				String members = c.decrypt("AES/CBC/PKCS7PADDING", enc_memList, sharedKey);
+				String members = c.decrypt("AES", enc_memList, sharedKey);
 				String[] m_arr = members.split("-");
 				List<String> memList = new ArrayList<>();
 				for (int i = 0; i < m_arr.length; i++) {

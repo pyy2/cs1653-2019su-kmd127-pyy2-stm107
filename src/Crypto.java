@@ -205,9 +205,7 @@ class Crypto {
     }
 
     /*
-     *
      * ******** SHA256/Signature/HMAC ********
-     *
      */
 
     byte[] createChecksum(String data) {

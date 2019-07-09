@@ -28,7 +28,7 @@ public class FileClient extends Client implements FileClientInterface {
 		String pubKey = c.toString(groupK);
 		String concatted = pubKey + token;
 
-		byte[] encryptedToken = c.encrypt("AES/CBC/PKCS7PADDING", concatted, sharedKey);
+		byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
 
 		env.addObject(encryptedToken); // Add encrypted token/key
 		env.addObject(fsMac); // add signed data
@@ -69,7 +69,7 @@ public class FileClient extends Client implements FileClientInterface {
 				// prepare metadata request
 				String pubKey = c.toString(groupK);
 				String concatted = pubKey + token + "||" + sourceFile;
-				byte[] encryptedToken = c.encrypt("AES/CBC/PKCS7PADDING", concatted, sharedKey);
+				byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
 
 				env.addObject(encryptedToken); // Add encrypted token/key
 				env.addObject(fsMac); // add signed data
@@ -126,7 +126,7 @@ public class FileClient extends Client implements FileClientInterface {
 			String concatted = pubKey + token;
 
 			// Encrypt with shared key
-			byte[] encryptedToken = c.encrypt("AES/CBC/PKCS7PADDING", concatted, sharedKey);
+			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
@@ -139,7 +139,7 @@ public class FileClient extends Client implements FileClientInterface {
 				byte[] flist = (byte[]) e.getObjContents().get(0);
 
 				if (flist != null) {
-					String[] filenames = c.decrypt("AES/CBC/PKCS7PADDING", flist, sharedKey).split("\\|\\|");
+					String[] filenames = c.decrypt("AES", flist, sharedKey).split("\\|\\|");
 					return Arrays.asList(filenames);
 				}
 			}
@@ -165,7 +165,7 @@ public class FileClient extends Client implements FileClientInterface {
 			// prepare metadata request
 			String pubKey = c.toString(groupK);
 			String concatted = pubKey + token + "||" + destFile + "||" + group;
-			byte[] encryptedToken = c.encrypt("AES/CBC/PKCS7PADDING", concatted, sharedKey);
+			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data

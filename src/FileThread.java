@@ -104,7 +104,7 @@ public class FileThread extends Thread {
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
 							// decrypt to get token/key
-							String decrypted = fc.decrypt("AES/CBC/PKCS7PADDING", tokKey, _aesKey);
+							String decrypted = fc.decrypt("AES", tokKey, _aesKey);
 							String[] st = decrypted.split("\\|\\|");
 							String groupK = st[0];
 							String token = st[1];
@@ -148,7 +148,7 @@ public class FileThread extends Thread {
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
 							// decrypt to get request (gsPK, token, destFile, group)
-							String decrypted = fc.decrypt("AES/CBC/PKCS7PADDING", req, _aesKey);
+							String decrypted = fc.decrypt("AES", req, _aesKey);
 							String[] st = decrypted.split("\\|\\|");
 							System.out.println(decrypted);
 
@@ -225,7 +225,7 @@ public class FileThread extends Thread {
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
 							// decrypt to get request (gsPK, token, destFile, group)
-							String decrypted = fc.decrypt("AES/CBC/PKCS7PADDING", req, _aesKey);
+							String decrypted = fc.decrypt("AES", req, _aesKey);
 							String[] st = decrypted.split("\\|\\|");
 
 							if (st.length != 3) {
@@ -326,7 +326,7 @@ public class FileThread extends Thread {
 					byte[] sigHmac = (byte[]) e.getObjContents().get(2);
 
 					// decrypt to get token/key
-					String decrypted = fc.decrypt("AES/CBC/PKCS7PADDING", tokKey, _aesKey);
+					String decrypted = fc.decrypt("AES", tokKey, _aesKey);
 					String[] st = decrypted.split("\\|\\|");
 					String groupK = st[0];
 					String token = st[1];

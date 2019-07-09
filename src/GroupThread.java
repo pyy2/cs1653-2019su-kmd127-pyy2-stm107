@@ -144,11 +144,12 @@ public class GroupThread extends Thread {
 				Envelope message = (Envelope) input.readObject();
 				System.out.println("Request received: " + message.getMessage());
 				Envelope response;
+				clientK = gc.getSysK();
 
 				if (message.getMessage().equals("GET"))// Client wants a token
 				{
 					byte[] uname = (byte[]) message.getObjContents().get(0);
-					String username = gc.decrypt("AES/CBC/PKCS7PADDING", uname, _aesKey);
+					String username = gc.decrypt("AES", uname, _aesKey);
 					if (username == null) {
 						response = new Envelope("FAIL");
 						response.addObject(null);
@@ -172,9 +173,9 @@ public class GroupThread extends Thread {
 						byte[] bconcatted = concatted.getBytes();
 
 						// Encrypt with shared key
-						byte[] encryptedToken = gc.encrypt("AES/CBC/PKCS7PADDING", concatted, _aesKey);
+						byte[] encryptedToken = gc.encrypt("AES", concatted, _aesKey);
 
-						System.out.println(concatted);
+						// System.out.println(concatted);
 						// Then HMAC(pubkey || token, ClientKey) and sign
 						Mac mac = Mac.getInstance("HmacSHA256", "BC");
 						mac.init(clientK);
@@ -201,7 +202,7 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = gc.decrypt("AES/CBC/PKCS7PADDING", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String username = p_arr[0];
@@ -237,9 +238,9 @@ public class GroupThread extends Thread {
 							if (message.getObjContents().get(1) != null) {
 								byte[] uname = (byte[]) message.getObjContents().get(0);
 								byte[] pass = (byte[]) message.getObjContents().get(1);
-								String username = gc.decrypt("AES/CBC/PKCS7PADDING", uname, _aesKey); // Extract the
-																										// username
-								String password = gc.decrypt("AES/CBC/PKCS7PADDING", pass, _aesKey);
+								String username = gc.decrypt("AES", uname, _aesKey); // Extract the
+																						// username
+								String password = gc.decrypt("AES", pass, _aesKey);
 
 								if (checkPassword(username, password)) {
 									response = new Envelope("OK"); // Success
@@ -257,7 +258,7 @@ public class GroupThread extends Thread {
 
 						if (message.getObjContents().get(0) != null) {
 							byte[] uname = (byte[]) message.getObjContents().get(0);
-							String username = gc.decrypt("AES/CBC/PKCS7PADDING", uname, _aesKey);
+							String username = gc.decrypt("AES", uname, _aesKey);
 
 							if (firstLogin(username)) {
 								response = new Envelope("OK"); // Success
@@ -279,37 +280,19 @@ public class GroupThread extends Thread {
 									if (message.getObjContents().get(3) != null) {
 										byte[] uname = (byte[]) message.getObjContents().get(0);
 										byte[] pass = (byte[]) message.getObjContents().get(1);
-										byte[] signed_data = (byte[]) message.getObjContents().get(2);
-										byte[] verify = (byte[]) message.getObjContents().get(3);
-										String username = gc.decrypt("AES/CBC/PKCS7PADDING", uname, _aesKey); // Extract
-																												// the
-																												// username
-										String password = gc.decrypt("AES/CBC/PKCS7PADDING", pass, _aesKey);
+										byte[] hmac = (byte[]) message.getObjContents().get(2);
+										byte[] signed_data = (byte[]) message.getObjContents().get(3);
 
-										// Verify the message hasn't been tampered with in transit!
-										// (no man in the middle)
-										Signature sign = Signature.getInstance("RSA", "BC");
-										sign.initVerify(clientK);
-										sign.update(verify);
-										boolean verified = sign.verify(signed_data);
-										if (verified)
-											System.out.printf("Signature verified!\n");
-										else {
-											System.out.println("Unable to verify signature!\n");
-											// output.writeObject(response);
-											// return;
+										String username = gc.decrypt("AES", uname, _aesKey); // Extract
+																								// the
+																								// username
+										String password = gc.decrypt("AES", pass, _aesKey);
+
+										if (!gc.verifyHmac((username + password).getBytes(), hmac)) {
+											output.writeObject(response);
+											return;
 										}
-										// Recalculate the Hmac
-										byte[] reverify = (username + password).getBytes();
-										Mac mac = Mac.getInstance("HmacSHA256", "BC");
-										mac.init(_aesKey);
-										mac.update(reverify);
-										byte[] out = mac.doFinal();
-										if (Arrays.equals(verify, out)) {
-											System.out.println("HMAC Successfully verified!\n");
-										} else {
-											System.out.println(
-													"Unable to verify HMAC. Is there a man in the middle??\n\n");
+										if (!gc.verifySignature(hmac, signed_data)) {
 											output.writeObject(response);
 											return;
 										}
@@ -338,7 +321,7 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = gc.decrypt("AES/CBC/PKCS7PADDING", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String username = p_arr[0];
@@ -374,7 +357,7 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = gc.decrypt("AES/CBC/PKCS7PADDING", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String groupName = p_arr[0];
@@ -410,7 +393,7 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = gc.decrypt("AES/CBC/PKCS7PADDING", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String groupName = p_arr[0];
@@ -445,7 +428,7 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = gc.decrypt("AES/CBC/PKCS7PADDING", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String groupName = p_arr[0];
@@ -486,7 +469,7 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = gc.decrypt("AES/CBC/PKCS7PADDING", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String userName = p_arr[0];
@@ -522,7 +505,7 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String params = gc.decrypt("AES/CBC/PKCS7PADDING", enc_params, _aesKey);
+									String params = gc.decrypt("AES", enc_params, _aesKey);
 									String[] p_arr = params.split("-");
 
 									String userName = p_arr[0];
