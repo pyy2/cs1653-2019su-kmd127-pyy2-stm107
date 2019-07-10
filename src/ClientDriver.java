@@ -170,7 +170,7 @@ public class ClientDriver {
       System.out.println("It's your first time logging in. Please change your password.");
       System.out.print("Please enter new password: ");
       String new_password = kb.nextLine();
-      boolean reset = false;
+      boolean reset = gcli.resetPassword(username, new_password);;
       while (!reset) {
         System.out.println("Error changing password! Make sure you follow password requirements and that your new password is not the same as your old password!!\n\n");
         System.out.print("Please enter new password: ");
