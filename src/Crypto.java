@@ -41,7 +41,7 @@ class Crypto {
         priv = null;
         aes = null;
         random = new SecureRandom();
-        random.nextBytes(iv);
+        //random.nextBytes(iv);
     }
 
     /*
@@ -198,7 +198,7 @@ class Crypto {
         byte[] encrypted = null;
         //random.nextBytes(iv);
         //System.out.println("This is what we're gonna use: " + new BigInteger(iv));
-        //writeBytesToFile(iv, "./iv.txt");
+        writeBytesToFile(iv, "./iv.txt");
         try {
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
             cipher.init(Cipher.ENCRYPT_MODE, aes, new IvParameterSpec(iv));
@@ -216,7 +216,7 @@ class Crypto {
     }
 
     String aesDecrypt(final byte[] encrypted) {
-        //iv = readBytesFromFile("./iv.txt");
+        iv = readBytesFromFile("./iv.txt");
         String decryptedValue = null;
         try {
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
@@ -480,31 +480,31 @@ class Crypto {
         }
     }
 
-    // private byte[] readBytesFromFile(String filePath) {
-    //
-    //     FileInputStream fileInputStream = null;
-    //     byte[] bytesArray = null;
-    //
-    //     try {
-    //
-    //         File file = new File(filePath);
-    //         bytesArray = new byte[(int) file.length()];
-    //
-    //         // read file into bytes[]
-    //         //fileInputStream = new FileInputStream("./iv.txt");
-    //       //  fileInputStream.read(bytesArray);
-    //
-    //     } catch (IOException e) {
-    //         e.printStackTrace();
-    //     } finally {
-    //         if (fileInputStream != null) {
-    //             try {
-    //                 fileInputStream.close();
-    //             } catch (IOException e) {
-    //                 e.printStackTrace();
-    //             }
-    //         }
-    //     }
-    //     return bytesArray;
-    // }
+    private byte[] readBytesFromFile(String filePath) {
+
+        FileInputStream fileInputStream = null;
+        byte[] bytesArray = null;
+
+        try {
+
+            File file = new File(filePath);
+            bytesArray = new byte[(int) file.length()];
+
+            // read file into bytes[]
+            fileInputStream = new FileInputStream("./iv.txt");
+            fileInputStream.read(bytesArray);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fileInputStream != null) {
+                try {
+                    fileInputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return bytesArray;
+    }
 }
