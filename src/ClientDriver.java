@@ -193,6 +193,7 @@ public class ClientDriver {
 
   private static void logout() {
     utkn = null;
+    bounceToken();
     System.out.println("Logged out.\n\n");
     login();
   }
@@ -444,6 +445,9 @@ public class ClientDriver {
     gcli.connect(GIP, GPORT, "group", clientNum);
     fcli.disconnect();
     fcli.connect(FIP, FPORT, "file", clientNum);
+    if(utkn == null){
+      return null;
+    }
     String uname = utkn.getSubject();
     return gcli.getToken(uname);
   }

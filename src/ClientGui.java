@@ -296,7 +296,7 @@ class ClientGui {
         String uname = uRestf.getText();
         String pass = rpasslogtf.getText();
         String npass = npasslogtf.getText();
-        ulogtf.setText("");
+        uRestf.setText("");
         rpasslogtf.setText("");
         npasslogtf.setText("");
         resetPassword(uname, pass, npass);
@@ -307,6 +307,7 @@ class ClientGui {
     logout.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         utkn = null;
+        bounceToken();
         ta.setText("Logging out...\n");
         ta.append("Logged out successfully.\n\n");
         ta.append("Bye!\n\n\n");
@@ -694,6 +695,9 @@ class ClientGui {
     gcli.connect(GIP, Integer.parseInt(GPORT), "group", cliNum);
     fcli.disconnect();
     fcli.connect(FIP, Integer.parseInt(FPORT), "file", cliNum);
+    if(utkn == null){
+      return null;
+    }
     String uname = utkn.getSubject();
     return gcli.getToken(uname);
   }
