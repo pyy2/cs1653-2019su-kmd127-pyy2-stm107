@@ -101,16 +101,16 @@ public abstract class Client {
 				String aesKey = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
 				c.setAESKey(aesKey);
 				sharedKey = c.getAESKey();
-				System.out.println("Received AES key -> " + c.toString(sharedKey));
+				System.out.println("Received AES key!");
 
 				// verify checksum
 				byte[] _checkSum = (byte[]) input.readObject(); // read checksum
-				System.out.println("Checksum:\n" + c.toString(_checkSum)); // print
+				//System.out.println("Checksum:\n" + c.toString(_checkSum)); // print
 				System.out.println("Checksum verified -> " + c.isEqual(_checkSum, c.createChecksum(aesKey)));
 
 				// verify signature
 				byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
-				System.out.println("Signed Checksum: " + c.toString(signedChecksum));
+				//System.out.println("Signed Checksum: " + c.toString(signedChecksum));
 				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
 			} else {
@@ -175,8 +175,9 @@ public abstract class Client {
 				c.genAESKey(); // create AES key
 				sharedKey = c.getAESKey();
 				String challenge = c.getChallenge();
-				System.out.println("\nAES key: " + c.toString(sharedKey));
-				System.out.println("Challenge: " + challenge);
+				System.out.println("Created AES key and Challenge for File Server.\n\n");
+				//System.out.println("\nAES key: " + c.toString(sharedKey));
+				//System.out.println("Challenge: " + challenge);
 
 				// send encrypted aeskey + challenge with fs public key
 				String s = c.toString(sharedKey) + challenge;
@@ -193,7 +194,7 @@ public abstract class Client {
 				// send signed checksum
 				byte[] signedChecksum = c.signChecksum(checksum);
 				output.writeObject(signedChecksum);
-				System.out.println("Signed Checksum -> Client:\n" + c.toString(signedChecksum));
+				//System.out.println("Signed Checksum -> Client:\n" + c.toString(signedChecksum));
 				output.flush();
 
 				System.out.println("CHALLENGE VALIDATED: "

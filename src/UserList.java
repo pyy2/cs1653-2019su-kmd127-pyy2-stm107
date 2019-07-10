@@ -65,7 +65,7 @@ import java.math.BigInteger;
 					newUser.passwordNeedsChanged = true;
 					newUser.locked = false;
 					list.put(username, newUser);
-					System.out.println("This is the user: " + list.get(username));
+					//System.out.println("This is the user: " + list.get(username));
 				}
 				else{
 					System.out.println("Invalid Password.");

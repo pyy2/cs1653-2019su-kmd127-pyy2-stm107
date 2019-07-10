@@ -31,7 +31,7 @@ class Crypto {
     SecretKey aes;
     SecureRandom random;
     int AES_LENGTH = 128;
-    byte[] iv = new byte[AES_LENGTH / 8];
+    byte[] iv = new BigInteger("2766407063173738325154464814828650299").toByteArray();
 
     // constructor
     Crypto() {
@@ -196,7 +196,8 @@ class Crypto {
 
     byte[] aesEncrypt(final String plaintext) {
         byte[] encrypted = null;
-        random.nextBytes(iv);
+        //random.nextBytes(iv);
+        //System.out.println("This is what we're gonna use: " + new BigInteger(iv));
         writeBytesToFile(iv, "./iv.txt");
         try {
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
@@ -225,6 +226,7 @@ class Crypto {
             System.out.println("The Exception is=" + e);
             e.printStackTrace(System.err);
         }
+        System.out.println("AES DECRYPTion DoNE");
         return decryptedValue;
     }
 

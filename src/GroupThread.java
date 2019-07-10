@@ -238,8 +238,6 @@ public class GroupThread extends Thread {
 							String[] upwd = gc.decrypt("AES", uname, _aesKey).split(";");
 							String username = upwd[0];
 							String password = upwd[1];
-							System.out.println("This is the username: "+ username);
-							System.out.println("This is the password: " + password);
 							if (checkPassword(username, password)) {
 								response = new Envelope("OK"); // Success
 							}
@@ -266,7 +264,7 @@ public class GroupThread extends Thread {
 					output.writeObject(response);
 				} else if (message.getMessage().equals("RPASS")) // Client wants to reset password
 				{
-					if (message.getObjContents().size() < 4) {
+					if (message.getObjContents().size() < 3) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
@@ -281,6 +279,8 @@ public class GroupThread extends Thread {
 									String[] upwd = gc.decrypt("AES", uname, _aesKey).split(";");
 									String username = upwd[0];
 									String password = upwd[1];
+									//System.out.println("The username is: " + username);
+									//System.out.println("The password is: " + password);
 
 									if (!gc.verifyHmac((username + password).getBytes(), hmac)) {
 										output.writeObject(response);

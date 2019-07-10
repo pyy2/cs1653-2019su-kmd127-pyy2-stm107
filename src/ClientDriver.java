@@ -52,7 +52,10 @@ public class ClientDriver {
       System.out.println("Error connecting to file server. Exiting...");
       System.exit(1);
     }
-    if (login())
+    boolean loggedin = false;
+    while (!loggedin){
+      loggedin = login();
+    }
       printMenu();
   }
 
@@ -144,7 +147,7 @@ public class ClientDriver {
     String username = kb.nextLine();
     System.out.print("Please enter your password: ");
     String password = kb.nextLine();
-    if (loginFails > 2) {
+    if (loginFails > 1) {
       System.out.println("You have exceeded the maximum falied login attempts!");
       System.out.println("If you have forgotten your password, please contact an administrator.");
       System.out.println("Shutting down...\n\n\n");
