@@ -40,7 +40,7 @@ To authorize that the file server s is indeed file server s and not s', there wi
 
 #### T4: Information Leakage via Passive Monitoring
 
-To prevent snooping and constant reuse of public/private keys, once verification is done with public key exchanges, a symmetric key will be generated for AES-128 use. As previously mentioned, AES is quicker than RSA for usability purposes. It is also more secure and can be renewed on every connection. AES will use a CBC method with padding and a randomly generated IV so every block will be dependent on the previous block to protect against corruption/tampering. This is also implemented with Bouncy Castle.
+To prevent snooping and constant reuse of public/private keys, once verification is done with public key exchanges, a symmetric key will be generated for AES-128 use. As previously mentioned, AES is quicker than RSA for usability purposes. It is also more secure and can be renewed on every connection. AES will use a CBC method with padding and a predetermined  IV so every block will be dependent on the previous block to protect against corruption/tampering. To do for the next phase is randomly generating and sending this IV. This is also implemented with Bouncy Castle.
 
 ### Implementation
 
