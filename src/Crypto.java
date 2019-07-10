@@ -286,7 +286,7 @@ class Crypto {
         if (verify) {
             System.out.printf("Signature verified!\n");
         } else {
-            System.out.println("Unable to verify signature!\n");
+            System.out.println("Signarture verification issue.\n");
         }
         return verify;
     }
