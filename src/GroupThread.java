@@ -677,7 +677,8 @@ public class GroupThread extends Thread {
 					return false; // User already exists
 				} else {
 					my_gs.userList.addUser(username, password);
-					return true;
+					if(my_gs.userList.checkUser(username)) return true;
+					else return false;
 				}
 			} else {
 				return false; // requester not an administrator
