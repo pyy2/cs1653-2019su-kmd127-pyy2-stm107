@@ -54,3 +54,16 @@
   When the client driver program first starts, it asks the user for a the IP and port of the group and file server that the user wants to connect to. When the user connects to the group server and asks for a session token, instead of just sending the encrypted username and password, it will also send the ip:port combination of its intended file server. This ip:port will then be stored as an attribute on the user's session token, which is hashed and signed by group server to ensure it has not been tampered with.
 
   Then, when a file server gives a stolen token to a user for use on another file server, when the user makes a request, the file server will check to see that the ip:port on the token match the file server's own ip:port. If it does not, the file server will terminate the connection and the token cannot be used on that file server.
+
+
+### Protocol Diagrams
+
+**Client-to-Group Server**
+
+![Client-to-Group](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/p4-client-groups.png)
+
+**Client-to-Group Server**
+
+![Client-to-File](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/phase4_client_fileserver.png)
+
+![Per-Group File Permission](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/groups_keys.png)
