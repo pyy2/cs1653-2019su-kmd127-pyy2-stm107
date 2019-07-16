@@ -66,4 +66,6 @@
 
 ![Client-to-File](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/phase4_client_fileserver.png)
 
+**Per-Group File Encryption Key**
+
 ![Per-Group File Permission](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/group_keys.png)
