@@ -32,6 +32,7 @@ class Crypto {
     SecureRandom random;
     int AES_LENGTH = 128;
     byte[] iv = new BigInteger("2766407063173738325154464814828650299").toByteArray();
+    ArrayList<byte[]> usedNonces = new ArrayList<byte[]>();
 
     // constructor
     Crypto() {
@@ -43,6 +44,49 @@ class Crypto {
         random = new SecureRandom();
         //random.nextBytes(iv);
     }
+
+    /*
+     *
+     * ******** Lamport-like Key Handling ********
+     *
+     */
+
+    byte[] hashSecretKey(SecretKey seed, int n){
+      byte[] hashedSecret = seed.getEncoded();
+      try{
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        for(int i = 0; i < n; i++){
+          md.update(hashedSecret);
+          hashedSecret = md.digest();
+        }
+      }
+      catch(Exception e){
+        System.out.println("Error creating Lamport-Like group key: " + e);
+      }
+
+      return hashedSecret;
+    }
+
+    /*
+     *
+     * ******** Nonce ********
+     *
+     */
+
+     byte[] createNonce(){
+       byte[] nonce = null;
+       random.nextBytes(nonce);
+       return nonce;
+     }
+
+     // verifies the nonce has not been used yet
+     boolean verifyNonce(byte[] nonce){
+       return usedNonces.contains(nonce);
+     }
+
+     void invalidateNonce(byte[] used){
+       usedNonces.add(used);
+     }
 
     /*
      *
