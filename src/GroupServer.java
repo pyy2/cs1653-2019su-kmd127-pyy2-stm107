@@ -192,6 +192,20 @@ class ShutDownListener extends Thread {
 			e.printStackTrace(System.err);
 		}
 		try {
+			outStream = new ObjectOutputStream(new FileOutputStream("GroupSeeds.bin"));
+			outStream.writeObject(my_gs.gsList);
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+		}
+		try {
+			outStream = new ObjectOutputStream(new FileOutputStream("GroupHashedKeys.bin"));
+			outStream.writeObject(my_gs.ghkList);
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+		}
+		try {
 			outStream = new ObjectOutputStream(new FileOutputStream("TrustedClients.bin"));
 			outStream.writeObject(my_gs.tcList);
 		} catch (Exception e) {
@@ -224,6 +238,20 @@ class AutoSave extends Thread {
 				try {
 					outStream = new ObjectOutputStream(new FileOutputStream("TrustedClients.bin"));
 					outStream.writeObject(my_gs.tcList);
+				} catch (Exception e) {
+					System.err.println("Error: " + e.getMessage());
+					e.printStackTrace(System.err);
+				}
+				try {
+					outStream = new ObjectOutputStream(new FileOutputStream("GroupSeeds.bin"));
+					outStream.writeObject(my_gs.gsList);
+				} catch (Exception e) {
+					System.err.println("Error: " + e.getMessage());
+					e.printStackTrace(System.err);
+				}
+				try {
+					outStream = new ObjectOutputStream(new FileOutputStream("GroupHashedKeys.bin"));
+					outStream.writeObject(my_gs.ghkList);
 				} catch (Exception e) {
 					System.err.println("Error: " + e.getMessage());
 					e.printStackTrace(System.err);
