@@ -18,6 +18,8 @@ public class GroupServer extends Server {
 	public static final int SERVER_PORT = 8765;
 	public UserList userList;
 	public TrustedClients tcList;
+	public GroupSeeds gsList;
+	public GroupHashedKeys ghkList;
 	public final String groupConfig = "GS";
 
 	public GroupServer() {
@@ -34,10 +36,13 @@ public class GroupServer extends Server {
 
 		String userFile = "UserList.bin";
 		String tcFile = "TrustedClients.bin";
+		String gsFile = "GroupSeeds.bin";
+		String ghkFile = "GroupHashedKeys.bin";
 		Scanner console = new Scanner(System.in);
 		ObjectInputStream tcStream;
 		ObjectInputStream userStream;
-		ObjectInputStream groupStream;
+		ObjectInputStream gsStream;
+		ObjectInputStream ghkStream;
 
 		// This runs a thread that saves the lists on program exit
 		Runtime runtime = Runtime.getRuntime();
@@ -57,18 +62,45 @@ public class GroupServer extends Server {
 			System.out.println("Exception: " + e);
 		}
 
+		// Open group seed file to get per group key info
+		try {
+			FileInputStream gsis = new FileInputStream(gsFile);
+			gsStream = new ObjectInputStream(gsis);
+			gsList = (GroupSeeds) gsStream.readObject();
+		} catch (FileNotFoundException e) {
+			System.out.println("Group Seeds File Does Not Exist. Creating Group Seeds List...");
+			System.out.println("No group seeds currently exist.");
+			gsList = new GroupSeeds();
+		} catch (Exception e) {
+			System.out.println("Unable to load list of group seeds.");
+			System.out.println("Exception: " + e);
+		}
+
+		// Open per-group key info
+		try {
+			FileInputStream ghkis = new FileInputStream(ghkFile);
+			ghkStream = new ObjectInputStream(ghkis);
+			ghkList = (GroupHashedKeys) ghkStream.readObject();
+		} catch (FileNotFoundException e) {
+			System.out.println("Group Hashed Keys File Does Not Exist. Creating Group Hashed Keys List...");
+			ghkList = new GroupHashedKeys();
+		} catch (Exception e) {
+			System.out.println("Unable to load list of group hashed keys.");
+			System.out.println("Exception: " + e);
+		}
+
 		// Open user file to get user list
 		try {
-			FileInputStream fis = new FileInputStream(userFile);
-			userStream = new ObjectInputStream(fis);
-			userList = (UserList) userStream.readObject();
-		} catch (FileNotFoundException e) {
-			System.out.println("UserList File Does Not Exist. Creating UserList...");
-			System.out.println("No users currently exist. Your account will be the administrator.");
-			System.out.print("Enter your username: ");
-			String username = console.next();
-			System.out.print("Enter your password: ");
-			String password = console.next();
+				FileInputStream fis = new FileInputStream(userFile);
+				userStream = new ObjectInputStream(fis);
+				userList = (UserList) userStream.readObject();
+			} catch (FileNotFoundException e) {
+				System.out.println("UserList File Does Not Exist. Creating UserList...");
+				System.out.println("No users currently exist. Your account will be the administrator.");
+				System.out.print("Enter your username: ");
+				String username = console.next();
+				System.out.print("Enter your password: ");
+				String password = console.next();
 
 			// Create a new list, add current user to the ADMIN group. They now own the
 			// ADMIN group.

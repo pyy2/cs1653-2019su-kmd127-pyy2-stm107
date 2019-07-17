@@ -598,7 +598,33 @@ public class GroupThread extends Thread {
 					}
 					output.writeObject(response);
 				}
+				// TODO: CHANGE TO MATCH ACTUAL MESSAGE STRUCTURE
+				else if (message.getMessage().equals("GETGKEY"))
+				{
+					if (message.getObjContents().size() < 3) {
+						response = new Envelope("FAIL");
+					} else {
+						response = new Envelope("FAIL");
+						// Should maybe just contain group and token, concatted and hashed?
+						if (message.getObjContents().get(0) != null) {
+							byte[] grp_token = (byte[]) message.getObjContents().get(0);
 
+							String group_tkn_str = gc.decrypt("AES", grp_token, _aesKey);
+							String[] p_arr = group_tkn_str.split("-");
+
+							String groupName = p_arr[0];
+							UserToken yourToken = makeTokenFromString(p_arr[1]);
+							String curr_key = getKey(groupName, yourToken);
+							if (curr_key != null) {
+								response = new Envelope("OK"); // success
+								byte[] enc_key = gc.encrypt("AES", curr_key, _aesKey);
+								response.addObject(enc_key);
+								//TODO: SHOULD PROBABLY ADD SOME SORT OF HMAC W/SHARED KEY2 FOR INTEGRITY
+							}
+						}
+					}
+					output.writeObject(response);
+				}
 				else if (message.getMessage().equals("DISCONNECT")) // Client wants to disconnect
 				{
 					socket.close(); // Close the socket
@@ -754,6 +780,20 @@ public class GroupThread extends Thread {
 			// default
 			boolean success = my_gs.userList.createGroup(groupName);
 			my_gs.userList.addOwnership(requester, groupName);
+
+			// create a per-group key.
+			byte[] seed = gc.createLamportSeed();
+			if(my_gs.gsList.getSeed(groupName) != null){
+				System.out.println("WARNING: This group seed already exists. That's unexpected.");
+			}
+			my_gs.gsList.addSeed(groupName, seed);
+
+			// Hash it 1000 times (because it was just created and we're starting at 1000)
+			byte[] hashedKey = gc.hashSecretKey(seed, 1000);
+
+			// Store H^1000(seed) and 1000
+			my_gs.ghkList.addGroupKey(groupName, 1000, hashedKey);
+			System.out.println("The hashed group key has been stored.\n\n");
 			return success;
 		} else
 			return false;
@@ -771,6 +811,10 @@ public class GroupThread extends Thread {
 					my_gs.userList.removeGroup(user, groupName);
 				}
 				my_gs.userList.removeOwnership(requester, groupName);
+
+				// remove the per-group seed and hash keys
+				my_gs.gsList.removeSeed(groupName);
+				my_gs.ghkList.removeGroupKey(groupName);
 				return my_gs.userList.deleteGroup(groupName);
 			} else
 				return false;
@@ -813,6 +857,18 @@ public class GroupThread extends Thread {
 				// check to see if the user(to be removed) is a member of the group
 				if (userGroups != null && userGroups.contains(groupName)) {
 					my_gs.userList.removeGroup(user, groupName);
+
+					// get the current seed and keys
+					Hashtable<Integer, byte[]> curr_key = my_gs.ghkList.getGroupKey(groupName);
+					byte[] seed = my_gs.gsList.getSeed(groupName);
+
+					// decrement n, recalculate, and save
+					int n = curr_key.keys().nextElement();
+					byte[] curr_byte = curr_key.get(n);
+					n--;
+					byte[] dec_key = gc.hashSecretKey(curr_byte, n);
+					my_gs.ghkList.addGroupKey(groupName, n, dec_key);
+					System.out.println("The group key has been updated.");
 					return true;
 				} else {
 					System.out.println("User groups doesn't contain group.");
@@ -826,6 +882,25 @@ public class GroupThread extends Thread {
 			System.out.println("Requester doesn't exist.");
 			return false;
 		}
+	}
+
+	private String getKey(String group, UserToken token){
+		String requester = token.getSubject();
+		if (my_gs.userList.checkUser(requester)) {
+			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
+			// check to see if the requestor is a member of the group
+			if (temp.contains(group)) {
+				String ckey;
+				Hashtable<Integer, byte[]> curr_key;
+				curr_key = my_gs.ghkList.getGroupKey(group);
+				// turn it into a string for ease of sending
+				String n = new String(Integer.toString(curr_key.keys().nextElement()));
+				String key = new String(curr_key.get(Integer.parseInt(n)));
+				ckey = n + "+" + key;
+				return ckey;
+			}
+		}
+		return null;
 	}
 
 	private UserToken makeTokenFromString(String tokenString) {

@@ -51,8 +51,14 @@ class Crypto {
      *
      */
 
-    byte[] hashSecretKey(SecretKey seed, int n){
-      byte[] hashedSecret = seed.getEncoded();
+    byte[] createLamportSeed(){
+      byte[] seed = null;
+      random.nextBytes(seed);
+      return seed;
+    }
+
+    byte[] hashSecretKey(byte[] seed, int n){
+      byte[] hashedSecret = seed;
       try{
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         for(int i = 0; i < n; i++){
@@ -63,10 +69,8 @@ class Crypto {
       catch(Exception e){
         System.out.println("Error creating Lamport-Like group key: " + e);
       }
-
       return hashedSecret;
     }
-
     /*
      *
      * ******** RSA Public/Private Keys ********
