@@ -69,27 +69,6 @@ class Crypto {
 
     /*
      *
-     * ******** Nonce ********
-     *
-     */
-
-     byte[] createNonce(){
-       byte[] nonce = null;
-       random.nextBytes(nonce);
-       return nonce;
-     }
-
-     // verifies the nonce has not been used yet
-     boolean verifyNonce(byte[] nonce){
-       return usedNonces.contains(nonce);
-     }
-
-     void invalidateNonce(byte[] used){
-       usedNonces.add(used);
-     }
-
-    /*
-     *
      * ******** RSA Public/Private Keys ********
      *
      */
