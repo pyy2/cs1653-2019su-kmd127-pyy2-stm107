@@ -197,13 +197,14 @@ public abstract class Client {
 				//System.out.println("Signed Checksum -> Client:\n" + c.toString(signedChecksum));
 				output.flush();
 
-				if(!c.isEqual(challenge.getBytes(), input.readObject().toString().getBytes())){
+				byte[] Rchallenge = input.readObject().toString().getBytes();
+				if(!c.isEqual(challenge.getBytes(), Rchallenge)){
 					System.out.println("Error valiating challenge!");
 					System.out.println("Terminating connection!!");
 					System.exit(0);
 				}
 				System.out.println("CHALLENGE VALIDATED: "
-						+ c.isEqual(challenge.getBytes(), input.readObject().toString().getBytes()));
+						+ c.isEqual(challenge.getBytes(), Rchallenge));
 				System.out.println("\n############# CONNETION TO FILESERVER SECURE ############\n");
 			}
 

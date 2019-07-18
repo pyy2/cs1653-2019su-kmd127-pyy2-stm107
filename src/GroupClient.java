@@ -69,6 +69,36 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	}
 
+	public String getKeys(String group, UserToken token){
+		try {
+			Envelope message = null, response = null;
+			message = new Envelope("GETGKEY");
+
+			ArrayList<String> reqParams = new ArrayList<>();
+			reqParams.add(group);
+			reqParams.add(token.toString());
+			byte[] reqBytes = c.createEncryptedString(reqParams);
+
+			message.addObject(reqBytes);
+			output.writeObject(message);
+
+			response = (Envelope) input.readObject();
+
+			// If server indicates success, return the member list
+			if (response.getMessage().equals("OK")) {
+
+				byte[] enc_keys = (byte[]) response.getObjContents().get(0);
+				String keys = c.decrypt("AES", enc_keys, sharedKey);
+				return keys;
+			}
+
+			return null;
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
+		}
+	}
 	public boolean lockUser(String username){
 		try {
 			Envelope message = null, response = null;

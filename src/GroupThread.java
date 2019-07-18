@@ -601,7 +601,7 @@ public class GroupThread extends Thread {
 				// TODO: CHANGE TO MATCH ACTUAL MESSAGE STRUCTURE
 				else if (message.getMessage().equals("GETGKEY"))
 				{
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 1) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
@@ -898,6 +898,9 @@ public class GroupThread extends Thread {
 				String key = new String(curr_key.get(Integer.parseInt(n)));
 				ckey = n + "+" + key;
 				return ckey;
+			}
+			else{
+				System.out.println("User is not a member of the request group and cannot get the key!");
 			}
 		}
 		return null;

@@ -52,7 +52,7 @@ class Crypto {
      */
 
     byte[] createLamportSeed(){
-      byte[] seed = null;
+      byte[] seed = new byte[128];
       random.nextBytes(seed);
       return seed;
     }

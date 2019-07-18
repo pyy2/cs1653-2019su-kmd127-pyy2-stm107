@@ -127,6 +127,9 @@ public class ClientDriver {
         break;
       case "15":
         exit();
+      case "16":
+        getKeys();
+        break;
       default:
         System.out.println("\nI'm sorry, I didn't understand your input. Let's try again.\n");
       }
@@ -437,6 +440,23 @@ public class ClientDriver {
     fcli.disconnect();
     System.out.println("Bye!");
     System.exit(0);
+  }
+
+  private static void getKeys() {
+    System.out.println("\nGetting group keys\n");
+    utkn = bounceToken();
+    if (!checkLogInStatus())
+      return;
+    System.out.print("Please enter the name of the group for which you need keys: ");
+    String group = kb.nextLine();
+    String keys = gcli.getKeys(group, utkn);
+    if (keys == null)
+      System.out.println("Error deleting file from file server.\n");
+    else{
+      System.out.println("Looks like you're allowed. Here's yo' keys!\n");
+      System.out.println("The key info: " + keys);
+    }
+
   }
 
   private static UserToken bounceToken() {
