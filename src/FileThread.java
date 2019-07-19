@@ -28,7 +28,7 @@ public class FileThread extends Thread {
 	Crypto fc; // filecrypto class
 
 	// local sequence # tracker
-	int exp_seq = 1;
+	int expseq = 1;
 
 	public FileThread(Socket _socket) {
 		socket = _socket;
@@ -147,6 +147,8 @@ public class FileThread extends Thread {
 						} else if (e.getObjContents().get(1) == null) {
 							response = new Envelope("FAIL-BADGROUP");
 						} else {
+							int seq = (Integer) e.getObjContents().get(2);
+							fc.checkSequence(seq, expseq);
 							byte[] req = (byte[]) e.getObjContents().get(0);
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
@@ -187,23 +189,31 @@ public class FileThread extends Thread {
 												remotePath.replace('/', '_'));
 
 										response = new Envelope("READY"); // Success
+										response.addObject(++expseq);
+										++expseq;
 										output.writeObject(response);
 
 										e = (Envelope) input.readObject();
 										while (e.getMessage().compareTo("CHUNK") == 0) {
 											// Store the file that has been ENCRYPTED WITH THE GROUP KEY
+											seq = (Integer)e.getObjContents().get(2);
+											fc.checkSequence(seq, expseq);
 											byte[] b = (byte[]) e.getObjContents().get(1);
-											shared_n = (int)e.getObjContents().get(0);
+											shared_n = (Integer)e.getObjContents().get(0);
 
 											// write data to the file.
 											fos.write(b);
 											response = new Envelope("READY"); // Success
+											response.addObject(++expseq);
+											++expseq;
 											output.writeObject(response);
 											e = (Envelope) input.readObject();
 										}
 
 										// add shared_n as ShareFile metadata
 										if (e.getMessage().compareTo("EOF") == 0) {
+											seq = (Integer) e.getObjContents().get(0);
+											fc.checkSequence(seq, expseq);
 											System.out.printf("Transfer successful file %s\n", remotePath);
 											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath, shared_n);
 											response = new Envelope("OK"); // Success
@@ -217,6 +227,8 @@ public class FileThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### DOWNLOAD FILES #######################//
@@ -233,6 +245,8 @@ public class FileThread extends Thread {
 						if (e.getObjContents().get(1) == null) {
 							response = new Envelope("FAIL-BADHMAC");
 						} else {
+							int seq = (Integer) e.getObjContents().get(2);
+							fc.checkSequence(seq, expseq);
 							byte[] req = (byte[]) e.getObjContents().get(0);
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
 
@@ -279,7 +293,9 @@ public class FileThread extends Thread {
 												response = new Envelope("READY"); // Success
 												// Send shared n over to client for key generation.
 												response.addObject(shared_n);
+												response.addObject(++expseq);
 												output.writeObject(response);
+												++expseq;
 
 												do {
 													byte[] buf = new byte[4096];
@@ -297,7 +313,6 @@ public class FileThread extends Thread {
 													}
 													// buffer is already encrypted
 													e.addObject(buf);
-													//e.addObject(fc.encrypt("AES", new String(buf), _aesKey));
 													e.addObject(new Integer(n));
 
 													output.writeObject(e);
@@ -307,12 +322,16 @@ public class FileThread extends Thread {
 												} while (fis.available() > 0);
 
 												if (e.getMessage().compareTo("DOWNLOADF") == 0) {
-
 													e = new Envelope("EOF");
+													e.addObject(expseq);
+													//expseq;
 													output.writeObject(e);
 
 													e = (Envelope) input.readObject();
+
 													if (e.getMessage().compareTo("OK") == 0) {
+														seq = (Integer) e.getObjContents().get(0);
+														fc.checkSequence(seq, expseq);
 														System.out.printf("File data download successful\n");
 													} else {
 
@@ -344,6 +363,8 @@ public class FileThread extends Thread {
 
 					byte[] tokKey = (byte[]) e.getObjContents().get(0);
 					byte[] sigHmac = (byte[]) e.getObjContents().get(1);
+					int seq = (Integer) e.getObjContents().get(2);
+					fc.checkSequence(seq, expseq);
 
 					// decrypt to get token/key
 					String decrypted = fc.decrypt("AES", tokKey, _aesKey);
@@ -396,6 +417,8 @@ public class FileThread extends Thread {
 							e = new Envelope(e1.getMessage());
 						}
 					}
+					e.addObject(++expseq);
+					++expseq;
 					output.writeObject(e);
 
 				} else if (e.getMessage().equals("DISCONNECT-")) {

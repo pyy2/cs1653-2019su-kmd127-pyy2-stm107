@@ -38,11 +38,14 @@ public class FileClient extends Client implements FileClientInterface {
 
 		env.addObject(encryptedToken); // Add encrypted token/key
 		env.addObject(fsMac); // add signed data
+		env.addObject(++expseq);
+		++expseq;
 
 		try {
 			output.writeObject(env);
 			env = (Envelope) input.readObject();
-
+			int seq = (Integer) env.getObjContents().get(0);
+			fc.checkSequence(seq, expseq);
 			if (env.getMessage().compareTo("OK") == 0) {
 				System.out.printf("File %s deleted successfully\n", filename);
 			} else {
@@ -80,6 +83,8 @@ public class FileClient extends Client implements FileClientInterface {
 
 				env.addObject(encryptedToken); // Add encrypted token/key
 				env.addObject(fsMac); // add signed data
+				env.addObject(++expseq);
+				++expseq;
 				output.writeObject(env);
 
 				byte[] curr_key = null;
@@ -88,6 +93,8 @@ public class FileClient extends Client implements FileClientInterface {
 				if (env.getMessage().equals("READY")) {
 					// get file's n for lamport
 					int file_n = (Integer) env.getObjContents().get(0);
+					int seq = (Integer) env.getObjContents().get(1);
+					fc.checkSequence(seq, expseq);
 
 					// with n extracted, get the key
 					// subtract my n from the gserver from this n
@@ -103,7 +110,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 					// make the secret key
 					SecretKey skey = fc.makeAESKeyFromString(curr_key);
-					System.out.println("This is the key..." + Base64.getEncoder().encodeToString(skey.getEncoded()));
+					//System.out.println("This is the key..." + Base64.getEncoder().encodeToString(skey.getEncoded()));
 
 					// Now get the file chunks
 					env = (Envelope) input.readObject();
@@ -119,12 +126,17 @@ public class FileClient extends Client implements FileClientInterface {
 					fos.close();
 
 					if (env.getMessage().compareTo("EOF") == 0) {
+						seq = (Integer) env.getObjContents().get(0);
+						expseq++;
+						fc.checkSequence(seq, expseq);
 						fos.close();
 						System.out.printf("\nTransfer successful file %s\n", sourceFile);
 						env = new Envelope("OK"); // Success
+						env.addObject(++expseq);
+						++expseq;
 						output.writeObject(env);
 					} else {
-						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
+						System.out.printf("Error reading file %(s (%s)\n", sourceFile, env.getMessage());
 						file.delete();
 						return false;
 					}
@@ -202,6 +214,8 @@ public class FileClient extends Client implements FileClientInterface {
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
+			message.addObject(++expseq);
+			++expseq;
 			output.writeObject(message);
 
 			FileInputStream fis = new FileInputStream(sourceFile);
@@ -210,6 +224,8 @@ public class FileClient extends Client implements FileClientInterface {
 
 			// If server indicates success, return the member list
 			if (env.getMessage().equals("READY")) {
+				int seq = (Integer) env.getObjContents().get(0);
+				fc.checkSequence(seq, expseq);
 				System.out.printf("Meta data upload successful\n");
 			} else {
 				System.out.printf("Upload failed: %s\n", env.getMessage());
@@ -238,6 +254,8 @@ public class FileClient extends Client implements FileClientInterface {
 				// add shared n and encrypted chunk (no need to encrypt further)
 				message.addObject(shared_n);
 				message.addObject(enc_buf);
+				message.addObject(++expseq);
+				++expseq;
 				message.addObject(enc_buf.length);
 
 				output.writeObject(message);
@@ -248,12 +266,18 @@ public class FileClient extends Client implements FileClientInterface {
 
 			// If server indicates success, return the member list
 			if (env.getMessage().compareTo("READY") == 0) {
+				int seq = (Integer) env.getObjContents().get(0);
+				fc.checkSequence(seq, expseq);
 
 				message = new Envelope("EOF");
+				message.addObject(++expseq);
+				++expseq;
 				output.writeObject(message);
 
 				env = (Envelope) input.readObject();
 				if (env.getMessage().compareTo("OK") == 0) {
+					seq = (Integer) env.getObjContents().get(0);
+					fc.checkSequence(seq, expseq);
 					System.out.printf("\nFile data upload successful\n");
 				} else {
 
