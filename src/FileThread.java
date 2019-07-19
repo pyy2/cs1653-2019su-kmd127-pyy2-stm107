@@ -35,6 +35,9 @@ public class FileThread extends Thread {
 	public void run() {
 		boolean proceed = true;
 		try {
+
+//####################### HAND SHAKE PROTOCOL #######################//
+
 			System.out.println("\n*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
 			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
@@ -53,27 +56,19 @@ public class FileThread extends Thread {
 
 			fc.setSysK(input.readObject()); // set client's public key (encoded)
 			clientK = fc.getSysK();
-			// System.out.println("Received client's public key: \n" +
-			// fc.RSAtoString(clientK));
 
 			// get aes key + challenge
 			String s = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
 			String aesKey = s.substring(0, s.lastIndexOf("-"));
 			String challenge = s.substring(aesKey.length(), s.length());
-			// System.out.println("AESKey: " + aesKey);
-			// System.out.println("Challenge: " + challenge);
 			fc.setAESKey(aesKey); // set aes key
 			_aesKey = fc.getAESKey();
 
 			// verify checksum
 			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
-			// System.out.println("Client checksum:\n" + fc.toString(_checkSum)); // print
-			// System.out.println("Checksum verified -> " + fc.isEqual(_checkSum,
-			// fc.createChecksum(s)));
 
 			// verify signature
 			byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
-			// System.out.println("Signed Checksum:\n" + fc.toString(signedChecksum));
 
 			// respond with challenge
 			output.writeObject(challenge);
@@ -84,6 +79,8 @@ public class FileThread extends Thread {
 				Envelope e = (Envelope) input.readObject();
 				response = null;
 				System.out.println("Request received: " + e.getMessage());
+
+//####################### LIST FILES #######################//
 
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
@@ -135,6 +132,9 @@ public class FileThread extends Thread {
 						}
 					}
 					output.writeObject(response);
+
+//####################### UPLOAD FILES #######################//
+
 				} else if (e.getMessage().equals("UPLOADF")) {
 					if (e.getObjContents().size() < 2) {
 						response = new Envelope("FAIL-BADCONTENTS");
@@ -190,11 +190,10 @@ public class FileThread extends Thread {
 										while (e.getMessage().compareTo("CHUNK") == 0) {
 											// Store the file that has been ENCRYPTED WITH THE GROUP KEY
 											byte[] b = (byte[]) e.getObjContents().get(1);
-
 											shared_n = (int)e.getObjContents().get(0);
 
 											// write data to the file.
-											fos.write(b, 0, (Integer) e.getObjContents().get(2));
+											fos.write(b);
 											response = new Envelope("READY"); // Success
 											output.writeObject(response);
 											e = (Envelope) input.readObject();
@@ -216,6 +215,10 @@ public class FileThread extends Thread {
 						}
 					}
 					output.writeObject(response);
+
+//####################### DOWNLOAD FILES #######################//
+
+
 				} else if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
 					if (e.getObjContents().size() < 2) {
@@ -331,6 +334,9 @@ public class FileThread extends Thread {
 						}
 					}
 					output.writeObject(response);
+
+//####################### DELETE FILES #######################//
+
 				} else if (e.getMessage().compareTo("DELETEF") == 0) {
 
 					byte[] tokKey = (byte[]) e.getObjContents().get(0);

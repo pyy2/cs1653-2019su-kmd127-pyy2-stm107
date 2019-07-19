@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.io.ObjectInputStream;
@@ -73,6 +72,7 @@ public class FileClient extends Client implements FileClientInterface {
 				Envelope env = new Envelope("DOWNLOADF"); // Success
 
 				// prepare metadata request
+				//TODO: Don't send group public key.
 				String pubKey = c.toString(groupK);
 				String concatted = pubKey + token + "||" + sourceFile;
 				byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
@@ -85,13 +85,12 @@ public class FileClient extends Client implements FileClientInterface {
 
 				env = (Envelope) input.readObject();
 				if (env.getMessage().equals("READY")) {
-					// get file's n
+					// get file's n for lamport
 					int file_n = (Integer) env.getObjContents().get(0);
-					System.out.println("This is the file's n: " + file_n);
 
 					// with n extracted, get the key
 					// subtract my n from the gserver from this n
-					int hash_n = shared_n - file_n;
+					int hash_n = file_n - shared_n;
 					if(hash_n < 0){
 						System.out.println("Requestor has invalid group key. Terminating request...");
 						return false;
@@ -101,17 +100,16 @@ public class FileClient extends Client implements FileClientInterface {
 						curr_key = fc.hashSecretKey(key, hash_n);
 					}
 
+					// make the secret key
 					SecretKey skey = fc.makeAESKeyFromString(curr_key);
-					//System.out.println("This is the key..." + Base64.getEncoder().encodeToString(skey.getEncoded()));
+					System.out.println("This is the key..." + Base64.getEncoder().encodeToString(skey.getEncoded()));
+
 					// Now get the file chunks
 					env = (Envelope) input.readObject();
 					while (env.getMessage().compareTo("CHUNK") == 0) {
-						// decrypt
-						String teststr = c.decrypt("AES", (byte[]) env.getObjContents().get(0), sharedKey);
-						System.out.println("This is a test: " + teststr);
-						//byte[] b = c.decrypt("AES", (byte[]) env.getObjContents().get(0), fc.makeAESKeyFromString(curr_key)).getBytes();
-						byte[] test = c.decrypt("AES", (byte[]) env.getObjContents().get(0), sharedKey).getBytes();
-						fos.write(test, 0, (Integer) env.getObjContents().get(1));
+						// decrypt abnd write
+						byte[] decrypted_file = c.aesGroupDecrypt((byte[]) env.getObjContents().get(0), skey);
+						fos.write(decrypted_file, 0, (Integer) env.getObjContents().get(1));
 						System.out.printf(".");
 						env = new Envelope("DOWNLOADF"); // Success
 						output.writeObject(env);
@@ -206,13 +204,6 @@ public class FileClient extends Client implements FileClientInterface {
 			output.writeObject(message);
 
 			FileInputStream fis = new FileInputStream(sourceFile);
-			// READ IN THE WHOLE FILE.
-			byte[] inFile = new byte[(int) sourceFile.length()];
-			fis.read(inFile);
-
-			// encrypt it with shared group key and add the shared n
-			SecretKey skey = fc.makeAESKeyFromString(key);
-			byte[] enc_file = c.encrypt("AES", new String(inFile), skey);
 
 			env = (Envelope) input.readObject();
 
@@ -223,9 +214,8 @@ public class FileClient extends Client implements FileClientInterface {
 				System.out.printf("Upload failed: %s\n", env.getMessage());
 				return false;
 			}
-
-			int n = -1;
-			ByteArrayInputStream byte_chunk = new ByteArrayInputStream(enc_file);
+			// establish the shared group key for encryption
+			SecretKey skey = fc.makeAESKeyFromString(key);
 			do {
 				byte[] buf = new byte[4096];
 				if (env.getMessage().compareTo("READY") != 0) {
@@ -233,7 +223,10 @@ public class FileClient extends Client implements FileClientInterface {
 					return false;
 				}
 				message = new Envelope("CHUNK");
-				n = byte_chunk.read(buf);
+				// read in from the file
+				int n = fis.read(buf); // can throw an IOException
+				//encrypt the chunk
+				byte [] enc_buf = c.aesGroupEncrypt(new String(buf), skey);
 				if (n > 0) {
 					System.out.printf(".");
 				} else if (n < 0) {
@@ -241,9 +234,10 @@ public class FileClient extends Client implements FileClientInterface {
 					return false;
 				}
 
+				// add shared n and encrypted chunk (no need to encrypt further)
 				message.addObject(shared_n);
-				message.addObject(buf);
-				message.addObject(buf.length);
+				message.addObject(enc_buf);
+				message.addObject(enc_buf.length);
 
 				output.writeObject(message);
 

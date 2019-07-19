@@ -403,6 +403,10 @@ public class ClientDriver {
 
     // Get the current group keys
     Hashtable<Integer, byte[]> key_info = getKeys(upGroup);
+    if(!key_info.keys().hasMoreElements()){
+      System.out.println("Error uploading file to file server.\n");
+      return;
+    }
     int n = key_info.keys().nextElement();
     byte[] key = key_info.get(n);
     //System.out.println("The key the clidriver is sending to upload is: " + new String(key));
@@ -427,7 +431,10 @@ public class ClientDriver {
 
     // Get the current group keys for download decryption
     Hashtable<Integer, byte[]> key_info = getKeys(group);
-    //System.out.println("Before splitting: " + key_info);
+    if(!key_info.keys().hasMoreElements()){
+      System.out.println("Error downloading file.\n");
+      return;
+    }
     int n = key_info.keys().nextElement();
     byte[] key = key_info.get(n);
     //System.out.println("The key the clidriver is sending to download is: " + new String(key));
@@ -478,7 +485,13 @@ public class ClientDriver {
       int indexofDelim = keys.indexOf("~");
       int n = Integer.parseInt(keys.substring(0, indexofDelim));
       String keystr = keys.substring(indexofDelim+1);
-      n_key.put(n, keystr.getBytes());
+      try{
+        n_key.put(n, keystr.getBytes("ISO-8859-1"));
+      }
+      catch(Exception e){
+        System.out.println("Error getting key bytes: " + e);
+      }
+
     }
     return n_key;
   }
