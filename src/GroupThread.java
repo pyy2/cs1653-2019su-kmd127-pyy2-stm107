@@ -896,7 +896,7 @@ public class GroupThread extends Thread {
 				// turn it into a string for ease of sending
 				String n = new String(Integer.toString(curr_key.keys().nextElement()));
 				String key = new String(curr_key.get(Integer.parseInt(n)));
-				ckey = n + "+" + key;
+				ckey = n + "~" + key;
 				return ckey;
 			}
 			else{

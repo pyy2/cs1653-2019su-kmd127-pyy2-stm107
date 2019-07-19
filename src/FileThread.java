@@ -150,7 +150,6 @@ public class FileThread extends Thread {
 							// decrypt to get request (gsPK, token, destFile, group)
 							String decrypted = fc.decrypt("AES", req, _aesKey);
 							String[] st = decrypted.split("\\|\\|");
-							System.out.println(decrypted);
 
 							// if length doesn't match
 							if (st.length != 4) {
@@ -164,7 +163,7 @@ public class FileThread extends Thread {
 								// create hmac from clientk
 								byte[] concatted = (groupK + "||" + token).getBytes();
 								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
-
+								int shared_n = 0;
 								// verify signature is from gs
 								if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
 									response = new Envelope("FAIL-BADGSSIG");
@@ -189,17 +188,22 @@ public class FileThread extends Thread {
 
 										e = (Envelope) input.readObject();
 										while (e.getMessage().compareTo("CHUNK") == 0) {
-											byte[] b = fc.decrypt("AES", (byte[]) e.getObjContents().get(0), _aesKey)
-													.getBytes();
-											fos.write(b, 0, (Integer) e.getObjContents().get(1));
+											// Store the file that has been ENCRYPTED WITH THE GROUP KEY
+											byte[] b = (byte[]) e.getObjContents().get(1);
+
+											shared_n = (int)e.getObjContents().get(0);
+
+											// write data to the file.
+											fos.write(b, 0, (Integer) e.getObjContents().get(2));
 											response = new Envelope("READY"); // Success
 											output.writeObject(response);
 											e = (Envelope) input.readObject();
 										}
 
+										// add shared_n as ShareFile metadata
 										if (e.getMessage().compareTo("EOF") == 0) {
 											System.out.printf("Transfer successful file %s\n", remotePath);
-											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath);
+											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath, shared_n);
 											response = new Envelope("OK"); // Success
 										} else {
 											System.out.printf("Error reading file %s from client\n", remotePath);
@@ -248,6 +252,7 @@ public class FileThread extends Thread {
 
 									UserToken t = (UserToken) fc.makeTokenFromString(token);
 									ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
+
 									if (sf == null) {
 										System.out.printf("Error: File %s doesn't exist\n", remotePath);
 										response = new Envelope("ERROR_FILEMISSING");
@@ -255,7 +260,7 @@ public class FileThread extends Thread {
 										System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
 										response = new Envelope("ERROR_PERMISSION");
 									} else {
-
+										int shared_n = sf.getN();
 										try {
 											File f = new File("shared_files/_" + remotePath.replace('/', '_'));
 											if (!f.exists()) {
@@ -264,6 +269,11 @@ public class FileThread extends Thread {
 												response = new Envelope("ERROR_NOTONDISK");
 											} else {
 												FileInputStream fis = new FileInputStream(f);
+
+												response = new Envelope("READY"); // Success
+												// Send shared n over to client for key generation.
+												response.addObject(shared_n);
+												output.writeObject(response);
 
 												do {
 													byte[] buf = new byte[4096];
@@ -279,8 +289,9 @@ public class FileThread extends Thread {
 														System.out.println("Read error");
 
 													}
-
-													e.addObject(fc.encrypt("AES", new String(buf), _aesKey));
+													// buffer is already encrypted
+													e.addObject(buf);
+													//e.addObject(fc.encrypt("AES", new String(buf), _aesKey));
 													e.addObject(new Integer(n));
 
 													output.writeObject(e);
@@ -289,7 +300,6 @@ public class FileThread extends Thread {
 
 												} while (fis.available() > 0);
 
-												// If server indicates success, return the member list
 												if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
 													e = new Envelope("EOF");
@@ -297,16 +307,16 @@ public class FileThread extends Thread {
 
 													e = (Envelope) input.readObject();
 													if (e.getMessage().compareTo("OK") == 0) {
-														System.out.printf("File data upload successful\n");
+														System.out.printf("File data download successful\n");
 													} else {
 
-														System.out.printf("Upload failed: %s\n", e.getMessage());
+														System.out.printf("Download failed: %s\n", e.getMessage());
 
 													}
 
 												} else {
 
-													System.out.printf("Upload failed: %s\n", e.getMessage());
+													System.out.printf("Download failed: %s\n", e.getMessage());
 
 												}
 											}

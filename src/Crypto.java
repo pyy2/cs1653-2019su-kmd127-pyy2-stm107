@@ -58,6 +58,7 @@ class Crypto {
     }
 
     byte[] hashSecretKey(byte[] seed, int n){
+      System.out.println("Hashing key: " + new String(seed) +  " " +n+ " times.");
       byte[] hashedSecret = seed;
       try{
         MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -178,6 +179,10 @@ class Crypto {
 
     void setAESKey(String key) {
         aes = new SecretKeySpec(decode(key), "AES");
+    }
+
+    SecretKey makeAESKeyFromString(byte[] key){
+      return new SecretKeySpec(key, 0, key.length, "AES");
     }
 
     SecretKey getAESKey() {

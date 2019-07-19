@@ -100,28 +100,6 @@ public class FileServer extends Server {
 			System.out.println("Error creating shared_files directory");
 		}
 
-		// // check if groupserver keys exist
-		// final String path = "./FSpublic.key";
-		// final String path2 = "./FSprivate.key";
-		// File f = new File(path);
-		// File f2 = new File(path2);
-		// Crypto crypto = new Crypto();
-		//
-		// // if key files don't exist, create new ones
-		// if (!f.exists() && !f2.exists()) {
-		// 	System.out.println("FS key NOT found!");
-		// 	crypto.setSystemKP(fileConfig);
-		// }
-		// // now they should exist, set public/private key
-		// if (f.exists() && f2.exists()) {
-		// System.out.println("FS keys found!\nSetting public/private key");
-		// crypto.setPublicKey("FS");
-		// crypto.setPrivateKey("FS");
-		// }
-
-		// System.out.println(crypto.RSAtoString(crypto.getPublic())); // print out
-		// group public key
-
 		// Autosave Daemon. Saves lists every 5 minutes
 		AutoSaveFS aSave = new AutoSaveFS();
 		aSave.setDaemon(true);
