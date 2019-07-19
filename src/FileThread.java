@@ -88,6 +88,9 @@ public class FileThread extends Thread {
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
 
+					int seq = (Integer) e.getObjContents().get(2);
+					fc.checkSequence(seq, expseq);
+
 					if (e.getObjContents().size() < 2) {
 						response = new Envelope("FAIL-BADCONTENTS");
 					} else {
@@ -134,6 +137,8 @@ public class FileThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### UPLOAD FILES #######################//

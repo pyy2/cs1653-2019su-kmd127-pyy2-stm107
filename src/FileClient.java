@@ -174,12 +174,16 @@ public class FileClient extends Client implements FileClientInterface {
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
+			message.addObject(++expseq);
+			++expseq;
 			output.writeObject(message);
 
 			e = (Envelope) input.readObject();
 
 			// If server indicates success, return the files list
 			if (e.getMessage().equals("OK")) {
+				int seq = (Integer) e.getObjContents().get(1);
+				fc.checkSequence(seq, expseq);
 				byte[] flist = (byte[]) e.getObjContents().get(0);
 
 				if (flist != null) {
