@@ -27,11 +27,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			message.addObject(uname); // Add user name string
 			message.addObject(++expseq);
-			//System.out.println(expseq);
 			output.writeObject(message);
 
 			++expseq;
-			//System.out.println(expseq);
 
 			// Get the response from the server
 			response = (Envelope) input.readObject();
@@ -245,10 +243,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			// Add HMAC(Username||password, sharedKey) signed with private key so we know it
 			// hasn't been tampered with!
-			byte[] verify = (username + password).getBytes();
+		//	byte[] verify = (username + password).getBytes();
 			Mac mac = Mac.getInstance("HmacSHA256", "BC");
 			mac.init(sharedKey);
-			mac.update(verify);
+			mac.update(upwd);
 			byte[] out = mac.doFinal();
 			byte[] signed_data = c.signChecksum(out);
 

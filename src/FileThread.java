@@ -384,8 +384,6 @@ public class FileThread extends Thread {
 					byte[] out = fc.createClientHmac(concatted, fc.getSysK());
 					if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
 						System.out.println("HMAC not consistent.");
-						//output.writeObject(new Envelope("FAIL-BADHMAC"));
-						//return;
 					}
 					UserToken t = (UserToken) fc.makeTokenFromString(token);
 

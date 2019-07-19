@@ -30,7 +30,7 @@ public class FileClient extends Client implements FileClientInterface {
 		}
 		Envelope env = new Envelope("DELETEF"); // Success
 
-		// prepare request
+		// TODO: Don't send the group key
 		String pubKey = c.toString(groupK);
 		String concatted = remotePath + "||" + pubKey + token;
 

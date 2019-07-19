@@ -319,7 +319,7 @@ public class GroupThread extends Thread {
 									//System.out.println("The username is: " + username);
 									//System.out.println("The password is: " + password);
 
-									if (!gc.verifyHmac((username + password).getBytes(), hmac)) {
+									if (!gc.verifyHmac((upwd, hmac)) {
 										output.writeObject(response);
 										return;
 									}
