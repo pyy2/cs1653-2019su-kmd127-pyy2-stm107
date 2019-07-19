@@ -56,7 +56,7 @@ public interface FileClientInterface
      * @return true on success, false on failure
      *
      */
-    public boolean upload(final String sourceFile, final String destFile, final String group, final UserToken token);
+    public boolean upload(final String sourceFile, final String destFile, final String group, final UserToken token, int shared_n, byte[] key);
 
 
     /**
@@ -66,11 +66,13 @@ public interface FileClientInterface
      * @param sourceFile The filename used on the server
      * @param destFile   The filename to use locally
      * @param token      The token of the user uploading the file
+     * @param shared_n   The n associated with the Lamport-like group key
+     * @param keys       The current shared group key
      *
      * @return true on success, false on failure
      *
      */
-    public boolean download(final String sourceFile, final String destFile, final UserToken token);
+    public boolean download(final String sourceFile, final String destFile, final UserToken token, int shared_n, byte[] keys);
 
 
     /**

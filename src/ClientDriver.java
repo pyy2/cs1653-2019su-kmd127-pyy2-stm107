@@ -11,6 +11,7 @@ public class ClientDriver {
   public static int FPORT = 4321;
   private static String clientNum;
   private static int loginFails = 0;
+  protected static Crypto c;
 
   public static void main(String args[]) {
     kb = new Scanner(System.in);
@@ -128,7 +129,7 @@ public class ClientDriver {
       case "15":
         exit();
       case "16":
-        getKeys();
+        getKeys(null);
         break;
       default:
         System.out.println("\nI'm sorry, I didn't understand your input. Let's try again.\n");
@@ -399,7 +400,17 @@ public class ClientDriver {
     System.out.print("Please enter the group to which you want to upload the file: ");
     String upGroup = kb.nextLine();
     utkn = gcli.getToken(utkn.getSubject());
-    if (!fcli.upload(upSrc, upDest, upGroup, utkn))
+
+    // Get the current group keys
+    Hashtable<Integer, byte[]> key_info = getKeys(upGroup);
+    if(!key_info.keys().hasMoreElements()){
+      System.out.println("Error uploading file to file server.\n");
+      return;
+    }
+    int n = key_info.keys().nextElement();
+    byte[] key = key_info.get(n);
+    //System.out.println("The key the clidriver is sending to upload is: " + new String(key));
+    if (!fcli.upload(upSrc, upDest, upGroup, utkn, n, key))
       System.out.println("Error uploading file to file server.\n");
     else
       System.out.println("File successfully uploaded to file server!\n");
@@ -414,8 +425,21 @@ public class ClientDriver {
     String downSrc = kb.nextLine();
     System.out.print("Please enter the name for the destination: ");
     String downDest = kb.nextLine();
+    System.out.print("Please enter the group in which the file resides: ");
+    String group = kb.nextLine();
     utkn = gcli.getToken(utkn.getSubject());
-    if (!fcli.download(downSrc, downDest, utkn))
+
+    // Get the current group keys for download decryption
+    Hashtable<Integer, byte[]> key_info = getKeys(group);
+    if(!key_info.keys().hasMoreElements()){
+      System.out.println("Error downloading file.\n");
+      return;
+    }
+    int n = key_info.keys().nextElement();
+    byte[] key = key_info.get(n);
+    //System.out.println("The key the clidriver is sending to download is: " + new String(key));
+
+    if (!fcli.download(downSrc, downDest, utkn, n, key))
       System.out.println("Error downloading file.\n");
     else
       System.out.println("File successfully downloaded!\n");
@@ -442,21 +466,34 @@ public class ClientDriver {
     System.exit(0);
   }
 
-  private static void getKeys() {
+  private static Hashtable<Integer, byte[]> getKeys(String group) {
+    if(group == null){
+      System.out.println("No group name found.");
+      System.out.print("Please enter the name of the groups for which you need keys: ");
+      group = kb.nextLine();
+    }
+    Hashtable<Integer, byte[]> n_key = new Hashtable<>();
     System.out.println("\nGetting group keys\n");
     utkn = bounceToken();
     if (!checkLogInStatus())
-      return;
-    System.out.print("Please enter the name of the group for which you need keys: ");
-    String group = kb.nextLine();
+      return null;
     String keys = gcli.getKeys(group, utkn);
     if (keys == null)
-      System.out.println("Error deleting file from file server.\n");
+      System.out.println("Error getting group keys. You may not have permission, or the group/key doesn't exist.\n");
     else{
-      System.out.println("Looks like you're allowed. Here's yo' keys!\n");
-      System.out.println("The key info: " + keys);
-    }
+      System.out.println("Looks like you're allowed. Here's yo' key!\n");
+      int indexofDelim = keys.indexOf("~");
+      int n = Integer.parseInt(keys.substring(0, indexofDelim));
+      String keystr = keys.substring(indexofDelim+1);
+      try{
+        n_key.put(n, keystr.getBytes("ISO-8859-1"));
+      }
+      catch(Exception e){
+        System.out.println("Error getting key bytes: " + e);
+      }
 
+    }
+    return n_key;
   }
 
   private static UserToken bounceToken() {

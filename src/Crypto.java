@@ -52,12 +52,15 @@ class Crypto {
      */
 
     byte[] createLamportSeed(){
-      byte[] seed = new byte[128];
-      random.nextBytes(seed);
+      System.out.println("Creating lamport key...");
+      SecretKey key = genAESKey();
+      byte[] seed = key.getEncoded();
+      System.out.println("Number of bytes is: " + seed.length);
       return seed;
     }
 
     byte[] hashSecretKey(byte[] seed, int n){
+      //System.out.println("Hashing key: " + new String(seed) +  " " +n+ " times.");
       byte[] hashedSecret = seed;
       try{
         MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -71,6 +74,12 @@ class Crypto {
       }
       return hashedSecret;
     }
+
+    SecretKey makeAESKeyFromString(byte[] key){
+      //System.out.println("The number of bytes is: " + key.length);
+      return new SecretKeySpec(key, "AES");
+    }
+
     /*
      *
      * ******** RSA Public/Private Keys ********
@@ -162,7 +171,7 @@ class Crypto {
      */
 
     // generate AES key
-    void genAESKey() {
+    SecretKey genAESKey() {
         SecretKey key = null;
         try {
             KeyGenerator keyGen = KeyGenerator.getInstance("AES", "BC");
@@ -174,6 +183,7 @@ class Crypto {
             e2.printStackTrace();
         }
         this.aes = key;
+        return key;
     }
 
     void setAESKey(String key) {
@@ -223,9 +233,6 @@ class Crypto {
 
     byte[] aesEncrypt(final String plaintext) {
         byte[] encrypted = null;
-        //random.nextBytes(iv);
-        //System.out.println("This is what we're gonna use: " + new BigInteger(iv));
-        //writeBytesToFile(iv, "./iv.txt");
         try {
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
             cipher.init(Cipher.ENCRYPT_MODE, aes, new IvParameterSpec(iv));
@@ -237,6 +244,35 @@ class Crypto {
 
         return encrypted;
     }
+
+    byte[] aesGroupEncrypt(final String plaintext, final Key key) {
+        byte[] encrypted = null;
+        try {
+            final Cipher cipher = Cipher.getInstance("AES/OFB/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
+            encrypted = cipher.doFinal(plaintext.getBytes());
+        } catch (Exception e) {
+            System.out.println("The Exception is=" + e);
+        }
+        System.out.println("GROUP ENCRYPTION DONE");
+
+        return encrypted;
+    }
+
+    byte[] aesGroupDecrypt(final byte[] encrypted, final Key key) {
+        byte[] decryptedValue = null;
+        try {
+            final Cipher cipher = Cipher.getInstance("AES/OFB/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
+            decryptedValue = cipher.doFinal(encrypted);
+        } catch (Exception e) {
+            System.out.println("The Exception is=" + e);
+            e.printStackTrace(System.err);
+        }
+        System.out.println("AES DECRYPTion DoNE");
+        return decryptedValue;
+    }
+
 
     byte[] decode(String key) {
         return Base64.getDecoder().decode(key);

@@ -12,7 +12,7 @@ all:
 	mkdir -p ./src/jar
 	cd ./src/jar && wget -N $(JAR)
 	$(JC) $(JFLAGS) -d './build' src/*.java
-	echo "Hello World!" >> ./build/test.txt
+	echo "Hello World!" > ./build/test.txt
 
 gs:
 	cd build && java $(JFLAGS2) RunGroupServer $(GPORT)
