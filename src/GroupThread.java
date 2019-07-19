@@ -814,9 +814,8 @@ public class GroupThread extends Thread {
 			my_gs.userList.addOwnership(requester, groupName);
 
 			// create a per-group key.
-		//	System.out.println("Generating Lamport seed...");
 			byte[] seed = gc.createLamportSeed();
-		//	System.out.println("The number of bytes is: " + seed.length);
+			//	System.out.println("The number of bytes is: " + seed.length);
 			if(my_gs.gsList.getSeed(groupName) != null){
 				System.out.println("WARNING: This group seed already exists. That's unexpected.");
 			}
@@ -824,7 +823,6 @@ public class GroupThread extends Thread {
 
 			// Hash it 1000 times (because it was just created and we're starting at 1000)
 			byte[] hashedKey = gc.hashSecretKey(seed, 1000);
-			//System.out.println("I think this is the problem: "+hashedKey.length);
 
 			// Store H^1000(seed) and 1000
 			my_gs.ghkList.addGroupKey(groupName, 1000, hashedKey);
@@ -893,7 +891,7 @@ public class GroupThread extends Thread {
 				if (userGroups != null && userGroups.contains(groupName)) {
 					my_gs.userList.removeGroup(user, groupName);
 
-					// get the current seed and keys
+					// get the seed and key info
 					Hashtable<Integer, byte[]> curr_key = my_gs.ghkList.getGroupKey(groupName);
 					byte[] seed = my_gs.gsList.getSeed(groupName);
 
@@ -901,7 +899,7 @@ public class GroupThread extends Thread {
 					int n = curr_key.keys().nextElement();
 					byte[] curr_byte = curr_key.get(n);
 					n--;
-					byte[] dec_key = gc.hashSecretKey(curr_byte, n);
+					byte[] dec_key = gc.hashSecretKey(seed, n);
 					my_gs.ghkList.addGroupKey(groupName, n, dec_key);
 					System.out.println("The group key has been updated.");
 					return true;
@@ -932,10 +930,8 @@ public class GroupThread extends Thread {
 				// turn it into a string for ease of sending
 				try{
 					String n = new String(Integer.toString(curr_key.keys().nextElement()));
-					System.out.println("new sanity check: " + curr_key.get(Integer.parseInt(n)).length);
 					// need a 1:1 encoding so the number of bytes don't change.
 					String key = new String(curr_key.get(Integer.parseInt(n)), "ISO-8859-1");
-					System.out.println("Any better?: " + key.getBytes("ISO-8859-1").length);
 					ckey = n + "~" + key;
 				}
 				catch(Exception e){
