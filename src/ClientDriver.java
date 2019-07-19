@@ -198,6 +198,8 @@ public class ClientDriver {
   private static void logout() {
     utkn = null;
     bounceToken();
+    // reset the seq number
+    gcli.expseq = 0;
     System.out.println("Logged out.\n\n");
     login();
   }
@@ -498,14 +500,22 @@ public class ClientDriver {
 
   private static UserToken bounceToken() {
     // Bounce the server connections and re-login
+    //int gexp = gcli.expseq;
+    //int fexp = fcli.expseq;
+    //System.out.println("this is the seq: "+gexp);
+    gcli.expseq = 0;
+    fcli.expseq = 0;
     gcli.disconnect();
     gcli.connect(GIP, GPORT, "group", clientNum);
+    //gcli.expseq = gexp;
     fcli.disconnect();
     fcli.connect(FIP, FPORT, "file", clientNum);
+    //fcli.expseq = fexp;
     if(utkn == null){
       return null;
     }
     String uname = utkn.getSubject();
+    //System.out.println("This is the exp: "+gexp);
     return gcli.getToken(uname);
   }
 }

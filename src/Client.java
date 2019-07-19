@@ -32,8 +32,9 @@ public abstract class Client {
 	// accessible in FileClient thread
 	static PublicKey groupK;
 	static byte[] fsMac;
-	// KeyPair keyPair;
-	// ObjectInputStream keyPairStream;
+
+	// expseq_g = 0;
+	// expseq_f = 0;
 
 	public boolean connect(final String server, final int port, final String type, final String clientNum) {
 		fsMac = null;

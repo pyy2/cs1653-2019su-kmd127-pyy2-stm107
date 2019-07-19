@@ -31,6 +31,9 @@ public class GroupThread extends Thread {
 	Crypto gc;
 	Scanner in = new Scanner(System.in);
 
+	// local sequence # tracker
+	int expseq = 1;
+
 	public GroupThread(Socket _socket, GroupServer _gs) {
 		socket = _socket;
 		my_gs = _gs;
@@ -143,6 +146,10 @@ public class GroupThread extends Thread {
 				if (message.getMessage().equals("GET"))// Client wants a token
 				{
 					byte[] uname = (byte[]) message.getObjContents().get(0);
+
+					int seq = (Integer) message.getObjContents().get(1);
+					gc.checkSequence(seq, expseq);
+
 					String username = gc.decrypt("AES", uname, _aesKey);
 					if (username == null) {
 						response = new Envelope("FAIL");
@@ -162,6 +169,7 @@ public class GroupThread extends Thread {
 							token = yourToken.toString();
 						}
 
+						// TODO: Don't send group public key.
 						// Concat token with pubkey and encrypt with shared key.
 						String concatted = pubKey + "||" + token;
 						byte[] bconcatted = concatted.getBytes();
@@ -180,18 +188,26 @@ public class GroupThread extends Thread {
 						response.addObject(encryptedToken);
 						response.addObject(out);
 						response.addObject(signed_data);
+						response.addObject(++expseq);
+						System.out.println(expseq);
+
+						++expseq;
+						System.out.println(expseq);
+
 						output.writeObject(response);
+
 					}
 
 //####################### CREATE USER #######################//
 
 				} else if (message.getMessage().equals("CUSER")) // Client wants to create a user
 				{
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
-
+						int seq = (Integer) message.getObjContents().get(3);
+						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
@@ -223,37 +239,48 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
-//####################### CHANGE PASSWORD #######################//
+//####################### CHECK PASSWORD #######################//
 
 				} else if (message.getMessage().equals("CPWD")) // Client wants to for password match
 				{
-					if (message.getObjContents().size() < 1) {
+					if (message.getObjContents().size() < 2) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
+						int seq = (Integer) message.getObjContents().get(1);
+						gc.checkSequence(seq, expseq);
+
 						if (message.getObjContents().get(0) != null) {
 							byte[] uname = (byte[]) message.getObjContents().get(0);
 							String[] upwd = gc.decrypt("AES", uname, _aesKey).split(";");
 							String username = upwd[0];
 							String password = upwd[1];
 							if (checkPassword(username, password)) {
+								//System.out.println("Do we get here...");
 								response = new Envelope("OK"); // Success
 							}
 						}
 					}
+					response.addObject(++expseq);
+					System.out.println(expseq);
+					++expseq;
+					System.out.println(expseq);
 					// Doesn't really need to be encrypted since it's just sending "ok" of "fail"
 					output.writeObject(response);
 
 //####################### CHECK IF FIRST LOGIN #######################//
 
 				} else if (message.getMessage().equals("FLOGIN")) {
-					if (message.getObjContents().size() < 1) {
+					if (message.getObjContents().size() < 2) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
-
+						int seq = (Integer) message.getObjContents().get(1);
+						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							byte[] uname = (byte[]) message.getObjContents().get(0);
 							String username = gc.decrypt("AES", uname, _aesKey);
@@ -263,18 +290,22 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					// Doesn't really need to be encrypted since it's just sending "ok" of "fail"
+					response.addObject(++expseq);
+					System.out.println(expseq);
+					++expseq;
+					System.out.println(expseq);
 					output.writeObject(response);
 
 //####################### RESET PASSWORD #######################//
 
 				} else if (message.getMessage().equals("RPASS")) // Client wants to reset password
 				{
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
-
+						int seq = (Integer) message.getObjContents().get(3);
+						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
@@ -303,7 +334,8 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					// Doesn't really need to be encrypted since it's just sending "ok" of "fail"
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### UNLOCK (WIP) #######################//
@@ -311,40 +343,26 @@ public class GroupThread extends Thread {
 				} else if (message.getMessage().equals("UNLOCK")) // Client wants to delete a user
 				{
 
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 2) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								if (message.getObjContents().get(2) != null) {
-									byte[] enc_params = (byte[]) message.getObjContents().get(0);
-									byte[] hmac = (byte[]) message.getObjContents().get(1);
-									byte[] signed_data = (byte[]) message.getObjContents().get(2);
+								int seq = (Integer) message.getObjContents().get(1);
+								gc.checkSequence(seq, expseq);
 
-									String params = gc.decrypt("AES", enc_params, _aesKey);
-									String[] p_arr = params.split("-");
+								String uname = gc.decrypt("AES", (byte[]) message.getObjContents().get(0), _aesKey);
 
-									String username = p_arr[0];
-									UserToken yourToken = makeTokenFromString(p_arr[1]);
-
-									if (!gc.verifyHmac(enc_params, hmac)) {
-										output.writeObject(response);
-										return;
-									}
-									if (!gc.verifySignature(hmac, signed_data)) {
-										output.writeObject(response);
-										return;
-									}
-									if (unlockUser(username)) {
-										response = new Envelope("OK"); // Success
-									}
+								if (unlockUser(uname)) {
+									response = new Envelope("OK"); // Success
 								}
 							}
 						}
 					}
-
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### LOCK (WIP) #######################//
@@ -352,40 +370,26 @@ public class GroupThread extends Thread {
 				} else if (message.getMessage().equals("LOCK")) // Client wants to delete a user
 				{
 
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 2) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								if (message.getObjContents().get(2) != null) {
-									byte[] enc_params = (byte[]) message.getObjContents().get(0);
-									byte[] hmac = (byte[]) message.getObjContents().get(1);
-									byte[] signed_data = (byte[]) message.getObjContents().get(2);
+								int seq = (Integer) message.getObjContents().get(1);
+								gc.checkSequence(seq, expseq);
 
-									String params = gc.decrypt("AES", enc_params, _aesKey);
-									String[] p_arr = params.split("-");
+								String uname = gc.decrypt("AES", (byte[]) message.getObjContents().get(0), _aesKey);
 
-									String username = p_arr[0];
-									UserToken yourToken = makeTokenFromString(p_arr[1]);
-
-									if (!gc.verifyHmac(enc_params, hmac)) {
-										output.writeObject(response);
-										return;
-									}
-									if (!gc.verifySignature(hmac, signed_data)) {
-										output.writeObject(response);
-										return;
-									}
-									if (lockUser(username)) {
-										response = new Envelope("OK"); // Success
-									}
+								if (lockUser(uname)) {
+									response = new Envelope("OK"); // Success
 								}
 							}
 						}
 					}
-
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### DELETE USER #######################//
@@ -393,13 +397,15 @@ public class GroupThread extends Thread {
 				} else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
 				{
 
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
+								int seq = (Integer) message.getObjContents().get(3);
+								gc.checkSequence(seq, expseq);
 								if (message.getObjContents().get(2) != null) {
 									byte[] enc_params = (byte[]) message.getObjContents().get(0);
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
@@ -421,22 +427,26 @@ public class GroupThread extends Thread {
 									}
 									if (deleteUser(username, yourToken)) {
 										response = new Envelope("OK"); // Success
+
 									}
 								}
 							}
 						}
 					}
-
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### CREATE GROUP #######################//
 
 				} else if (message.getMessage().equals("CGROUP")) // Client wants to create a group
 				{
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
+						int seq = (Integer) message.getObjContents().get(3);
+						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
@@ -465,17 +475,20 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### DELETE GROUP #######################//
 
 				} else if (message.getMessage().equals("DGROUP")) // Client wants to delete a group
 				{
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
-
+						int seq = (Integer) message.getObjContents().get(3);
+						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
@@ -484,6 +497,13 @@ public class GroupThread extends Thread {
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
 									String params = gc.decrypt("AES", enc_params, _aesKey);
+									// try again if it fails because sometimes weird shit happens
+									if(params == null){
+										gc.decrypt("AES", enc_params, _aesKey);
+									}
+									if(params == null){
+										gc.decrypt("AES", enc_params, _aesKey);
+									}
 									String[] p_arr = params.split("-");
 
 									String groupName = p_arr[0];
@@ -504,16 +524,20 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### LIST GROUP MEMBERS #######################//
 
 				} else if (message.getMessage().equals("LMEMBERS")) // Client wants a list of members in a group
 				{
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
+						int seq = (Integer) message.getObjContents().get(3);
+						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
@@ -548,16 +572,20 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### ADD USER TO GROUP #######################//
 
 				} else if (message.getMessage().equals("AUSERTOGROUP")) // Client wants to add user to a group
 				{
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
+						int seq = (Integer) message.getObjContents().get(3);
+						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
@@ -587,16 +615,20 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 
 //####################### REMOVE USER FROM GROUP #######################//
 
 				} else if (message.getMessage().equals("RUSERFROMGROUP")) // Client wants to remove user from a group
 				{
-					if (message.getObjContents().size() < 3) {
+					if (message.getObjContents().size() < 4) {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
+						int seq = (Integer) message.getObjContents().get(3);
+						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
@@ -626,6 +658,8 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 				}
 
@@ -637,7 +671,9 @@ public class GroupThread extends Thread {
 						response = new Envelope("FAIL");
 					} else {
 						response = new Envelope("FAIL");
-						// Should maybe just contain group and token, concatted and hashed?
+						int seq = (Integer) message.getObjContents().get(1);
+						gc.checkSequence(seq, expseq);
+
 						if (message.getObjContents().get(0) != null) {
 							byte[] grp_token = (byte[]) message.getObjContents().get(0);
 
@@ -655,6 +691,8 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
+					response.addObject(++expseq);
+					++expseq;
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("DISCONNECT")) // Client wants to disconnect

@@ -27,6 +27,9 @@ public class FileThread extends Thread {
 	PublicKey clientK; // client publickey
 	Crypto fc; // filecrypto class
 
+	// local sequence # tracker
+	int exp_seq = 1;
+
 	public FileThread(Socket _socket) {
 		socket = _socket;
 		fc = new Crypto();

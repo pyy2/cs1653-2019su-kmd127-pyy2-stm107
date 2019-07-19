@@ -19,6 +19,7 @@ import javax.crypto.*;
 public class FileClient extends Client implements FileClientInterface {
 
 	Crypto fc = new Crypto();
+	int expseq = 0;
 
 	public boolean delete(String filename, UserToken token) {
 		String remotePath;
