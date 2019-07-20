@@ -458,6 +458,10 @@ class Crypto {
     void verifyFServer(UserToken token, String ip, int port){
         String tIP = token.getfsIP();
         int tPORT = token.getfsPORT();
+        System.out.println("TIP is: " + tIP);
+        System.out.println("TPORT is: " + tPORT);
+        System.out.println("IP is: " + ip);
+        System.out.println("Port is: " + port);
         if (!tIP.equals(ip)){
             System.out.println("Stolen token detected; shutting down");
             System.exit(0);

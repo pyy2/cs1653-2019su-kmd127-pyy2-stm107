@@ -34,6 +34,9 @@ public class FileThread extends Thread {
 	int expseq = 1;
 
 	public FileThread(Socket _socket, String _ip, int _port) {
+		if (_ip.equals("0.0.0.0") || _ip.equals("localhost")){
+			_ip = "127.0.0.1";
+		}
 		socket = _socket;
 		ip = _ip;
 		port = _port;
