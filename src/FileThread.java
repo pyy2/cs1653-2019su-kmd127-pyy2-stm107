@@ -20,6 +20,9 @@ import javax.crypto.*;
 import java.security.Signature;
 
 public class FileThread extends Thread {
+
+	String ip;
+	int port;
 	private final Socket socket;
 	PublicKey pub; // fs public key
 	PrivateKey priv; // fs private key
@@ -30,8 +33,13 @@ public class FileThread extends Thread {
 	// local sequence # tracker
 	int expseq = 1;
 
-	public FileThread(Socket _socket) {
+	public FileThread(Socket _socket, String _ip, int _port) {
+		if (_ip.equals("0.0.0.0") || _ip.equals("localhost")){
+			_ip = "127.0.0.1";
+		}
 		socket = _socket;
+		ip = _ip;
+		port = _port;
 		fc = new Crypto();
 	}
 
@@ -112,6 +120,8 @@ public class FileThread extends Thread {
 							String groupK = st[0];
 							String token = st[1];
 
+							fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
+
 							// create hmac using client's publickey
 							byte[] out = fc.createClientHmac(decrypted.getBytes(), fc.getSysK());
 
@@ -170,6 +180,7 @@ public class FileThread extends Thread {
 								String remotePath = st[2];
 								String group = st[3];
 
+								fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
 								// create hmac from clientk
 								byte[] concatted = (groupK + "||" + token).getBytes();
 								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
@@ -266,6 +277,7 @@ public class FileThread extends Thread {
 								String token = st[1];
 								String remotePath = st[2];
 
+								fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
 								// create hmac from clientk
 								byte[] concatted = (groupK + "||" + token).getBytes();
 								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
@@ -378,6 +390,7 @@ public class FileThread extends Thread {
 					String groupK = st[1];
 					String token = st[2];
 
+					fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
 					// verify signed HMAC created from client's public key of token + key
 					// signed by group client
 					byte[] concatted = (remotePath + "||" + groupK + "||" + token).getBytes();

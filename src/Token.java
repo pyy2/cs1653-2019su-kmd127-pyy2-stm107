@@ -19,14 +19,19 @@ public class Token implements UserToken, java.io.Serializable {
   private List<String> groups;
   private long creationTime;
   private long expirationTime;
+  private String fsIP;
+  private int fsPORT;
 
 
-  public Token(String _issuer, String _subject, List<String> _groups, long _creationTime, long _expirationTime) {
+
+  public Token(String _issuer, String _subject, List<String> _groups, long _creationTime, long _expirationTime, String _fsIP, int _fsPORT) {
     issuer = _issuer;
     subject = _subject;
     groups = _groups;
     creationTime = _creationTime;
     expirationTime = _expirationTime;
+    fsIP = _fsIP;
+    fsPORT = _fsPORT;
   }
 
   /**
@@ -74,8 +79,16 @@ public class Token implements UserToken, java.io.Serializable {
     return creationTime;
   }
 
+  public String getfsIP(){
+    return fsIP;
+  }
+
+  public int getfsPORT(){
+    return fsPORT;
+  }
+
   public String toString() {
-    String tokenString = issuer + ";" + subject + ";" + creationTime + ";" + expirationTime + ";";
+    String tokenString = issuer + ";" + subject + ";" + creationTime + ";" + expirationTime + ";" + fsIP + ";" + fsPORT +";";
     
     for (int i = 0; i < groups.size(); i++) {
       tokenString += groups.get(i);

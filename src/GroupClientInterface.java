@@ -37,7 +37,7 @@ public interface GroupClientInterface {
      *         does not exist, a null value will be returned.
      *
      */
-    public UserToken getToken(final String username);
+    public UserToken getToken(final String username, final String fip, final int fport);
 
     /**
      * Method used to determine if the user exists without returning the token.
@@ -47,7 +47,7 @@ public interface GroupClientInterface {
      * @return true if user exists, false if it does not.
      *
      */
-    public boolean userExists(final String username);
+    public boolean userExists(final String username, final String fip, final int fport);
 
     /**
      * Method used to determine if the user's password is correct.
