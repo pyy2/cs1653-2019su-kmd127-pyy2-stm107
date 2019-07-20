@@ -444,11 +444,13 @@ class Crypto {
         String[] tokenComps = tokenString.split(";");
         String issuer = tokenComps[0];
         String subject = tokenComps[1];
+        long creationTime = tokenComps[2];
+        long expirationTime = tokenComps[3];
         List<String> groups = new ArrayList<>();
-        for (int i = 2; i < tokenComps.length; i++) {
+        for (int i = 4; i < tokenComps.length; i++) {
             groups.add(tokenComps[i]);
         }
-        return new Token(issuer, subject, groups);
+        return new Token(issuer, subject, groups, creationTime, expirationTime);
     }
 
     /*

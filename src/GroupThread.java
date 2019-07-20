@@ -811,7 +811,7 @@ public class GroupThread extends Thread {
 					// Delete owned groups
 					for (int index = 0; index < deleteOwnedGroup.size(); index++) {
 						// Use the delete group method. Token must be created for this action
-						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup));
+						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup, yourToken.getCREtime(), yourToken.getEXPtime()));
 					}
 
 					// Delete the user from the user list
@@ -983,13 +983,14 @@ public class GroupThread extends Thread {
 	}
 
 	private UserToken makeTokenFromString(String tokenString) {
-		String[] tokenComps = tokenString.split(";");
-		String issuer = tokenComps[0];
-		String subject = tokenComps[1];
-		List<String> groups = new ArrayList<>();
-		for (int i = 2; i < tokenComps.length; i++) {
-			groups.add(tokenComps[i]);
-		}
-		return new Token(issuer, subject, groups);
-	}
+	// 	String[] tokenComps = tokenString.split(";");
+	// 	String issuer = tokenComps[0];
+	// 	String subject = tokenComps[1];
+	// 	List<String> groups = new ArrayList<>();
+	// 	for (int i = 2; i < tokenComps.length; i++) {
+	// 		groups.add(tokenComps[i]);
+	// 	}
+	// 	return new Token(issuer, subject, groups);
+	// }
+		gc.makeTokenFromString(tokenString);
 }

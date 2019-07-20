@@ -69,9 +69,14 @@ public class Token implements UserToken, java.io.Serializable {
   public long getEXPtime(){
     return expirationTime;
   }
-  
+
+  public long getCREtime(){
+    return creationTime;
+  }
+
   public String toString() {
-    String tokenString = issuer + ";" + subject + ";";
+    String tokenString = issuer + ";" + subject + ";" + creationTime + ";" + expirationTime + ";";
+    
     for (int i = 0; i < groups.size(); i++) {
       tokenString += groups.get(i);
       if (i != groups.size() - 1) {
@@ -79,6 +84,7 @@ public class Token implements UserToken, java.io.Serializable {
       }
 
     }
+
     return tokenString;
   }
 

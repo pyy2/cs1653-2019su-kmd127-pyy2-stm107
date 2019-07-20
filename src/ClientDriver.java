@@ -539,7 +539,7 @@ public class ClientDriver {
     return gcli.getToken(uname);
   }
 
-  private void checkExpiration(){
+  private static void checkExpiration(){
     long currTime = System.currentTimeMillis();
     boolean expired = currTime > utkn.getExpiration();
     if (expired){
