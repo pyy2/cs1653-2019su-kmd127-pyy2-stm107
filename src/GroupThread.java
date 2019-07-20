@@ -49,7 +49,7 @@ public class GroupThread extends Thread {
 
 		try {
 
-//####################### HAND SHAKE PROTOCOL #######################//
+			// ####################### HAND SHAKE PROTOCOL #######################//
 
 			// Announces connection and opens object streams
 			System.out.println("\n*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
@@ -141,7 +141,7 @@ public class GroupThread extends Thread {
 				Envelope response = null;
 				clientK = gc.getSysK();
 
-//####################### GET TOKEN #######################//
+				// ####################### GET TOKEN #######################//
 
 				if (message.getMessage().equals("GET"))// Client wants a token
 				{
@@ -198,7 +198,7 @@ public class GroupThread extends Thread {
 
 					}
 
-//####################### CREATE USER #######################//
+					// ####################### CREATE USER #######################//
 
 				} else if (message.getMessage().equals("CUSER")) // Client wants to create a user
 				{
@@ -243,7 +243,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### CHECK PASSWORD #######################//
+					// ####################### CHECK PASSWORD #######################//
 
 				} else if (message.getMessage().equals("CPWD")) // Client wants to for password match
 				{
@@ -260,7 +260,7 @@ public class GroupThread extends Thread {
 							String username = upwd[0];
 							String password = upwd[1];
 							if (checkPassword(username, password)) {
-								//System.out.println("Do we get here...");
+								// System.out.println("Do we get here...");
 								response = new Envelope("OK"); // Success
 							}
 						}
@@ -272,7 +272,7 @@ public class GroupThread extends Thread {
 					// Doesn't really need to be encrypted since it's just sending "ok" of "fail"
 					output.writeObject(response);
 
-//####################### CHECK IF FIRST LOGIN #######################//
+					// ####################### CHECK IF FIRST LOGIN #######################//
 
 				} else if (message.getMessage().equals("FLOGIN")) {
 					if (message.getObjContents().size() < 2) {
@@ -296,7 +296,7 @@ public class GroupThread extends Thread {
 					System.out.println(expseq);
 					output.writeObject(response);
 
-//####################### RESET PASSWORD #######################//
+					// ####################### RESET PASSWORD #######################//
 
 				} else if (message.getMessage().equals("RPASS")) // Client wants to reset password
 				{
@@ -313,13 +313,18 @@ public class GroupThread extends Thread {
 									byte[] hmac = (byte[]) message.getObjContents().get(1);
 									byte[] signed_data = (byte[]) message.getObjContents().get(2);
 
-									String[] upwd = gc.decrypt("AES", uname, _aesKey).split(";");
+									String temp = gc.decrypt("AES", uname, _aesKey);
+									String[] upwd = temp.split(";");
 									String username = upwd[0];
 									String password = upwd[1];
-									//System.out.println("The username is: " + username);
-									//System.out.println("The password is: " + password);
+									// System.out.println("The username is: " + username);
+									// System.out.println("The password is: " + password);
 
+<<<<<<< HEAD
 									if (!gc.verifyHmac(uname, hmac)) {
+=======
+									if (!gc.verifyHmac(temp.getBytes(), hmac)) {
+>>>>>>> 3a901d49a0aca7f04f4d6c9ac2c5eb7099f52ddf
 										output.writeObject(response);
 										return;
 									}
@@ -338,7 +343,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### UNLOCK (WIP) #######################//
+					// ####################### UNLOCK (WIP) #######################//
 
 				} else if (message.getMessage().equals("UNLOCK")) // Client wants to delete a user
 				{
@@ -365,7 +370,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### LOCK (WIP) #######################//
+					// ####################### LOCK (WIP) #######################//
 
 				} else if (message.getMessage().equals("LOCK")) // Client wants to delete a user
 				{
@@ -392,7 +397,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### DELETE USER #######################//
+					// ####################### DELETE USER #######################//
 
 				} else if (message.getMessage().equals("DUSER")) // Client wants to delete a user
 				{
@@ -437,7 +442,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### CREATE GROUP #######################//
+					// ####################### CREATE GROUP #######################//
 
 				} else if (message.getMessage().equals("CGROUP")) // Client wants to create a group
 				{
@@ -479,7 +484,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### DELETE GROUP #######################//
+					// ####################### DELETE GROUP #######################//
 
 				} else if (message.getMessage().equals("DGROUP")) // Client wants to delete a group
 				{
@@ -498,13 +503,10 @@ public class GroupThread extends Thread {
 
 									String params = gc.decrypt("AES", enc_params, _aesKey);
 									// try again if it fails because sometimes weird shit happens
-									if(params == null){
-										// do something else real quick
-										sleep(3);
+									if (params == null) {
 										gc.decrypt("AES", enc_params, _aesKey);
 									}
-									if(params == null){
-										sleep(5);
+									if (params == null) {
 										gc.decrypt("AES", enc_params, _aesKey);
 									}
 									String[] p_arr = params.split("-");
@@ -531,7 +533,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### LIST GROUP MEMBERS #######################//
+					// ####################### LIST GROUP MEMBERS #######################//
 
 				} else if (message.getMessage().equals("LMEMBERS")) // Client wants a list of members in a group
 				{
@@ -579,7 +581,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### ADD USER TO GROUP #######################//
+					// ####################### ADD USER TO GROUP #######################//
 
 				} else if (message.getMessage().equals("AUSERTOGROUP")) // Client wants to add user to a group
 				{
@@ -622,7 +624,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### REMOVE USER FROM GROUP #######################//
+					// ####################### REMOVE USER FROM GROUP #######################//
 
 				} else if (message.getMessage().equals("RUSERFROMGROUP")) // Client wants to remove user from a group
 				{
@@ -666,10 +668,9 @@ public class GroupThread extends Thread {
 					output.writeObject(response);
 				}
 
-//####################### GET CURRENT GROUP KEY #######################//
+				// ####################### GET CURRENT GROUP KEY #######################//
 
-				else if (message.getMessage().equals("GETGKEY"))
-				{
+				else if (message.getMessage().equals("GETGKEY")) {
 					if (message.getObjContents().size() < 1) {
 						response = new Envelope("FAIL");
 					} else {
@@ -690,15 +691,14 @@ public class GroupThread extends Thread {
 								response = new Envelope("OK"); // success
 								byte[] enc_key = gc.encrypt("AES", curr_key, _aesKey);
 								response.addObject(enc_key);
-								//TODO: SHOULD PROBABLY ADD SOME SORT OF HMAC W/SHARED KEY2 FOR INTEGRITY
+								// TODO: SHOULD PROBABLY ADD SOME SORT OF HMAC W/SHARED KEY2 FOR INTEGRITY
 							}
 						}
 					}
 					response.addObject(++expseq);
 					++expseq;
 					output.writeObject(response);
-				}
-				else if (message.getMessage().equals("DISCONNECT")) // Client wants to disconnect
+				} else if (message.getMessage().equals("DISCONNECT")) // Client wants to disconnect
 				{
 					socket.close(); // Close the socket
 					proceed = false; // End this communication loop
@@ -776,8 +776,10 @@ public class GroupThread extends Thread {
 					return false; // User already exists
 				} else {
 					my_gs.userList.addUser(username, password);
-					if(my_gs.userList.checkUser(username)) return true;
-					else return false;
+					if (my_gs.userList.checkUser(username))
+						return true;
+					else
+						return false;
 				}
 			} else {
 				return false; // requester not an administrator
@@ -856,8 +858,8 @@ public class GroupThread extends Thread {
 
 			// create a per-group key.
 			byte[] seed = gc.createLamportSeed();
-			//	System.out.println("The number of bytes is: " + seed.length);
-			if(my_gs.gsList.getSeed(groupName) != null){
+			// System.out.println("The number of bytes is: " + seed.length);
+			if (my_gs.gsList.getSeed(groupName) != null) {
 				System.out.println("WARNING: This group seed already exists. That's unexpected.");
 			}
 			my_gs.gsList.addSeed(groupName, seed);
@@ -958,7 +960,7 @@ public class GroupThread extends Thread {
 		}
 	}
 
-	private String getKey(String group, UserToken token){
+	private String getKey(String group, UserToken token) {
 		String ckey = new String();
 		String requester = token.getSubject();
 		if (my_gs.userList.checkUser(requester)) {
@@ -969,18 +971,16 @@ public class GroupThread extends Thread {
 				curr_key = my_gs.ghkList.getGroupKey(group);
 
 				// turn it into a string for ease of sending
-				try{
+				try {
 					String n = new String(Integer.toString(curr_key.keys().nextElement()));
 					// need a 1:1 encoding so the number of bytes don't change.
 					String key = new String(curr_key.get(Integer.parseInt(n)), "ISO-8859-1");
 					ckey = n + "~" + key;
-				}
-				catch(Exception e){
+				} catch (Exception e) {
 					System.out.println("Error getting group key: " + e);
 				}
 				return ckey;
-			}
-			else{
+			} else {
 				System.out.println("User is not a member of the request group and cannot get the key!");
 			}
 		}

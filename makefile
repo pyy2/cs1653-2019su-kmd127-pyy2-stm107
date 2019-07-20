@@ -34,9 +34,9 @@ clean:
 	rm -r src/jar
 
 clear:
-	rm -r ./build/shared_files/
-	rm -r ./build/*.bin
 	rm -r ./build/*.key
+	rm -r ./build/*.bin
+	rm -r ./build/shared_files/
 
 test:
 	echo $(CURRENT_DIR)
