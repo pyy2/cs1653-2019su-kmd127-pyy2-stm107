@@ -454,8 +454,8 @@ class Crypto {
         }
         return new Token(issuer, subject, groups, creationTime, expirationTime, fsIP, fsPORT);
     }
-    
-    boolean verifyFServer(Token token, String ip, int port){
+
+    void verifyFServer(UserToken token, String ip, int port){
         String tIP = token.getfsIP();
         int tPORT = token.getfsPORT();
         if (!tIP.equals(ip)){

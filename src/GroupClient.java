@@ -15,17 +15,21 @@ public class GroupClient extends Client implements GroupClientInterface {
 	// local sequence # tracker
 	int expseq = 0;
 
-	public UserToken getToken(String username) {
+	public UserToken getToken(String username, String fip, int fport) {
 		try {
 			UserToken token = null;
 			Envelope message = null, response = null;
-
+			ArrayList<String> params = new ArrayList<String>();
+			params.add(username);
+			params.add(fip);
+			params.add(Integer.toString(fport));
+			byte[] enc_params = c.createEncryptedString(params);
 			// Tell the server to return a token.
 			message = new Envelope("GET");
 			// ecnrypt username with symmetric keys
-			byte[] uname = c.encrypt("AES", username, sharedKey);
+			// byte[] uname = c.encrypt("AES", username, sharedKey);
 
-			message.addObject(uname); // Add user name string
+			message.addObject(enc_params); // Add user name string
 			message.addObject(++expseq);
 			output.writeObject(message);
 

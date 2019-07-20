@@ -190,7 +190,7 @@ public class ClientDriver {
       }
       System.out.println("Password changed successfully!\n\n");
     }
-    utkn = gcli.getToken(username);
+    utkn = gcli.getToken(username, FIP, FPORT);
 
     if (utkn != null) {
       System.out.println("Logged in as " + utkn.getSubject() + "\n");

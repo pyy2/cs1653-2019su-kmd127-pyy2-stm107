@@ -145,12 +145,17 @@ public class GroupThread extends Thread {
 
 				if (message.getMessage().equals("GET"))// Client wants a token
 				{
-					byte[] uname = (byte[]) message.getObjContents().get(0);
+					byte[] enc_params = (byte[]) message.getObjContents().get(0);
 
 					int seq = (Integer) message.getObjContents().get(1);
 					gc.checkSequence(seq, expseq);
 
-					String username = gc.decrypt("AES", uname, _aesKey);
+					String params = gc.decrypt("AES", enc_params, _aesKey);
+					String[] split_params = params.split("-");
+					String username = split_params[0];
+					String fip = split_params[1];
+					int fport = Integer.parseInt(split_params[2]);
+
 					if (username == null) {
 						response = new Envelope("FAIL");
 						response.addObject(null);
@@ -161,7 +166,7 @@ public class GroupThread extends Thread {
 							response = new Envelope("LOCKED");
 						}
 						else{
-							UserToken yourToken = createToken(username); // Create a token
+							UserToken yourToken = createToken(username, fip, fport); // Create a token
 
 							// Respond to the client. On error, the client will receive a null token
 							response = new Envelope("OK");
@@ -704,13 +709,13 @@ public class GroupThread extends Thread {
 	}
 
 	// Method to create tokens
-	private UserToken createToken(String username) {
+	private UserToken createToken(String username, String fip, int port) {
 		// Check that user exists
 		if (my_gs.userList.checkUser(username)) {
 			long currTime = System.currentTimeMillis();
 			long expTime = currTime + 1200000;
 			// Issue a new token with server's name, user's name, user's groups, currtime and exptime 
-			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), currTime, expTime);
+			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), currTime, expTime, fip, port);
 			return yourToken;
 		} else {
 			return null;
@@ -811,7 +816,7 @@ public class GroupThread extends Thread {
 					// Delete owned groups
 					for (int index = 0; index < deleteOwnedGroup.size(); index++) {
 						// Use the delete group method. Token must be created for this action
-						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup, yourToken.getCREtime(), yourToken.getEXPtime()));
+						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup, yourToken.getCREtime(), yourToken.getEXPtime(), yourToken.getfsIP(), yourToken.getfsPORT()));
 					}
 
 					// Delete the user from the user list
