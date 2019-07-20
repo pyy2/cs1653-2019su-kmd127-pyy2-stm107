@@ -180,6 +180,7 @@ public class FileThread extends Thread {
 								String remotePath = st[2];
 								String group = st[3];
 
+								fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
 								// create hmac from clientk
 								byte[] concatted = (groupK + "||" + token).getBytes();
 								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
@@ -276,6 +277,7 @@ public class FileThread extends Thread {
 								String token = st[1];
 								String remotePath = st[2];
 
+								fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
 								// create hmac from clientk
 								byte[] concatted = (groupK + "||" + token).getBytes();
 								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
@@ -388,6 +390,7 @@ public class FileThread extends Thread {
 					String groupK = st[1];
 					String token = st[2];
 
+					fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
 					// verify signed HMAC created from client's public key of token + key
 					// signed by group client
 					byte[] concatted = (remotePath + "||" + groupK + "||" + token).getBytes();
