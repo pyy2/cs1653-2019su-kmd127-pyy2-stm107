@@ -500,7 +500,7 @@ class ClientGui {
       ta.append("If you have forgotten your password, please contact an administrator.");
       return;
     }
-    if (!gcli.userExists(uname, FIP, Integer.toString(FPORT))) {
+    if (!gcli.userExists(uname, FIP, Integer.parseInt(FPORT))) {
       // intentionally non-specific error message.
       ta.setText("Error logging in!\n\n");
       return;
@@ -523,7 +523,7 @@ class ClientGui {
       ta.append("Please change your password using the \"RESET PASSWORD\" section in the GUI above.\n\n");
       return;
     }
-    utkn = gcli.getToken(uname, FIP, Integer.toString(FPORT));
+    utkn = gcli.getToken(uname, FIP, Integer.parseInt(FPORT));
     if (utkn != null) {
       ta.append("Logged in as " + utkn.getSubject() + "\n\n\n");
       loggedin = true;
@@ -727,7 +727,7 @@ class ClientGui {
       return null;
     }
     String uname = utkn.getSubject();
-    return gcli.getToken(uname, FIP, Integer.toString(FPORT));
+    return gcli.getToken(uname, FIP, Integer.parseInt(FPORT));
   }
 
   private static Hashtable<Integer, byte[]> getKeys(String group) {
