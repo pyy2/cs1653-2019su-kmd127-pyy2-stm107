@@ -991,7 +991,7 @@ public class GroupThread extends Thread {
 	// 		groups.add(tokenComps[i]);
 	// 	}
 	// 	return new Token(issuer, subject, groups);
-		gc.makeTokenFromString(tokenString);
+		return gc.makeTokenFromString(tokenString);
 
 	}
 }

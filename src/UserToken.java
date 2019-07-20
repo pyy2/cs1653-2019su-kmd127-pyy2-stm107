@@ -48,7 +48,7 @@ public interface UserToken
      */
     public List<String> getGroups();
 
-    public Long getCREtime();
+    public long getCREtime();
 
     public long getEXPtime();
 

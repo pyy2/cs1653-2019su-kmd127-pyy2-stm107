@@ -542,6 +542,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 		// 	groups.add(tokenComps[i]);
 		// }
 		// return new Token(issuer, subject, groups,);
-		c.makeTokenFromString(tokenString);
+		return c.makeTokenFromString(tokenString);
 	}
 }
