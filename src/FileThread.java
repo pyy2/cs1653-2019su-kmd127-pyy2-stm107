@@ -20,6 +20,9 @@ import javax.crypto.*;
 import java.security.Signature;
 
 public class FileThread extends Thread {
+
+	String ip;
+	int port;
 	private final Socket socket;
 	PublicKey pub; // fs public key
 	PrivateKey priv; // fs private key
@@ -30,8 +33,10 @@ public class FileThread extends Thread {
 	// local sequence # tracker
 	int expseq = 1;
 
-	public FileThread(Socket _socket) {
+	public FileThread(Socket _socket, String _ip, int _port) {
 		socket = _socket;
+		ip = _ip;
+		port = _port;
 		fc = new Crypto();
 	}
 
@@ -111,6 +116,8 @@ public class FileThread extends Thread {
 							String[] st = decrypted.split("\\|\\|");
 							String groupK = st[0];
 							String token = st[1];
+
+							fc.verifyFServer(token, ip, port);
 
 							// create hmac using client's publickey
 							byte[] out = fc.createClientHmac(decrypted.getBytes(), fc.getSysK());

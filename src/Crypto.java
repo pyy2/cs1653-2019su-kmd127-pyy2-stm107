@@ -446,13 +446,27 @@ class Crypto {
         String subject = tokenComps[1];
         long creationTime = Long.parseLong(tokenComps[2]);
         long expirationTime = Long.parseLong(tokenComps[3]);
+        String fsIP = tokenComps[4];
+        int fsPORT = Integer.parseInt(tokenComps[5]);
         List<String> groups = new ArrayList<>();
-        for (int i = 4; i < tokenComps.length; i++) {
+        for (int i = 6; i < tokenComps.length; i++) {
             groups.add(tokenComps[i]);
         }
-        return new Token(issuer, subject, groups, creationTime, expirationTime);
+        return new Token(issuer, subject, groups, creationTime, expirationTime, fsIP, fsPORT);
     }
-
+    
+    boolean verifyFServer(Token token, String ip, int port){
+        String tIP = token.getfsIP();
+        int tPORT = token.getfsPORT();
+        if (!tIP.equals(ip)){
+            System.out.println("Stolen token detected; shutting down");
+            System.exit(0);
+        }
+        if (tPORT != port){
+            System.out.println("Stolen token detected; shutting down");
+            System.exit(0);
+        }
+    }
     /*
      *
      * ******** MISC. ********

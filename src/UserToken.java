@@ -52,4 +52,8 @@ public interface UserToken
 
     public long getEXPtime();
 
+    public String getfsIP();
+
+    public int getfsPORT();
+
 }   //-- end interface UserToken
