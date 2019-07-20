@@ -319,7 +319,7 @@ public class GroupThread extends Thread {
 									//System.out.println("The username is: " + username);
 									//System.out.println("The password is: " + password);
 
-									if (!gc.verifyHmac((upwd, hmac)) {
+									if (!gc.verifyHmac(uname, hmac)) {
 										output.writeObject(response);
 										return;
 									}
@@ -499,9 +499,12 @@ public class GroupThread extends Thread {
 									String params = gc.decrypt("AES", enc_params, _aesKey);
 									// try again if it fails because sometimes weird shit happens
 									if(params == null){
+										// do something else real quick
+										sleep(3);
 										gc.decrypt("AES", enc_params, _aesKey);
 									}
 									if(params == null){
+										sleep(5);
 										gc.decrypt("AES", enc_params, _aesKey);
 									}
 									String[] p_arr = params.split("-");

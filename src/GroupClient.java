@@ -538,6 +538,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 	private UserToken makeTokenFromString(String tokenString) {
+		System.out.println("This is the tokenString: " +tokenString);
 		String[] tokenComps = tokenString.split(";");
 		String issuer = tokenComps[0];
 		String subject = tokenComps[1];
