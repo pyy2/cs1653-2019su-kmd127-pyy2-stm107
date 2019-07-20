@@ -444,8 +444,8 @@ class Crypto {
         String[] tokenComps = tokenString.split(";");
         String issuer = tokenComps[0];
         String subject = tokenComps[1];
-        long creationTime = tokenComps[2];
-        long expirationTime = tokenComps[3];
+        long creationTime = Long.parseLong(tokenComps[2]);
+        long expirationTime = Long.parseLong(tokenComps[3]);
         List<String> groups = new ArrayList<>();
         for (int i = 4; i < tokenComps.length; i++) {
             groups.add(tokenComps[i]);

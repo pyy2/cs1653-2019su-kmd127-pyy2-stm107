@@ -541,7 +541,7 @@ public class ClientDriver {
 
   private static void checkExpiration(){
     long currTime = System.currentTimeMillis();
-    boolean expired = currTime > utkn.getExpiration();
+    boolean expired = currTime > utkn.getEXPtime();
     if (expired){
       System.out.println("YOUR USER SESSION HAS EXPIRED!!!");
       System.out.println("Please log in again.");
