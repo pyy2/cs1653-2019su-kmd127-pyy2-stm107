@@ -24,12 +24,14 @@ public class Token implements UserToken, java.io.Serializable {
 
 
 
-  public Token(String _issuer, String _subject, List<String> _groups, long _creationTime, long _expirationTime) {
+  public Token(String _issuer, String _subject, List<String> _groups, long _creationTime, long _expirationTime, String _fsIP, int _fsPORT) {
     issuer = _issuer;
     subject = _subject;
     groups = _groups;
     creationTime = _creationTime;
     expirationTime = _expirationTime;
+    fsIP = _fsIP;
+    fsPORT = _fsPORT;
   }
 
   /**

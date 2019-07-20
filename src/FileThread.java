@@ -117,7 +117,7 @@ public class FileThread extends Thread {
 							String groupK = st[0];
 							String token = st[1];
 
-							fc.verifyFServer(token, ip, port);
+							fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
 
 							// create hmac using client's publickey
 							byte[] out = fc.createClientHmac(decrypted.getBytes(), fc.getSysK());
