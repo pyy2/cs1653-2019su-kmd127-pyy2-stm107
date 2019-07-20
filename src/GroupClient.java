@@ -34,6 +34,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// Get the response from the server
 			response = (Envelope) input.readObject();
 
+			if (response.getMessage().equals("LOCKED")){
+				System.out.println("The user is locked!");
+				System.out.println("Please contact your administrator to unlock.");
+				return null;
+			}
 			// Successful response
 			if (response.getMessage().equals("OK")) {
 				// If there is a token in the Envelope, return it
@@ -124,17 +129,15 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			++expseq;
 
+			response = (Envelope) input.readObject();
+
 			// If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
-				int seq = (Integer) response.getObjContents().get(0);
-				c.checkSequence(seq, expseq);
 				return true;
 			}
 
 			return false;
 		} catch (Exception e) {
-			System.err.println("Error: " + e.getMessage());
-			e.printStackTrace(System.err);
 			return false;
 		}
 	}
@@ -153,14 +156,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			// If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
-				int seq = (Integer) response.getObjContents().get(0);
-				c.checkSequence(seq, expseq);
 				return true;
 			}
 			return false;
 		} catch (Exception e) {
-			System.err.println("Error: " + e.getMessage());
-			e.printStackTrace(System.err);
 			return false;
 		}
 	}
@@ -180,16 +179,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 			byte[] upwd = c.encrypt("AES", upwd_str, sharedKey);
 			message.addObject(upwd); // Add user name string
 			message.addObject(++expseq);
-			System.out.println(expseq);
 			output.writeObject(message);
 			expseq++;
-			System.out.println(expseq);
 
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
-				System.out.println("Are we getting here??");
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -538,7 +534,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 	private UserToken makeTokenFromString(String tokenString) {
-		System.out.println("This is the tokenString: " +tokenString);
 		String[] tokenComps = tokenString.split(";");
 		String issuer = tokenComps[0];
 		String subject = tokenComps[1];

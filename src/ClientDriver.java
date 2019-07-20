@@ -63,7 +63,7 @@ public class ClientDriver {
   public static void printMenu() {
     while (true) {
       System.out.println("What would you like to do?");
-      System.out.println("Please select from the following operations (please enter a number 1-15): ");
+      System.out.println("Please select from the following operations (please enter a number 1-16): ");
       System.out.println("1. Log in (Get user token)");
       System.out.println("2. Reset password.");
       System.out.println("3. Create a new user.");
@@ -77,8 +77,9 @@ public class ClientDriver {
       System.out.println("11. Upload a file.");
       System.out.println("12. Download a file.");
       System.out.println("13. Delete a file.");
-      System.out.println("14. Logout");
-      System.out.println("15. Exit");
+      System.out.println("14. Unlock User");
+      System.out.println("15. Logout");
+      System.out.println("16. Exit");
       System.out.print(">> ");
 
       String command = kb.nextLine();
@@ -124,11 +125,15 @@ public class ClientDriver {
         deleteFile();
         break;
       case "14":
-        logout();
+        unlockUser();
         break;
       case "15":
-        exit();
+        logout();
+        break;
       case "16":
+        exit();
+      // This is hidden. It's here for testing.
+      case "17":
         getKeys(null);
         break;
       default:
@@ -154,7 +159,8 @@ public class ClientDriver {
     if (loginFails > 1) {
       System.out.println("You have exceeded the maximum falied login attempts!");
       System.out.println("If you have forgotten your password, please contact an administrator.");
-      System.out.println("Shutting down...\n\n\n");
+      System.out.println("You're account will be locked\n\n\n");
+      gcli.lockUser(username);
       System.exit(0);
     }
     if (!gcli.userExists(username)) {
@@ -205,37 +211,37 @@ public class ClientDriver {
   }
 
   // TODO: Implement account locking.
-  // private static void unlockUser(){
-  // System.out.println("\nLog in\n");
-  // System.out.print("Please enter Administrator username: ");
-  // String admin = kb.nextLine();
-  // System.out.print("Please enter Administrator password: ");
-  // String adminPass = kb.nextLine();
-  // if (!gcli.userExists(admin)) {
-  // // intentionally non-specific error message.
-  // System.out.println("Could not verify Administrator account.\n\n");
-  // return;
-  // }
-  // // Check for password match
-  // if (!gcli.checkPassword(admin, adminPass)) {
-  // // intentionally non-specific error message.
-  // System.out.println("Could not verify Administrator account.\n\n");
-  // return;
-  // }
-  // utkn = gcli.getToken(admin);
-  // if(!utkn.getGroups().contains("ADMIN")){
-  // System.out.println("Insufficient privileges to unlock user accounts!");
-  // return;
-  // }
-  // // Get the user to unlock
-  // System.out.print("Please enter username to unlock: ");
-  // String user = kb.nextLine();
-  // if(gcli.unlockUser(user)){
-  // System.out.println("User unlocked!");
-  // return;
-  // }
-  // System.out.println("Error unlocking user!");
-  // }
+  private static void unlockUser(){
+    System.out.println("\nLog in\n");
+    System.out.print("Please enter Administrator username: ");
+    String admin = kb.nextLine();
+    System.out.print("Please enter Administrator password: ");
+    String adminPass = kb.nextLine();
+    if (!gcli.userExists(admin)) {
+    // intentionally non-specific error message.
+      System.out.println("Could not verify Administrator account.\n\n");
+      return;
+    }
+    // Check for password match
+    if (!gcli.checkPassword(admin, adminPass)) {
+      // intentionally non-specific error message.
+      System.out.println("Could not verify Administrator account.\n\n");
+      return;
+    }
+    utkn = gcli.getToken(admin);
+    if(!utkn.getGroups().contains("ADMIN")){
+      System.out.println("Insufficient privileges to unlock user accounts!");
+      return;
+    }
+    // Get the user to unlock
+    System.out.print("Please enter username to unlock: ");
+    String user = kb.nextLine();
+    if(gcli.unlockUser(user)){
+      System.out.println("User unlocked!");
+      return;
+    }
+    System.out.println("Error unlocking user!");
+  }
 
   private static void resetPassword() {
     if (!checkLogInStatus())

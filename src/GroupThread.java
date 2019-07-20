@@ -156,44 +156,47 @@ public class GroupThread extends Thread {
 						response.addObject(null);
 						output.writeObject(response);
 					} else {
-						UserToken yourToken = createToken(username); // Create a token
+						if (my_gs.userList.list.get(username).getLockStatus()){
+							System.out.println("This is user is locked!");
+							response = new Envelope("LOCKED");
+						}
+						else{
+							UserToken yourToken = createToken(username); // Create a token
 
-						// Respond to the client. On error, the client will receive a null token
-						response = new Envelope("OK");
+							// Respond to the client. On error, the client will receive a null token
+							response = new Envelope("OK");
 
-						// First, stringify everything
-						String pubKey = gc.toString(gc.getPublic());
-						// System.out.println("OUTPUT" + pubKey);
-						String token = null;
-						if (yourToken != null) {
-							token = yourToken.toString();
+							// First, stringify everything
+							String pubKey = gc.toString(gc.getPublic());
+							// System.out.println("OUTPUT" + pubKey);
+							String token = null;
+							if (yourToken != null) {
+								token = yourToken.toString();
+							}
+
+							// TODO: Don't send group public key.
+							// Concat token with pubkey and encrypt with shared key.
+							String concatted = pubKey + "||" + token;
+							byte[] bconcatted = concatted.getBytes();
+
+							// Encrypt with shared key
+							byte[] encryptedToken = gc.encrypt("AES", concatted, _aesKey);
+
+							// TODO: Don't send public key
+							// Then HMAC(pubkey || token, ClientKey) and sign
+							Mac mac = Mac.getInstance("HmacSHA256", "BC");
+							mac.init(clientK);
+							mac.update(bconcatted);
+							byte[] out = mac.doFinal();
+							byte[] signed_data = gc.signChecksum(out);
+
+							response.addObject(encryptedToken);
+							response.addObject(out);
+							response.addObject(signed_data);
 						}
 
-						// TODO: Don't send group public key.
-						// Concat token with pubkey and encrypt with shared key.
-						String concatted = pubKey + "||" + token;
-						byte[] bconcatted = concatted.getBytes();
-
-						// Encrypt with shared key
-						byte[] encryptedToken = gc.encrypt("AES", concatted, _aesKey);
-
-						// TODO: Don't send public key
-						// Then HMAC(pubkey || token, ClientKey) and sign
-						Mac mac = Mac.getInstance("HmacSHA256", "BC");
-						mac.init(clientK);
-						mac.update(bconcatted);
-						byte[] out = mac.doFinal();
-						byte[] signed_data = gc.signChecksum(out);
-
-						response.addObject(encryptedToken);
-						response.addObject(out);
-						response.addObject(signed_data);
 						response.addObject(++expseq);
-						System.out.println(expseq);
-
 						++expseq;
-						System.out.println(expseq);
-
 						output.writeObject(response);
 
 					}
@@ -266,9 +269,7 @@ public class GroupThread extends Thread {
 						}
 					}
 					response.addObject(++expseq);
-					System.out.println(expseq);
 					++expseq;
-					System.out.println(expseq);
 					// Doesn't really need to be encrypted since it's just sending "ok" of "fail"
 					output.writeObject(response);
 
@@ -291,9 +292,7 @@ public class GroupThread extends Thread {
 						}
 					}
 					response.addObject(++expseq);
-					System.out.println(expseq);
 					++expseq;
-					System.out.println(expseq);
 					output.writeObject(response);
 
 					// ####################### RESET PASSWORD #######################//
@@ -337,7 +336,7 @@ public class GroupThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-					// ####################### UNLOCK (WIP) #######################//
+					// ####################### UNLOCK #######################//
 
 				} else if (message.getMessage().equals("UNLOCK")) // Client wants to delete a user
 				{
@@ -360,8 +359,6 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
-					++expseq;
 					output.writeObject(response);
 
 					// ####################### LOCK (WIP) #######################//
@@ -378,7 +375,6 @@ public class GroupThread extends Thread {
 							if (message.getObjContents().get(1) != null) {
 								int seq = (Integer) message.getObjContents().get(1);
 								gc.checkSequence(seq, expseq);
-
 								String uname = gc.decrypt("AES", (byte[]) message.getObjContents().get(0), _aesKey);
 
 								if (lockUser(uname)) {
@@ -387,8 +383,8 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
-					++expseq;
+					// response.addObject(++expseq);
+					// ++expseq;
 					output.writeObject(response);
 
 					// ####################### DELETE USER #######################//
@@ -833,6 +829,9 @@ public class GroupThread extends Thread {
 	}
 
 	private boolean unlockUser(String username) {
+		if(my_gs.userList.list.get(username) == null){
+			return false;
+		}
 		return my_gs.userList.list.get(username).unlockUser();
 	}
 

@@ -51,8 +51,8 @@ class Crypto {
      *
      */
      void checkSequence(int seq, int expseq){
-       System.out.println("SEQ="+seq);
-       System.out.println("EXPSEQ="+expseq);
+       //System.out.println("SEQ="+seq);
+       //System.out.println("EXPSEQ="+expseq);
        if(seq != expseq){
          System.out.println("SEQUENCE NUMBER MISMATCH!!");
          System.out.println("REORDER ATTACK DETECTED!!");

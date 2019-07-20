@@ -267,6 +267,10 @@ import java.math.BigInteger;
 			return locked;
 		}
 
+		public boolean getLockStatus(){
+			return locked;
+		}
+
 		public synchronized ArrayList<String> getOwnership()
 		{
 			return ownership;
