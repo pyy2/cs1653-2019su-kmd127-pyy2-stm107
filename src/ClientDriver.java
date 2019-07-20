@@ -163,7 +163,7 @@ public class ClientDriver {
       gcli.lockUser(username);
       System.exit(0);
     }
-    if (!gcli.userExists(username)) {
+    if (!gcli.userExists(username, FIP, FPORT)) {
       // intentionally non-specific error message.
       System.out.println("Error logging in.\n\n");
       return false;
@@ -218,7 +218,7 @@ public class ClientDriver {
     String admin = kb.nextLine();
     System.out.print("Please enter Administrator password: ");
     String adminPass = kb.nextLine();
-    if (!gcli.userExists(admin)) {
+    if (!gcli.userExists(admin, FIP, FPORT)) {
     // intentionally non-specific error message.
       System.out.println("Could not verify Administrator account.\n\n");
       return;
@@ -229,7 +229,7 @@ public class ClientDriver {
       System.out.println("Could not verify Administrator account.\n\n");
       return;
     }
-    utkn = gcli.getToken(admin);
+    utkn = gcli.getToken(admin, FIP, FPORT);
     if(!utkn.getGroups().contains("ADMIN")){
       System.out.println("Insufficient privileges to unlock user accounts!");
       return;
@@ -346,7 +346,7 @@ public class ClientDriver {
       System.out.println("User " + addgName + " successfully added to " + addToGName + "!\n");
       // refresh the token to add the groups.
       // This covers the scenario where you add yourself to a group.
-      utkn = gcli.getToken(utkn.getSubject());
+      utkn = gcli.getToken(utkn.getSubject(), FIP, FPORT);
     }
   }
 
@@ -367,7 +367,7 @@ public class ClientDriver {
       System.out.println("User " + delgName + " successfully deleted from " + delToGName + "!\n");
       // refresh the token to add the groups.
       // This covers the scenario where you add yourself to a group.
-      utkn = gcli.getToken(utkn.getSubject());
+      utkn = gcli.getToken(utkn.getSubject(), FIP, FPORT);
     }
   }
 
@@ -418,7 +418,7 @@ public class ClientDriver {
     String upDest = kb.nextLine();
     System.out.print("Please enter the group to which you want to upload the file: ");
     String upGroup = kb.nextLine();
-    utkn = gcli.getToken(utkn.getSubject());
+    utkn = gcli.getToken(utkn.getSubject(), FIP, FPORT);
 
     // Get the current group keys
     Hashtable<Integer, byte[]> key_info = getKeys(upGroup);
@@ -447,7 +447,7 @@ public class ClientDriver {
     String downDest = kb.nextLine();
     System.out.print("Please enter the group in which the file resides: ");
     String group = kb.nextLine();
-    utkn = gcli.getToken(utkn.getSubject());
+    utkn = gcli.getToken(utkn.getSubject(), FIP, FPORT);
 
     // Get the current group keys for download decryption
     Hashtable<Integer, byte[]> key_info = getKeys(group);
@@ -536,7 +536,7 @@ public class ClientDriver {
     }
     String uname = utkn.getSubject();
     //System.out.println("This is the exp: "+gexp);
-    return gcli.getToken(uname);
+    return gcli.getToken(uname, FIP, FPORT);
   }
 
   private static void checkExpiration(){

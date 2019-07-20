@@ -168,8 +168,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-	public boolean userExists(String username) {
-		return (getToken(username) != null);
+	public boolean userExists(String username, String fip, int fport) {
+		return (getToken(username, fip, fport) != null);
 	}
 
 	public boolean checkPassword(String username, String password) {

@@ -523,7 +523,7 @@ class ClientGui {
       ta.append("Please change your password using the \"RESET PASSWORD\" section in the GUI above.\n\n");
       return;
     }
-    utkn = gcli.getToken(uname);
+    utkn = gcli.getToken(uname, FIP, FPORT);
     if (utkn != null) {
       ta.append("Logged in as " + utkn.getSubject() + "\n\n\n");
       loggedin = true;
@@ -727,7 +727,7 @@ class ClientGui {
       return null;
     }
     String uname = utkn.getSubject();
-    return gcli.getToken(uname);
+    return gcli.getToken(uname, FIP, FPORT);
   }
 
   private static Hashtable<Integer, byte[]> getKeys(String group) {
