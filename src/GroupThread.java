@@ -317,14 +317,8 @@ public class GroupThread extends Thread {
 									String[] upwd = temp.split(";");
 									String username = upwd[0];
 									String password = upwd[1];
-									// System.out.println("The username is: " + username);
-									// System.out.println("The password is: " + password);
 
-<<<<<<< HEAD
 									if (!gc.verifyHmac(uname, hmac)) {
-=======
-									if (!gc.verifyHmac(temp.getBytes(), hmac)) {
->>>>>>> 3a901d49a0aca7f04f4d6c9ac2c5eb7099f52ddf
 										output.writeObject(response);
 										return;
 									}
