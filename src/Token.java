@@ -17,11 +17,16 @@ public class Token implements UserToken, java.io.Serializable {
   private String issuer;
   private String subject;
   private List<String> groups;
+  private long creationTime;
+  private long expirationTime;
 
-  public Token(String _issuer, String _subject, List<String> _groups) {
+
+  public Token(String _issuer, String _subject, List<String> _groups, long _creationTime, long _expirationTime) {
     issuer = _issuer;
     subject = _subject;
     groups = _groups;
+    creationTime = _creationTime;
+    expirationTime = _expirationTime;
   }
 
   /**
@@ -61,6 +66,10 @@ public class Token implements UserToken, java.io.Serializable {
     return groups;
   }
 
+  public long getEXPtime(){
+    return expirationTime;
+  }
+  
   public String toString() {
     String tokenString = issuer + ";" + subject + ";";
     for (int i = 0; i < groups.size(); i++) {

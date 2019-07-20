@@ -707,8 +707,10 @@ public class GroupThread extends Thread {
 	private UserToken createToken(String username) {
 		// Check that user exists
 		if (my_gs.userList.checkUser(username)) {
-			// Issue a new token with server's name, user's name, and user's groups
-			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username));
+			long currTime = System.currentTimeMillis();
+			long expTime = currTime + 1200000;
+			// Issue a new token with server's name, user's name, user's groups, currtime and exptime 
+			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), currTime, expTime);
 			return yourToken;
 		} else {
 			return null;

@@ -212,6 +212,7 @@ public class ClientDriver {
 
   // TODO: Implement account locking.
   private static void unlockUser(){
+    checkExpiration();
     System.out.println("\nLog in\n");
     System.out.print("Please enter Administrator username: ");
     String admin = kb.nextLine();
@@ -244,6 +245,7 @@ public class ClientDriver {
   }
 
   private static void resetPassword() {
+    checkExpiration();
     if (!checkLogInStatus())
       return;
     System.out.print("Please enter your username: ");
@@ -266,6 +268,7 @@ public class ClientDriver {
   }
 
   private static void createUser() {
+    checkExpiration();
     System.out.println("\nCreate a new user\n");
     if (!checkLogInStatus())
       return;
@@ -285,6 +288,7 @@ public class ClientDriver {
   }
 
   private static void deleteUser() {
+    checkExpiration();
     System.out.println("\nDelete a user\n");
     if (!checkLogInStatus())
       return;
@@ -298,6 +302,7 @@ public class ClientDriver {
   }
 
   private static void createGroup() {
+    checkExpiration();
     System.out.println("\nCreate a group\n");
     if (!checkLogInStatus())
       return;
@@ -311,6 +316,7 @@ public class ClientDriver {
   }
 
   private static void deleteGroup() {
+    checkExpiration();
     System.out.println("\nDelete a group\n");
     if (!checkLogInStatus())
       return;
@@ -324,6 +330,7 @@ public class ClientDriver {
   }
 
   private static void addUserToGroup() {
+    checkExpiration();
     System.out.println("\nAdd a user to a group\n");
     utkn = bounceToken();
     if (!checkLogInStatus())
@@ -344,6 +351,7 @@ public class ClientDriver {
   }
 
   private static void deleteUserFromGroup() {
+    checkExpiration();
     System.out.println("\nDelete a user form a group\n");
     utkn = bounceToken();
     if (!checkLogInStatus())
@@ -364,6 +372,7 @@ public class ClientDriver {
   }
 
   private static void listGroupMembers() {
+    checkExpiration();
     System.out.println("\nList all members of a group\n");
     utkn = bounceToken();
     if (!checkLogInStatus())
@@ -383,6 +392,7 @@ public class ClientDriver {
   }
 
   private static void listFiles() {
+    checkExpiration();
     System.out.println("\nList files\n");
     utkn = bounceToken();
     if (!checkLogInStatus())
@@ -397,6 +407,7 @@ public class ClientDriver {
   }
 
   private static void upload() {
+    checkExpiration();
     System.out.println("\nUpload a file\n");
     utkn = bounceToken();
     if (!checkLogInStatus())
@@ -425,6 +436,7 @@ public class ClientDriver {
   }
 
   private static void download() {
+    checkExpiration();
     System.out.println("\nDownload a file\n");
     utkn = bounceToken();
     if (!checkLogInStatus())
@@ -454,6 +466,7 @@ public class ClientDriver {
   }
 
   private static void deleteFile() {
+    checkExpiration();
     System.out.println("\nDelete a file\n");
     utkn = bounceToken();
     if (!checkLogInStatus())
@@ -475,6 +488,7 @@ public class ClientDriver {
   }
 
   private static Hashtable<Integer, byte[]> getKeys(String group) {
+    checkExpiration();
     if(group == null){
       System.out.println("No group name found.");
       System.out.print("Please enter the name of the groups for which you need keys: ");
@@ -523,5 +537,15 @@ public class ClientDriver {
     String uname = utkn.getSubject();
     //System.out.println("This is the exp: "+gexp);
     return gcli.getToken(uname);
+  }
+
+  private void checkExpiration(){
+    long currTime = System.currentTimeMillis();
+    boolean expired = currTime > utkn.getExpiration();
+    if (expired){
+      System.out.println("YOUR USER SESSION HAS EXPIRED!!!");
+      System.out.println("Please log in again.");
+      login();
+    }
   }
 }
