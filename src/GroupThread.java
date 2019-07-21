@@ -102,6 +102,7 @@ public class GroupThread extends Thread {
 							socket.close(); // Close the socket
 							proceed = false; // End this communication loop
 						}
+						in.close();
 					}
 					// The keys match, it's safe to proceed
 					else {
@@ -161,11 +162,10 @@ public class GroupThread extends Thread {
 						response.addObject(null);
 						output.writeObject(response);
 					} else {
-						if (my_gs.userList.list.get(username).getLockStatus()){
+						if (my_gs.userList.list.get(username).getLockStatus()) {
 							System.out.println("This is user is locked!");
 							response = new Envelope("LOCKED");
-						}
-						else{
+						} else {
 							UserToken yourToken = createToken(username, fip, fport); // Create a token
 
 							// Respond to the client. On error, the client will receive a null token
@@ -714,8 +714,10 @@ public class GroupThread extends Thread {
 		if (my_gs.userList.checkUser(username)) {
 			long currTime = System.currentTimeMillis();
 			long expTime = currTime + 1200000;
-			// Issue a new token with server's name, user's name, user's groups, currtime and exptime 
-			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), currTime, expTime, fip, port);
+			// Issue a new token with server's name, user's name, user's groups, currtime
+			// and exptime
+			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), currTime,
+					expTime, fip, port);
 			return yourToken;
 		} else {
 			return null;
@@ -816,7 +818,9 @@ public class GroupThread extends Thread {
 					// Delete owned groups
 					for (int index = 0; index < deleteOwnedGroup.size(); index++) {
 						// Use the delete group method. Token must be created for this action
-						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup, yourToken.getCREtime(), yourToken.getEXPtime(), yourToken.getfsIP(), yourToken.getfsPORT()));
+						deleteGroup(deleteOwnedGroup.get(index),
+								new Token(my_gs.name, username, deleteOwnedGroup, yourToken.getCREtime(),
+										yourToken.getEXPtime(), yourToken.getfsIP(), yourToken.getfsPORT()));
 					}
 
 					// Delete the user from the user list
@@ -836,7 +840,7 @@ public class GroupThread extends Thread {
 	}
 
 	private boolean unlockUser(String username) {
-		if(my_gs.userList.list.get(username) == null){
+		if (my_gs.userList.list.get(username) == null) {
 			return false;
 		}
 		return my_gs.userList.list.get(username).unlockUser();
@@ -988,14 +992,14 @@ public class GroupThread extends Thread {
 	}
 
 	private UserToken makeTokenFromString(String tokenString) {
-	// 	String[] tokenComps = tokenString.split(";");
-	// 	String issuer = tokenComps[0];
-	// 	String subject = tokenComps[1];
-	// 	List<String> groups = new ArrayList<>();
-	// 	for (int i = 2; i < tokenComps.length; i++) {
-	// 		groups.add(tokenComps[i]);
-	// 	}
-	// 	return new Token(issuer, subject, groups);
+		// String[] tokenComps = tokenString.split(";");
+		// String issuer = tokenComps[0];
+		// String subject = tokenComps[1];
+		// List<String> groups = new ArrayList<>();
+		// for (int i = 2; i < tokenComps.length; i++) {
+		// groups.add(tokenComps[i]);
+		// }
+		// return new Token(issuer, subject, groups);
 		return gc.makeTokenFromString(tokenString);
 
 	}

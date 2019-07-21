@@ -91,22 +91,22 @@ public class GroupServer extends Server {
 
 		// Open user file to get user list
 		try {
-				FileInputStream fis = new FileInputStream(userFile);
-				userStream = new ObjectInputStream(fis);
-				userList = (UserList) userStream.readObject();
-			} catch (FileNotFoundException e) {
-				System.out.println("UserList File Does Not Exist. Creating UserList...");
-				System.out.println("No users currently exist. Your account will be the administrator.");
-				System.out.print("Enter your username: ");
-				String username = console.next();
-				System.out.print("Enter your password: ");
-				String password = console.next();
+			FileInputStream fis = new FileInputStream(userFile);
+			userStream = new ObjectInputStream(fis);
+			userList = (UserList) userStream.readObject();
+		} catch (FileNotFoundException e) {
+			System.out.println("UserList File Does Not Exist. Creating UserList...");
+			System.out.println("No users currently exist. Your account will be the administrator.");
+			System.out.print("Enter your username: ");
+			String username = console.next();
+			System.out.print("Enter your password: ");
+			String password = console.next();
 
 			// Create a new list, add current user to the ADMIN group. They now own the
 			// ADMIN group.
 			userList = new UserList();
 			userList.addUser(username, password);
-			while(!userList.checkUser(username)){
+			while (!userList.checkUser(username)) {
 				System.out.println("Please try again.");
 				System.out.print("Enter your username: ");
 				username = console.next();
@@ -123,6 +123,8 @@ public class GroupServer extends Server {
 		} catch (ClassNotFoundException e2) {
 			System.out.println("Error reading from UserList file");
 			System.exit(-1);
+		} finally {
+			console.close();
 		}
 
 		// check if groupserver keys exist
