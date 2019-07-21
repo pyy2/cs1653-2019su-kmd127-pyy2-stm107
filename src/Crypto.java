@@ -116,6 +116,22 @@ class Crypto {
         }
     }
 
+    void saveGroupPK(String filename, PublicKey groupK) {
+        try {
+            KeyFactory fact = KeyFactory.getInstance("RSA");
+            RSAPublicKeySpec _pub = fact.getKeySpec(groupK, RSAPublicKeySpec.class);
+            saveToFile("./keys/" + filename + "public.key", _pub.getModulus(), _pub.getPublicExponent());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e2) {
+            e2.printStackTrace();
+        } catch (IOException e3) {
+            e3.printStackTrace();
+        } catch (InvalidKeySpecException e4) {
+            e4.printStackTrace();
+        }
+    }
+
     // set host public key
     void setPublicKey(String name) {
         try {

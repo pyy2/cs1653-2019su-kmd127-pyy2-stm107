@@ -23,6 +23,7 @@ public class FileServer extends Server {
 	public static FileList fileList;
 	public static PublicKey pub; // fs public key
 	public static PrivateKey priv; // fs private key
+	public static PublicKey gsKey;
 	Crypto fc; // filecrypto class
 	public final String fileConfig = "FS";
 
@@ -43,24 +44,37 @@ public class FileServer extends Server {
 		fsNum = fsNum.replaceAll("[^a-zA-Z0-9]", "");
 		String flush = kb.nextLine();
 
-		final String path = "./keys/FS" + fsNum + "public.key";
-		final String path2 = "./keys/FS" + fsNum + "private.key";
+		String fileConfig = "FS" + fsNum;
+
+		final String gsPath = "./keys/" + fileConfig + "GS" + "public.key";
+		final String path = "./keys/" + fileConfig + "public.key";
+		final String path2 = "./keys/" + fileConfig + "private.key";
+		File gs = new File(gsPath);
 		File f1 = new File(path);
 		File f2 = new File(path2);
 
-		// if key files don't exist, something went wrong on initialization, ABORT
+		// get group key
+		if (!gs.exists()) {
+			System.out.println("Enter Group Server Key: ");
+			String key = kb.nextLine();
+			fc.saveGroupPK(fileConfig + "GS", fc.stringToPK(key));
+		} else {
+			fc.setPublicKey(fileConfig + "GS");
+			gsKey = fc.getPublic();
+			System.out.println("GS Public Key:\n" + fc.RSAtoString(gsKey));
+		}
+
+		// if keys files don't exist, create new ones
 		if (!f1.exists() && !f2.exists()) {
 			System.out.println("FS key NOT found!\n Generating FS Keys");
-			Crypto crypto = new Crypto();
-			crypto.setSystemKP("FS" + fsNum);
-			// System.exit(1);
+			fc.setSystemKP(fileConfig);
 		}
 
 		// set keys
 		if (f1.exists() && f2.exists()) {
 			System.out.println("Setting FS public/private keys\n");
-			fc.setPublicKey("FS" + fsNum);
-			fc.setPrivateKey("FS" + fsNum);
+			fc.setPublicKey(fileConfig);
+			fc.setPrivateKey(fileConfig);
 			pub = fc.getPublic();
 			priv = fc.getPrivate();
 		}

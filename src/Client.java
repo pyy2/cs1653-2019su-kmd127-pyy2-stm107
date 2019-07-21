@@ -38,27 +38,25 @@ public abstract class Client {
 
 	public boolean connect(final String server, final int port, final String type, final String clientNum) {
 		fsMac = null;
-
-		String clientConfig = "CL" + clientNum;
+		c = new Crypto();
 
 		// set client key file paths
-		final String path = "./keys/" + clientConfig + "public.key";
-		final String path2 = "./keys/" + clientConfig + "private.key";
+		final String path = "./keys/CL" + clientNum + "public.key";
+		final String path2 = "./keys/CL" + clientNum + "private.key";
 		File f = new File(path);
 		File f2 = new File(path2);
-		c = new Crypto();
 
 		// if key files don't exist, create new ones
 		if (!f.exists() && !f2.exists()) {
 			System.out.println("CL key NOT found!");
-			c.setSystemKP(clientConfig);
+			c.setSystemKP("CL" + clientNum);
 		}
 
 		// now they should exist, set public/private key
 		if (f.exists() && f2.exists()) {
 			System.out.println("CL keys found!\nSetting public/private key");
-			c.setPublicKey(clientConfig);
-			c.setPrivateKey(clientConfig);
+			c.setPublicKey("CL" + clientNum);
+			c.setPrivateKey("CL" + clientNum);
 			pub = c.getPublic();
 			priv = c.getPrivate();
 		}

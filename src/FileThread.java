@@ -53,6 +53,7 @@ public class FileThread extends Thread {
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 			Envelope response;
 
+			// sets fileserver keys
 			pub = FileServer.pub;
 			priv = FileServer.priv;
 
