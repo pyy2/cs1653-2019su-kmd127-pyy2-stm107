@@ -58,8 +58,8 @@ public class GroupThread extends Thread {
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 
 			// set gs key file paths
-			final String path = "./GSpublic.key";
-			final String path2 = "./GSprivate.key";
+			final String path = "./keys/public.key";
+			final String path2 = "./keys/private.key";
 			File f = new File(path);
 			File f2 = new File(path2);
 

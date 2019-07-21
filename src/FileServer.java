@@ -43,8 +43,8 @@ public class FileServer extends Server {
 		fsNum = fsNum.replaceAll("[^a-zA-Z0-9]", "");
 		String flush = kb.nextLine();
 
-		final String path = "./FS"+fsNum+"public.key";
-		final String path2 = "./FS"+fsNum+"private.key";
+		final String path = "./keys/FS" + fsNum + "public.key";
+		final String path2 = "./keys/FS" + fsNum + "private.key";
 		File f1 = new File(path);
 		File f2 = new File(path2);
 
@@ -52,15 +52,15 @@ public class FileServer extends Server {
 		if (!f1.exists() && !f2.exists()) {
 			System.out.println("FS key NOT found!\n Generating FS Keys");
 			Crypto crypto = new Crypto();
-			crypto.setSystemKP("FS"+fsNum);
-			//System.exit(1);
+			crypto.setSystemKP("FS" + fsNum);
+			// System.exit(1);
 		}
 
 		// set keys
 		if (f1.exists() && f2.exists()) {
 			System.out.println("Setting FS public/private keys\n");
-			fc.setPublicKey("FS"+fsNum);
-			fc.setPrivateKey("FS"+fsNum);
+			fc.setPublicKey("FS" + fsNum);
+			fc.setPrivateKey("FS" + fsNum);
 			pub = fc.getPublic();
 			priv = fc.getPrivate();
 		}

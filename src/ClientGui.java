@@ -663,7 +663,7 @@ class ClientGui {
     if (checkLogInStatus()) {
       // Get the current group keys
       Hashtable<Integer, byte[]> key_info = getKeys(group);
-      if(!key_info.keys().hasMoreElements()){
+      if (!key_info.keys().hasMoreElements()) {
         System.out.println("Error uploading file to file server.\n");
         return;
       }
@@ -683,7 +683,7 @@ class ClientGui {
     if (checkLogInStatus()) {
       // Get the current group keys
       Hashtable<Integer, byte[]> key_info = getKeys(group);
-      if(!key_info.keys().hasMoreElements()){
+      if (!key_info.keys().hasMoreElements()) {
         System.out.println("Error uploading file to file server.\n");
         return;
       }
@@ -723,7 +723,7 @@ class ClientGui {
     fcli.connect(FIP, Integer.parseInt(FPORT), "file", cliNum);
     gcli.expseq = 0;
     fcli.expseq = 0;
-    if(utkn == null){
+    if (utkn == null) {
       return null;
     }
     String uname = utkn.getSubject();
@@ -739,15 +739,14 @@ class ClientGui {
     String keys = gcli.getKeys(group, utkn);
     if (keys == null)
       ta.setText("Error getting group keys. You may not have permission, or the group/key doesn't exist.\n");
-    else{
+    else {
       ta.setText("\nFetching current group key...\n\n");
       int indexofDelim = keys.indexOf("~");
       int n = Integer.parseInt(keys.substring(0, indexofDelim));
-      String keystr = keys.substring(indexofDelim+1);
-      try{
+      String keystr = keys.substring(indexofDelim + 1);
+      try {
         n_key.put(n, keystr.getBytes("ISO-8859-1"));
-      }
-      catch(Exception e){
+      } catch (Exception e) {
         ta.setText("Error getting key bytes: " + e);
       }
 

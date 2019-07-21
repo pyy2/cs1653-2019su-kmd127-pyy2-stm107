@@ -21,6 +21,7 @@ public class GroupServer extends Server {
 	public GroupSeeds gsList;
 	public GroupHashedKeys ghkList;
 	public final String groupConfig = "GS";
+	public PublicKey pk;
 
 	public GroupServer() {
 		super(SERVER_PORT, "ALPHA");
@@ -33,6 +34,7 @@ public class GroupServer extends Server {
 	public void start() {
 		// Overwrote server.start() because if no user file exists, initial admin
 		// account needs to be created
+		pk = null;
 
 		String userFile = "UserList.bin";
 		String tcFile = "TrustedClients.bin";
@@ -128,8 +130,8 @@ public class GroupServer extends Server {
 		}
 
 		// check if groupserver keys exist
-		final String path = "./GSpublic.key";
-		final String path2 = "./GSprivate.key";
+		final String path = "./keys/GSpublic.key";
+		final String path2 = "./keys/GSprivate.key";
 		File f = new File(path);
 		File f2 = new File(path2);
 		Crypto crypto = new Crypto();
@@ -139,15 +141,10 @@ public class GroupServer extends Server {
 			System.out.println("GS key NOT found!");
 			crypto.setSystemKP(groupConfig);
 		}
-		// // now they should exist, set public/private key
-		// if (f.exists() && f2.exists()) {
-		// System.out.println("GS keys found!\nSetting public/private key");
-		// crypto.setPublicKey("GS");
-		// crypto.setPrivateKey("GS");
-		// }
 
-		// System.out.println(crypto.RSAtoString(crypto.getPublic())); // print out
-		// group public key
+		crypto.setPublicKey("GS");
+		pk = crypto.getPublic();
+		System.out.println("\n\nPublic Key:\n" + crypto.RSAtoString(pk));
 
 		// Autosave Daemon. Saves lists every 5 minutes
 		AutoSave aSave = new AutoSave(this);

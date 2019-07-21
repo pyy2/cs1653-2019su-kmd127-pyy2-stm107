@@ -8,7 +8,7 @@ CURRENT_DIR = $(PWD)
 default: all
 
 all:
-	mkdir -p ./build
+	mkdir -p ./build/keys 
 	mkdir -p ./src/jar
 	cd ./src/jar && wget -N $(JAR)
 	$(JC) $(JFLAGS) -d './build' src/*.java
@@ -34,9 +34,12 @@ clean:
 	rm -r src/jar
 
 clear:
-	rm -r ./build/*.key
 	rm -r ./build/*.bin
 	rm -r ./build/shared_files/
+
+reset:
+	rm -r ./build/keys/
+	rm -r ./build/*.bin
 
 test:
 	echo $(CURRENT_DIR)

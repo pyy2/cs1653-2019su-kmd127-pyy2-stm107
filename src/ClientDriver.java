@@ -54,10 +54,10 @@ public class ClientDriver {
       System.exit(1);
     }
     boolean loggedin = false;
-    while (!loggedin){
+    while (!loggedin) {
       loggedin = login();
     }
-      printMenu();
+    printMenu();
   }
 
   public static void printMenu() {
@@ -132,7 +132,7 @@ public class ClientDriver {
         break;
       case "16":
         exit();
-      // This is hidden. It's here for testing.
+        // This is hidden. It's here for testing.
       case "17":
         getKeys(null);
         break;
@@ -180,9 +180,11 @@ public class ClientDriver {
       System.out.println("It's your first time logging in. Please change your password.");
       System.out.print("Please enter new password: ");
       String new_password = kb.nextLine();
-      boolean reset = gcli.resetPassword(username, new_password);;
+      boolean reset = gcli.resetPassword(username, new_password);
+      ;
       while (!reset) {
-        System.out.println("Error changing password! Make sure you follow password requirements and that your new password is not the same as your old password!!\n\n");
+        System.out.println(
+            "Error changing password! Make sure you follow password requirements and that your new password is not the same as your old password!!\n\n");
         System.out.print("Please enter new password: ");
         new_password = kb.nextLine();
         reset = gcli.resetPassword(username, new_password);
@@ -211,7 +213,7 @@ public class ClientDriver {
   }
 
   // TODO: Implement account locking.
-  private static void unlockUser(){
+  private static void unlockUser() {
     checkExpiration();
     System.out.println("\nLog in\n");
     System.out.print("Please enter Administrator username: ");
@@ -219,7 +221,7 @@ public class ClientDriver {
     System.out.print("Please enter Administrator password: ");
     String adminPass = kb.nextLine();
     if (!gcli.userExists(admin, FIP, FPORT)) {
-    // intentionally non-specific error message.
+      // intentionally non-specific error message.
       System.out.println("Could not verify Administrator account.\n\n");
       return;
     }
@@ -230,14 +232,14 @@ public class ClientDriver {
       return;
     }
     utkn = gcli.getToken(admin, FIP, FPORT);
-    if(!utkn.getGroups().contains("ADMIN")){
+    if (!utkn.getGroups().contains("ADMIN")) {
       System.out.println("Insufficient privileges to unlock user accounts!");
       return;
     }
     // Get the user to unlock
     System.out.print("Please enter username to unlock: ");
     String user = kb.nextLine();
-    if(gcli.unlockUser(user)){
+    if (gcli.unlockUser(user)) {
       System.out.println("User unlocked!");
       return;
     }
@@ -422,13 +424,14 @@ public class ClientDriver {
 
     // Get the current group keys
     Hashtable<Integer, byte[]> key_info = getKeys(upGroup);
-    if(!key_info.keys().hasMoreElements()){
+    if (!key_info.keys().hasMoreElements()) {
       System.out.println("Error uploading file to file server.\n");
       return;
     }
     int n = key_info.keys().nextElement();
     byte[] key = key_info.get(n);
-    //System.out.println("The key the clidriver is sending to upload is: " + new String(key));
+    // System.out.println("The key the clidriver is sending to upload is: " + new
+    // String(key));
     if (!fcli.upload(upSrc, upDest, upGroup, utkn, n, key))
       System.out.println("Error uploading file to file server.\n");
     else
@@ -451,13 +454,14 @@ public class ClientDriver {
 
     // Get the current group keys for download decryption
     Hashtable<Integer, byte[]> key_info = getKeys(group);
-    if(!key_info.keys().hasMoreElements()){
+    if (!key_info.keys().hasMoreElements()) {
       System.out.println("Error downloading file.\n");
       return;
     }
     int n = key_info.keys().nextElement();
     byte[] key = key_info.get(n);
-    //System.out.println("The key the clidriver is sending to download is: " + new String(key));
+    // System.out.println("The key the clidriver is sending to download is: " + new
+    // String(key));
 
     if (!fcli.download(downSrc, downDest, utkn, n, key))
       System.out.println("Error downloading file.\n");
@@ -489,7 +493,7 @@ public class ClientDriver {
 
   private static Hashtable<Integer, byte[]> getKeys(String group) {
     checkExpiration();
-    if(group == null){
+    if (group == null) {
       System.out.println("No group name found.");
       System.out.print("Please enter the name of the groups for which you need keys: ");
       group = kb.nextLine();
@@ -502,15 +506,14 @@ public class ClientDriver {
     String keys = gcli.getKeys(group, utkn);
     if (keys == null)
       System.out.println("Error getting group keys. You may not have permission, or the group/key doesn't exist.\n");
-    else{
+    else {
       System.out.println("Looks like you're allowed. Here's yo' key!\n");
       int indexofDelim = keys.indexOf("~");
       int n = Integer.parseInt(keys.substring(0, indexofDelim));
-      String keystr = keys.substring(indexofDelim+1);
-      try{
+      String keystr = keys.substring(indexofDelim + 1);
+      try {
         n_key.put(n, keystr.getBytes("ISO-8859-1"));
-      }
-      catch(Exception e){
+      } catch (Exception e) {
         System.out.println("Error getting key bytes: " + e);
       }
 
@@ -520,29 +523,29 @@ public class ClientDriver {
 
   private static UserToken bounceToken() {
     // Bounce the server connections and re-login
-    //int gexp = gcli.expseq;
-    //int fexp = fcli.expseq;
-    //System.out.println("this is the seq: "+gexp);
+    // int gexp = gcli.expseq;
+    // int fexp = fcli.expseq;
+    // System.out.println("this is the seq: "+gexp);
     gcli.expseq = 0;
     fcli.expseq = 0;
     gcli.disconnect();
     gcli.connect(GIP, GPORT, "group", clientNum);
-    //gcli.expseq = gexp;
+    // gcli.expseq = gexp;
     fcli.disconnect();
     fcli.connect(FIP, FPORT, "file", clientNum);
-    //fcli.expseq = fexp;
-    if(utkn == null){
+    // fcli.expseq = fexp;
+    if (utkn == null) {
       return null;
     }
     String uname = utkn.getSubject();
-    //System.out.println("This is the exp: "+gexp);
+    // System.out.println("This is the exp: "+gexp);
     return gcli.getToken(uname, FIP, FPORT);
   }
 
-  private static void checkExpiration(){
+  private static void checkExpiration() {
     long currTime = System.currentTimeMillis();
     boolean expired = currTime > utkn.getEXPtime();
-    if (expired){
+    if (expired) {
       System.out.println("YOUR USER SESSION HAS EXPIRED!!!");
       System.out.println("Please log in again.");
       login();

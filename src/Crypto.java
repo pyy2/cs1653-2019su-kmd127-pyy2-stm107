@@ -102,8 +102,8 @@ class Crypto {
             KeyFactory fact = KeyFactory.getInstance("RSA");
             RSAPublicKeySpec _pub = fact.getKeySpec(publicKey, RSAPublicKeySpec.class);
             RSAPrivateKeySpec _priv = fact.getKeySpec(privateKey, RSAPrivateKeySpec.class);
-            saveToFile(filename + "public.key", _pub.getModulus(), _pub.getPublicExponent());
-            saveToFile(filename + "private.key", _priv.getModulus(), _priv.getPrivateExponent());
+            saveToFile("./keys/" + filename + "public.key", _pub.getModulus(), _pub.getPublicExponent());
+            saveToFile("./keys/" + filename + "private.key", _priv.getModulus(), _priv.getPrivateExponent());
             System.out.println("keys saved in " + filename);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -119,7 +119,7 @@ class Crypto {
     // set host public key
     void setPublicKey(String name) {
         try {
-            this.pub = (PublicKey) readKeyFromFile(name + "public.key");
+            this.pub = (PublicKey) readKeyFromFile("./keys/" + name + "public.key");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -128,7 +128,7 @@ class Crypto {
     // set host private key
     void setPrivateKey(String name) {
         try {
-            this.priv = (PrivateKey) readKeyFromFile(name + "private.key");
+            this.priv = (PrivateKey) readKeyFromFile("./keys/" + name + "private.key");
         } catch (IOException e) {
             e.printStackTrace();
         }

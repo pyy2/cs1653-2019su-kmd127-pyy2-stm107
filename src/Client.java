@@ -16,7 +16,7 @@ public abstract class Client {
 	protected Socket sock;
 	protected ObjectOutputStream output;
 	protected ObjectInputStream input;
-	//String keyFile = "ClientKeyPair.bin";
+	// String keyFile = "ClientKeyPair.bin";
 	String tfsFile = "TrustedFServer.bin";
 	TrustedFServer tfsList;
 	ObjectInputStream tfsStream;
@@ -42,8 +42,8 @@ public abstract class Client {
 		String clientConfig = "CL" + clientNum;
 
 		// set client key file paths
-		final String path = "./" + clientConfig + "public.key";
-		final String path2 = "./" + clientConfig + "private.key";
+		final String path = "./keys/" + clientConfig + "public.key";
+		final String path2 = "./keys/" + clientConfig + "private.key";
 		File f = new File(path);
 		File f2 = new File(path2);
 		c = new Crypto();
@@ -106,12 +106,12 @@ public abstract class Client {
 
 				// verify checksum
 				byte[] _checkSum = (byte[]) input.readObject(); // read checksum
-				//System.out.println("Checksum:\n" + c.toString(_checkSum)); // print
+				// System.out.println("Checksum:\n" + c.toString(_checkSum)); // print
 				System.out.println("Checksum verified -> " + c.isEqual(_checkSum, c.createChecksum(aesKey)));
 
 				// verify signature
 				byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
-				//System.out.println("Signed Checksum: " + c.toString(signedChecksum));
+				// System.out.println("Signed Checksum: " + c.toString(signedChecksum));
 				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
 			} else {
@@ -127,24 +127,24 @@ public abstract class Client {
 				output.flush();
 				System.out.println("\nClient public key -> FS:\n" + c.RSAtoString(pub));
 
-				if(tfsList == null){
+				if (tfsList == null) {
 					tfsList = new TrustedFServer();
 				}
 				if (tfsList.pubkeys != null) {
 					// Check to see if ip:pubkey pair exists yet.
 					if (tfsList.pubkeys.containsKey(sock.getInetAddress().toString())) {
-					// If the ip is there, make sure that the pubkey matches.
-					List<PublicKey> storedFSKeys = tfsList.pubkeys.get(sock.getInetAddress().toString());
-					tfsList.pubkeys.get(sock.getInetAddress().toString());
+						// If the ip is there, make sure that the pubkey matches.
+						List<PublicKey> storedFSKeys = tfsList.pubkeys.get(sock.getInetAddress().toString());
+						tfsList.pubkeys.get(sock.getInetAddress().toString());
 						if (!storedFSKeys.contains(fsPub)) {
 							Scanner in = new Scanner(System.in);
-							System.out.println("Warning: stored fingerprint do not match the incoming file server key!");
+							System.out
+									.println("Warning: stored fingerprint do not match the incoming file server key!");
 							System.out.println("Continue connecting to file server? (y/n)");
 							if (in.next().charAt(0) == 'y') {
 								System.out.println("Adding file server's public key to trusted file servers list...");
 								tfsList.addServer(sock.getInetAddress().toString(), fsPub);
-							}
-							else{
+							} else {
 								System.out.println("Terminating connection...");
 								sock.close(); // Close the socket
 							}
@@ -177,8 +177,8 @@ public abstract class Client {
 				sharedKey = c.getAESKey();
 				String challenge = c.getChallenge();
 				System.out.println("Created AES key and Challenge for File Server.\n\n");
-				//System.out.println("\nAES key: " + c.toString(sharedKey));
-				//System.out.println("Challenge: " + challenge);
+				// System.out.println("\nAES key: " + c.toString(sharedKey));
+				// System.out.println("Challenge: " + challenge);
 
 				// send encrypted aeskey + challenge with fs public key
 				String s = c.toString(sharedKey) + challenge;
@@ -195,17 +195,17 @@ public abstract class Client {
 				// send signed checksum
 				byte[] signedChecksum = c.signChecksum(checksum);
 				output.writeObject(signedChecksum);
-				//System.out.println("Signed Checksum -> Client:\n" + c.toString(signedChecksum));
+				// System.out.println("Signed Checksum -> Client:\n" +
+				// c.toString(signedChecksum));
 				output.flush();
 
 				byte[] Rchallenge = input.readObject().toString().getBytes();
-				if(!c.isEqual(challenge.getBytes(), Rchallenge)){
+				if (!c.isEqual(challenge.getBytes(), Rchallenge)) {
 					System.out.println("Error valiating challenge!");
 					System.out.println("Terminating connection!!");
 					System.exit(0);
 				}
-				System.out.println("CHALLENGE VALIDATED: "
-						+ c.isEqual(challenge.getBytes(), Rchallenge));
+				System.out.println("CHALLENGE VALIDATED: " + c.isEqual(challenge.getBytes(), Rchallenge));
 				System.out.println("\n############# CONNETION TO FILESERVER SECURE ############\n");
 			}
 
