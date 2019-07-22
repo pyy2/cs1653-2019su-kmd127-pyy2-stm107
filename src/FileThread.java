@@ -28,6 +28,7 @@ public class FileThread extends Thread {
 	SecretKey _aesKey; // shared symmetric key b/w client-fs
 	PublicKey clientK; // client publickey
 	Crypto fc; // filecrypto class
+	SecretKey veriK;
 
 	// local sequence # tracker
 	int expseq = 1;
@@ -40,6 +41,7 @@ public class FileThread extends Thread {
 		ip = _ip;
 		port = _port;
 		fc = new Crypto();
+		veriK = null;
 	}
 
 	public void run() {
@@ -88,6 +90,8 @@ public class FileThread extends Thread {
 
 			byte[] ka = fc.createChecksum(clRand + random); // SHA256(Ra||Rb)
 			byte[] kb = fc.createChecksum(random + clRand); // SHA256(Rb||Ra)
+			veriK = fc.makeAESKeyFromString(kb);
+			fc.setVeriK(veriK); // set verification key
 
 			fc.setAESKey(fc.byteToString(ka));
 			_aesKey = fc.getAESKey();

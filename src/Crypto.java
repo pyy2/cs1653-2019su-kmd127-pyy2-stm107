@@ -24,7 +24,7 @@ class Crypto {
     byte[] iv = new BigInteger("2766407063173738325154464814828650299").toByteArray();
     ArrayList<byte[]> usedNonces = new ArrayList<byte[]>();
     byte[] randomKey; // shared key gen
-    SecretKey sysRandomKey; // shared key for verification (Kb)
+    SecretKey veriK; // shared key for verification (Kb)
 
     // constructor
     Crypto() {
@@ -33,6 +33,7 @@ class Crypto {
         pub = null;
         priv = null;
         aes = null;
+        veriK = null;
         random = new SecureRandom();
         // random.nextBytes(iv);
         randomKey = new byte[128];
@@ -53,6 +54,10 @@ class Crypto {
 
     String byteToString(byte[] b) {
         return Base64.getEncoder().encodeToString(b);
+    }
+
+    void setVeriK(SecretKey k) {
+        veriK = k;
     }
 
     /*
@@ -393,7 +398,7 @@ class Crypto {
         byte[] out = null;
         try {
             Mac mac = Mac.getInstance("HmacSHA256", "BC");
-            mac.init(aes);
+            mac.init(veriK);
             mac.update(macBytes);
             out = mac.doFinal();
         } catch (Exception e) {
@@ -406,7 +411,7 @@ class Crypto {
         byte[] out = null;
         try {
             Mac mac = Mac.getInstance("HmacSHA256", "BC");
-            mac.init(aes);
+            mac.init(veriK);
             mac.update(reverify);
             out = mac.doFinal();
         } catch (Exception e) {

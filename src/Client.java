@@ -2,10 +2,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.io.*;
 import java.util.*;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import javax.crypto.SecretKey;
-import javax.crypto.Mac;
 
 public abstract class Client {
 
@@ -28,6 +26,7 @@ public abstract class Client {
 	PrivateKey priv; // client's private key
 	SecretKey sharedKey; // symmetric AES key
 	PublicKey fsPub; // fileserver public key
+	SecretKey veriK;
 
 	// accessible in FileClient thread
 	static PublicKey groupK = null;
@@ -137,12 +136,14 @@ public abstract class Client {
 
 				byte[] ka = c.createChecksum(random + clRand); // SHA256(Ra||Rb)
 				byte[] kb = c.createChecksum(clRand + random); // SHA256(Rb||Ra)
+				veriK = c.makeAESKeyFromString(kb);
+				c.setVeriK(veriK); // set verification key
 
 				// decrypt with private key to get aes key
 				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
 				System.out.println("\nGS Shared Key: " + sharedKey);
-				System.out.println("\nGS Shared Verification Key: " + c.makeAESKeyFromString(kb));
+				System.out.println("\nGS Shared Verification Key: " + veriK);
 
 				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
@@ -221,12 +222,14 @@ public abstract class Client {
 
 				byte[] ka = c.createChecksum(random + clRand); // SHA256(Ra||Rb)
 				byte[] kb = c.createChecksum(clRand + random); // SHA256(Rb||Ra)
+				veriK = c.makeAESKeyFromString(kb);
+				c.setVeriK(veriK); // set verification key
 
 				// decrypt with private key to get aes key
 				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
 				System.out.println("\nFS Shared Key: " + sharedKey);
-				System.out.println("\nFS Shared Verification Key: " + c.makeAESKeyFromString(kb));
+				System.out.println("\nFS Shared Verification Key: " + veriK);
 
 				// send SHA256 checksum of symmetric key for verification
 				byte[] checksum = c.createChecksum(s); // create checksum

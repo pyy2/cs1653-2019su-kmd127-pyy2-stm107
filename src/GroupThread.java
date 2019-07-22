@@ -28,6 +28,7 @@ public class GroupThread extends Thread {
 	PrivateKey priv; // group's private key
 	SecretKey _aesKey; // AES symmetric key
 	PublicKey clientK; // client's public key
+	SecretKey veriK;
 	Crypto gc;
 
 	// local sequence # tracker
@@ -38,6 +39,7 @@ public class GroupThread extends Thread {
 		my_gs = _gs;
 		gc = new Crypto();
 		pub = null;
+		veriK = null;
 		priv = null;
 		_aesKey = null;
 		clientK = null;
@@ -135,6 +137,8 @@ public class GroupThread extends Thread {
 
 			byte[] ka = gc.createChecksum(clRand + random); // SHA256(Ra||Rb)
 			byte[] kb = gc.createChecksum(random + clRand); // SHA256(Rb||Ra)
+			veriK = gc.makeAESKeyFromString(kb);
+			gc.setVeriK(veriK); // set verification key
 
 			// send symmetric key encrypted with client's public key with padding
 			gc.setAESKey(gc.byteToString(ka));
