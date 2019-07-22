@@ -29,8 +29,6 @@ public class GroupThread extends Thread {
 	SecretKey _aesKey; // AES symmetric key
 	PublicKey clientK; // client's public key
 	Crypto gc;
-	private static Scanner in;
-	String response;
 
 	// local sequence # tracker
 	int expseq = 1;
@@ -43,8 +41,6 @@ public class GroupThread extends Thread {
 		priv = null;
 		_aesKey = null;
 		clientK = null;
-		in = new Scanner(System.in);
-		response = "";
 	}
 
 	public void run() {
@@ -97,7 +93,8 @@ public class GroupThread extends Thread {
 					if (!storedCliKeys.contains(clientK)) {
 						// prompt group client to see if they want to add ip:pubkey pair
 						// modified to let multiple clients connect if gs allows the connection
-						// or else it blocks because the keypairs generated for each client is different
+						// or else it blocks because the keypairs generated for each client is differen
+						Scanner in = new Scanner(System.in);
 						System.out.println("Warning: stored fingerprint do not match the incoming client key!");
 						System.out.println("Continue letting client connect? (y/n)");
 						if (in.next().charAt(0) == 'y') {

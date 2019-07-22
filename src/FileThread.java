@@ -61,19 +61,43 @@ public class FileThread extends Thread {
 
 			System.out.println("\n########### SECURING CLIENT CONNECTION ###########");
 
-			// System.out.println("FS public key -> Client:\n" + fc.RSAtoString(pub));
+			System.out.println("FS public key -> Client: Sent");
 			output.writeObject(pub); // send file public key
 			output.flush();
 
 			fc.setSysK(input.readObject()); // set client's public key (encoded)
 			clientK = fc.getSysK();
 
+			// // generate new pseudo-random number and send to CL
+			// gc.setRandom(); // generate new secure random (32 byte)
+			// String random = gc.byteToString(gc.getRandom());
+			// System.out.println("\nGS Random -> CL:\n" + random);
+			// output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", random, clientK)); //
+			// encrypt w gs private key
+			// output.flush();
+
+			// byte[] ka = gc.createChecksum(clRand + random); // SHA256(Ra||Rb)
+
 			// get aes key + challenge
-			String s = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
-			String aesKey = s.substring(0, s.lastIndexOf("-"));
-			String challenge = s.substring(aesKey.length(), s.length());
-			fc.setAESKey(aesKey); // set aes key
+			// read pseudo-random number + challenge from client
+			String init[] = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv).split("\\|\\|");
+			String clRand = init[0];
+			String challenge = init[1];
+			System.out.println("\nCL Random -> FS:\n" + clRand);
+			System.out.println("\nCL Challenge -> FS:\n" + challenge);
+
+			// generate FS random #
+			fc.setRandom();
+			String random = fc.byteToString(fc.getRandom());
+			System.out.println("\nFS Random # -> CL: " + random);
+			output.writeObject(fc.encrypt("RSA/ECB/PKCS1Padding", random, clientK));
+
+			byte[] ka = fc.createChecksum(clRand + random); // SHA256(Ra||Rb)
+			byte[] kb = fc.createChecksum(random + clRand); // SHA256(Rb||Ra)
+
+			fc.setAESKey(fc.byteToString(ka));
 			_aesKey = fc.getAESKey();
+			System.out.println("\nShared Key Set: " + _aesKey);
 
 			// verify checksum
 			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
