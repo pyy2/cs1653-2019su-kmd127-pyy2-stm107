@@ -117,6 +117,7 @@ public class GroupThread extends Thread {
 				// IP does not yet exist in trusted client list. Add it.
 				else {
 					System.out.println("This is your first time connecting this client to the group server.");
+					System.out.print("Continue letting client connect? (y/n): ");
 					Scanner in = new Scanner(System.in);
 					String matchInput = in.nextLine();
 					if (matchInput.toLowerCase().charAt(0) == 'y') {
@@ -409,8 +410,6 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					// response.addObject(++expseq);
-					// ++expseq;
 					output.writeObject(response);
 
 					// ####################### DELETE USER #######################//

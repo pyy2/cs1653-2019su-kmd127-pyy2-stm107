@@ -44,22 +44,22 @@ NOTE: ClientGuiOLD has been deprecated and removed from the source repo because 
 
 The client will ask you if you want to run in default mode. This will connect to the GroupServer running on 127.0.0.1:8765 and the FileServer running on 127.0.0.1:4321. If these servers are running on different ips/ports, select "n" to enter in specific ip/port information for each server.
 
-You will then be present with a list of options. Before any other task can be completed, the user must "log in" with option 1. (NOTE: For phase 2, there is no password. Just enter the username). If you fail to log in, selecting any other option will cause the client to prompt the user to sign in first.
+On first connection, the group client will first identify that the client's fingerprint is not present and will ask for user input to confirm it wants to allow the client to connect. Then, the client will identify that the file server's fingerprint is not present and will ask for user input to confirm.
 
-After logging in, the user can complete any of the actions listen in the GroupClientInterface and the FileClientInterface.
+You will then be asked to log in. If it is your first time logging in, you will also be asked to update your temporary admin-assigned password. You will then be presented with a list of options on the client. If you fail to log in, you will be prompted to login again. If you fail the login three times, your account will be locked and will require and administrator to unlock it.
 
-Selection of option 15 causes the user connections to the server to disconnect and the client program to end.
+After logging in, the user can complete any of the actions listed in the GroupClientInterface and the FileClientInterface.
 
-Future enhancements will include better logging in the event of a failure on in the Thread layers for both Group and File Servers and automated testing of all methods.
+Selection of option 16 causes the user connections to the server to disconnect and the client program to end.
 
 ## Client Functionality
  - Login: This function currently only requires a user name. It takes the username and gets a token from the group client. That token persists until the application is closed of the user clicks "Logout" (in the GUI client only!).
 
- - Create a User: This function creates a new user with a username. Password is not currently required. If a duplicate username is entered, an error message is printed.
+ - Create a User: This function creates a new user with a username. The password assigned will be considered a temporary password and must be changed on first login. If a duplicate username is entered, an error message is printed. If username or password complexity requirements are not met, an error message is printed.
 
  - Delete a User: This function deletes the user associated with the given username. If the user does not exist, an error message is printed.
 
- - Create a Group: This functions requires a group name. It creates the user group and assigns ownership to the requester. If the group already exists, an error message is printed.
+ - Create a Group: This function requires a group name. It creates the user group and assigns ownership to the requester. If the group already exists, an error message is printed.
 
  - Delete a Group: This function deletes the group associated with the given group name. If the requester does not own the group, an error message is printed. If the group does not exist, an error message is printed.
 
@@ -77,6 +77,8 @@ Future enhancements will include better logging in the event of a failure on in 
 
  - Delete a File: This function deletes the given file is the requester is a member of the file's group. If the user does not have sufficient group permissions, an error message is printed. If the file does not exist, an error message is printed.
 
- - Logout (GUI only): This function erases the user token and prompts the user to log in to continue.
+ - Unlock a User: This function requires an admin and locked user's username. It changes the user's locked status to false.
+
+ - Logout: This function erases the user token and prompts the user to log in to continue.
 
  - Exit: This function disconnects from the group and file servers and quits the Client Driver or Client GUI.

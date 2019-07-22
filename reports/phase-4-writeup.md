@@ -1,4 +1,13 @@
+### Phase 4 Write-Up
+
+#### Introduction
+  This phase deals more particularly with active attacks such as replays attacks, reorder attacks, modification of messages, the passing off of stolen tokens as your own, and attempting to open stolen or leaked files. The cryptographic techniques for this phase will need to be a bit different than last phase. First, in the previous phase we were using only one shared AES key for message encryption. We were also using that key to produce and HMAC and then signing that HMAC for verification. In this phase, we are creating multiple unique TLS style keys by using random number generation in the client and server. This not only allows us for a more secure HMAC and encryption because of the use of two distinct shared secret keys, it also allows for us to not need to sign every single message, because the use of two secrets shared only by the client and server thread in question proves the identity of the senders and receivers.
+
+  Other techniques we employed were the user of Lamport-like dynamic keys for group encryption of files. These keys you the principle of preimage resistance to allow for new keys to be made without a user who has left to group being able to calculate them. We also modified the token object to include verification that the tokeen is only being used by the intended file server, and to include a session timeout of 20 minutes so that a user cannot use their token for a longer period of time. If the user is on the server for more than 20 minutes, they will be prompted to log back in. Finally, we included sequence numbers on the client and server threads to ensure no reorder attacks can occur.
+
 #### T5: Message Reorder, Replay, or Modification
+
+  If an adversary were able to watch and record traffic between a client and a server, they would be able to attempt various message based attacks including reorder, replay, and modification of messages to attempt to gain unauthorizes access, get information, modify information, or prevent access (like changing passwords or deleting information).
 
   To prevent from reorder, replay, or modification attacks, we will be using a few different protocols. First, for reorder and modification, we will be utilizing HMAC and TLS like shared key generation protocols. When the client and server connect, they will first both generate and share pseudorandom numbers and will use these numbers to generate 2 distinct shared keys. When a message is sent, whether it is a request from a client or a response form a server, the message will be of the following general structure:
 
@@ -12,6 +21,10 @@
   {seq#||req/resp||token||padding}Ka, HMAC(Kb, {seq#||req/resp||token||padding})
 
   Thus, the sequence number is simply included in the message. When the receiver decrypts the message, they will check against the expected sequence number. If it doesn't match, the message will be rejected. If an adversary were to try to replay or reorder the message, the message would be rejected because the sequence number would be recognized as unexpected.
+
+  Our group chose to use TLS-like shared keys and sequence numbers because mostly because of ease of implementation and efficiency. The use of shared symmetric keys is much faster than using RSA for everything, and the addition and checking of a simple sequence number is very lightweight and quick.
+
+  These protocols are effective because both parties will agree on the keys, the keys will only be known to the client/server sharing them, and the keys will be generated anew on each subsequent connection. That way, stolen keys cannot be used in a new session, and replay attacks cannot occur. In the same way, each thread maintains its own expected sequence numbers for checking, so outside interference is unlikely.
 
 
 
@@ -47,17 +60,36 @@
       - Alice gets n' = 999 - 1000 = -1. She cannot compute H^-1(H^1000(seed)) because A) she does not know the seed (it lives securely on the group server) and B) you can't go backwards in a hash function (preimage resistance)! Alice's evil intentions are foiled!
       - NOTE: it is an assumption in our system that, even though Alice is no longer a member of the group, if a file in that group is unchanged, Alice can still access it. This is basically the same as her saving local copies of the files while she is a group member to reference later, or remembering the contents of the file later.
 
+      We chose this implementation because it was a lightweight way to have a group key that can change without having to constantly redistribute keys and re-encrypt all files on the server. The hashing algorithm is fast, and the seed is only known to the trusted group server, so no one on an adversary's corrupted client or files server could calculate the current group keys. Also, the Shared File object allows for the addition of file metadata, so adding n from the group key is an easy implementation, and the adversary cannot crack the file with only knowing n.
+
 ### T7: Token Theft
 
-  It is assumed that the file server will steal legitimate tokens from users and try to give them to other users. First, we need to ensure that a user cannot pass of another user's token as their own. This is fairly simple, in that we can simple verify that the requester's name matches the name in their token.
+  It is assumed that the file server will steal legitimate tokens from users and try to give them to other users. We need to ensure that the user cannot attempt to use the token they received from the rogue file server on another file server to login and attempt to access file information that they would not normally have access to. To accomplish this, we can modify the Token object to contain information about the file server it is intended to be used for.
 
-  We also need to ensure that the user cannot attempt to use the token they received from the rogue file server on another file server to login and attempt to access file information. To accomplish this, we can modify the Token object to contain information about the file server it is intended to be used for.
-
-  When the client driver program first starts, it asks the user for the IP and port of the group and file server that the user wants to connect to. When the user connects to the group server and asks for a session token, instead of just sending the encrypted username and password, it will also send the ip:port combination of its intended file server. This ip:port will then be stored as an attribute on the user's session token, which is hashed and signed by group server to ensure it has not been tampered with.
+  When the client driver program first starts, it asks the user for the IP and port of the group and file server that the user wants to connect to. When the user connects to the group server and asks for a session token, instead of just sending the encrypted username and password, it will also send the ip:port combination of its intended file server. This ip:port will then be stored as an attribute on the user's session token, which is hashed and signed by the group server to ensure it has not been tampered with.
 
   Then, when a file server gives a stolen token to a user for use on another file server, when the user makes a request, the file server will check to see that the ip:port on the token match the file server's own ip:port. If it does not, the file server will terminate the connection and the token cannot be used on that file server.
 
   Tokens will also be modified to include and expiration timer. Each session will have a lifespan of 20 minutes. On each transaction, the user's token will be checked by the server, and the server will verify that the current time is not later than the expiration time. If it is, the user will be logged out and forced to re-login to continue. On token issuance, a fresh expiration will be generated, 20 minutes from time of token creation.
+
+  We chose token modification because the token is ultimately the piece of information that allows for all access in the file server. The token is signed by the group server, but without the additional information provided above, the file server would think that a stolen token is perfectly valid. The expiration makes it so that an adversary cannot use an old token to try to access the file server. It is lightweight and easy to implement and check. The intended file server data is also readily present and easy to add and check as token metadata. Both, in combination with the token data signed by the group server, ensure that a token cannot be modified, stolen, or reused.
+
+## Design Approach
+
+  Our design approach started by looking at our phase 3 implementation. We had some security flaws as well as some heavy and intensive processes that we needed to rework. The use of the TLS-like keys is interesting in that is solves several problems: It eliminates the need to be constantly signing and verifying RSA signatures, which is an expensive process. It also allows for the prevention of replay attacks because the keys are generated on each connection.
+
+  The Lamport-like group keys was a fun idea. We liked that the Lamport OTP protocol used secure hashing principles and math to make easily refreshable group keys.
+
+  Modifying the token to include more metadata just seemed like an obvious choice. In the group members' profession experience, session tokens include a lot of metadata, including expiration times and intended "sites."
+
+  Finally, while not expressly called for in the prompt, brute force login attacks are a real concern. So we implemented a locking and unlocking mechanism that locks out a user after 3 failed login attempts. The user must have an administrator unlock their account after that happens.
+
+  As always, the GUI now also contains all of the necessary security updates that the test based client required.
+
+## Past Threats
+  The threats from T1-T4 are still addressed in this protocol. First, Unauthorized Token Issuance is still guarded against by protecting against brute force attacks, implementing password checking, and ensuring that lines of communication between the client and group server are secure. Token modification cannot happen because tokens are still signed by the group server so that the file server can verify that a token has not been modified. These tokens now include the additional expiration and file server information. There can be no unknown connection to unauthorized file server or unauthorized clients because the RSA-like fingerprinting is still in place. Finally, snooping cannot occur because of the use of symmetric key encryption on all communications between client and server. Our phase 4 implementation did not remove any of the necessary functionality from phase 3. It instead enhanced it to cover a new range of active threats. 
+
+
 
 ### Protocol Diagrams
 
@@ -72,3 +104,15 @@
 **Per-Group File Encryption Key**
 
 ![Per-Group File Permission](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/p4_group_key_system.png)
+
+## Phase 4 Division of Labor
+
+Each part of the encryption system was fiddled with by each member of the team. Specifically:
+
+ - Karyn Drombosky worked mostly the Lamport-like key implementation and the sequence numbers. She also updated the GUI and did the bonus work for locking and unlocking accounts on 3 failed login attempts.
+
+ - Paul Yu did the work of generating the TLS-like keys and updating all of the encryption and HMAC to handle using these keys instead of the single AES key. He also generated the group public key and implemented the logic to have it loaded into the clients and file server "out of band" (it is entered on the terminal by the end user, which simulates it being sent out of band).
+
+ - Sean Mizerski modified the tokens to contain and expiration timer and an intended file server. He then implemented the methods to check these on each transaction and terminate if an attack is detected. He also implemented user verification on every new connection.
+
+ - All three members proofread/verified documentation and tested the application.

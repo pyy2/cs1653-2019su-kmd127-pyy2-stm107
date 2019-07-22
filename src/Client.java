@@ -189,7 +189,6 @@ public abstract class Client {
 					else {
 						System.out.println("This is your first time connecting this client to the file server.");
 						Scanner in = new Scanner(System.in);
-						System.out.println("Warning: stored fingerprint do not match the incoming file server key!");
 						System.out.println("Continue connecting to file server? (y/n)");
 						if (in.next().charAt(0) == 'y') {
 							System.out.println("Adding file server's public key to trusted file servers list...");
