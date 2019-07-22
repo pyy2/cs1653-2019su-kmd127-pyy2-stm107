@@ -100,7 +100,7 @@ When a message is sent, whether it is a request from a client or a response form
 
 ![Client-to-Group](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/p4_client_groupserver.png)
 
-**Client-to-Group Server**
+**Client-to-File Server**
 
 ![Client-to-File](https://github.com/pyy2/cs1653-2019su-kmd127-pyy2-stm107/blob/master/reports/images/p4_client_fileserver.png)
 
