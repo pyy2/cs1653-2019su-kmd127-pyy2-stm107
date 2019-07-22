@@ -29,7 +29,8 @@ public class GroupThread extends Thread {
 	SecretKey _aesKey; // AES symmetric key
 	PublicKey clientK; // client's public key
 	Crypto gc;
-	Scanner in = new Scanner(System.in);
+	private static Scanner in;
+	String response;
 
 	// local sequence # tracker
 	int expseq = 1;
@@ -42,6 +43,8 @@ public class GroupThread extends Thread {
 		priv = null;
 		_aesKey = null;
 		clientK = null;
+		in = new Scanner(System.in);
+		response = "";
 	}
 
 	public void run() {
@@ -58,8 +61,8 @@ public class GroupThread extends Thread {
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 
 			// set gs key file paths
-			final String path = "./GSpublic.key";
-			final String path2 = "./GSprivate.key";
+			final String path = "./keys/GSpublic.key";
+			final String path2 = "./keys/GSprivate.key";
 			File f = new File(path);
 			File f2 = new File(path2);
 
@@ -67,7 +70,9 @@ public class GroupThread extends Thread {
 			if (!f.exists() && !f2.exists()) {
 				System.out.println("FATAL ERROR: GS key NOT found!\nSystem Exiting");
 				System.exit(1);
-			} else if ((pub == null) && (priv == null)) {
+			}
+
+			if ((pub == null) && (priv == null)) {
 				System.out.println("Setting GS public/private keys");
 				gc.setPublicKey("GS");
 				gc.setPrivateKey("GS");
@@ -77,10 +82,12 @@ public class GroupThread extends Thread {
 				System.out.println("GS Keys already set!");
 			}
 
-			System.out.println("\n########### ATTEMPT TO SECURE CL CONNECTION ###########");
+			System.out.println("\n\n########### ATTEMPT TO SECURE CL CONNECTION ###########\n");
+
+			// get client's public key
 			gc.setSysK(input.readObject()); // read client public key (not encoded)
-			clientK = gc.getSysK();
-			System.out.println("Received client's public key: \n" + gc.RSAtoString(clientK));
+			clientK = gc.getSysK(); // set client's public key
+			System.out.println("CL Public Key -> GS: \n" + gc.RSAtoString(clientK));
 
 			if (my_gs.tcList.pubkeys != null) {
 				// Check to see if ip:pubkey pair exists yet.
@@ -91,7 +98,6 @@ public class GroupThread extends Thread {
 						// prompt group client to see if they want to add ip:pubkey pair
 						// modified to let multiple clients connect if gs allows the connection
 						// or else it blocks because the keypairs generated for each client is different
-						Scanner in = new Scanner(System.in);
 						System.out.println("Warning: stored fingerprint do not match the incoming client key!");
 						System.out.println("Continue letting client connect? (y/n)");
 						if (in.next().charAt(0) == 'y') {
@@ -118,6 +124,24 @@ public class GroupThread extends Thread {
 
 			// send group server public key to client
 			output.writeObject(pub);
+
+			// read pseudo-random number from client
+			String clRand = gc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
+			gc.setSysRandom(clRand);
+			System.out.println("\nCL Random -> GS:\n" + clRand);
+
+			// generate new pseudo-random number and send to CL
+			gc.setRandom(); // generate new secure random (32 byte)
+			String random = gc.byteToString(gc.getRandom());
+			System.out.println("\nGS Random -> CL:\n" + random);
+			output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", random, clientK)); // encrypt w gs private key
+			output.flush();
+
+			String data = clRand + random;
+			byte[] Ka = gc.createChecksum(data + "a");
+			byte[] Kb = gc.createChecksum(data + "b");
+			System.out.println("\nGenerated Ka:\n" + gc.byteToString(Ka));
+			System.out.println("\nGenerated Kb:\n" + gc.byteToString(Ka));
 
 			// send symmetric key encrypted with client's public key with padding
 			gc.genAESKey(); // create AES key
@@ -161,11 +185,10 @@ public class GroupThread extends Thread {
 						response.addObject(null);
 						output.writeObject(response);
 					} else {
-						if (my_gs.userList.list.get(username).getLockStatus()){
+						if (my_gs.userList.list.get(username).getLockStatus()) {
 							System.out.println("This is user is locked!");
 							response = new Envelope("LOCKED");
-						}
-						else{
+						} else {
 							UserToken yourToken = createToken(username, fip, fport); // Create a token
 
 							// Respond to the client. On error, the client will receive a null token
@@ -714,8 +737,10 @@ public class GroupThread extends Thread {
 		if (my_gs.userList.checkUser(username)) {
 			long currTime = System.currentTimeMillis();
 			long expTime = currTime + 1200000;
-			// Issue a new token with server's name, user's name, user's groups, currtime and exptime 
-			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), currTime, expTime, fip, port);
+			// Issue a new token with server's name, user's name, user's groups, currtime
+			// and exptime
+			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), currTime,
+					expTime, fip, port);
 			return yourToken;
 		} else {
 			return null;
@@ -816,7 +841,9 @@ public class GroupThread extends Thread {
 					// Delete owned groups
 					for (int index = 0; index < deleteOwnedGroup.size(); index++) {
 						// Use the delete group method. Token must be created for this action
-						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup, yourToken.getCREtime(), yourToken.getEXPtime(), yourToken.getfsIP(), yourToken.getfsPORT()));
+						deleteGroup(deleteOwnedGroup.get(index),
+								new Token(my_gs.name, username, deleteOwnedGroup, yourToken.getCREtime(),
+										yourToken.getEXPtime(), yourToken.getfsIP(), yourToken.getfsPORT()));
 					}
 
 					// Delete the user from the user list
@@ -836,7 +863,7 @@ public class GroupThread extends Thread {
 	}
 
 	private boolean unlockUser(String username) {
-		if(my_gs.userList.list.get(username) == null){
+		if (my_gs.userList.list.get(username) == null) {
 			return false;
 		}
 		return my_gs.userList.list.get(username).unlockUser();
@@ -988,14 +1015,14 @@ public class GroupThread extends Thread {
 	}
 
 	private UserToken makeTokenFromString(String tokenString) {
-	// 	String[] tokenComps = tokenString.split(";");
-	// 	String issuer = tokenComps[0];
-	// 	String subject = tokenComps[1];
-	// 	List<String> groups = new ArrayList<>();
-	// 	for (int i = 2; i < tokenComps.length; i++) {
-	// 		groups.add(tokenComps[i]);
-	// 	}
-	// 	return new Token(issuer, subject, groups);
+		// String[] tokenComps = tokenString.split(";");
+		// String issuer = tokenComps[0];
+		// String subject = tokenComps[1];
+		// List<String> groups = new ArrayList<>();
+		// for (int i = 2; i < tokenComps.length; i++) {
+		// groups.add(tokenComps[i]);
+		// }
+		// return new Token(issuer, subject, groups);
 		return gc.makeTokenFromString(tokenString);
 
 	}

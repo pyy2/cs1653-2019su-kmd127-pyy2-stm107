@@ -1,20 +1,10 @@
 
 /* FileClient provides all the client functionality regarding the file server */
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.io.ObjectInputStream;
-import javax.crypto.Mac;
-import java.security.Signature;
-import java.security.Security;
-import java.util.Arrays;
-import java.util.Base64;
-import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
+import java.util.*;
+import java.security.*;
 import javax.crypto.*;
+import javax.crypto.spec.*;
 
 public class FileClient extends Client implements FileClientInterface {
 
@@ -76,7 +66,7 @@ public class FileClient extends Client implements FileClientInterface {
 				Envelope env = new Envelope("DOWNLOADF"); // Success
 
 				// prepare metadata request
-				//TODO: Don't send group public key.
+				// TODO: Don't send group public key.
 				String pubKey = c.toString(groupK);
 				String concatted = pubKey + token + "||" + sourceFile;
 				byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
@@ -99,18 +89,18 @@ public class FileClient extends Client implements FileClientInterface {
 					// with n extracted, get the key
 					// subtract my n from the gserver from this n
 					int hash_n = file_n - shared_n;
-					if(hash_n < 0){
+					if (hash_n < 0) {
 						System.out.println("Requestor has invalid group key. Terminating request...");
 						return false;
-					}
-					else{
+					} else {
 						System.out.println("Updating group key...");
 						curr_key = fc.hashSecretKey(key, hash_n);
 					}
 
 					// make the secret key
 					SecretKey skey = fc.makeAESKeyFromString(curr_key);
-					//System.out.println("This is the key..." + Base64.getEncoder().encodeToString(skey.getEncoded()));
+					// System.out.println("This is the key..." +
+					// Base64.getEncoder().encodeToString(skey.getEncoded()));
 
 					// Now get the file chunks
 					env = (Envelope) input.readObject();
@@ -210,7 +200,7 @@ public class FileClient extends Client implements FileClientInterface {
 			// Tell the server to return the member list
 			message = new Envelope("UPLOADF"); // Success
 
-			//TODO: Don't send group key. It is assumed it is already here.
+			// TODO: Don't send group key. It is assumed it is already here.
 			// prepare metadata request
 			String pubKey = c.toString(groupK);
 			String concatted = pubKey + token + "||" + destFile + "||" + group;
@@ -246,8 +236,8 @@ public class FileClient extends Client implements FileClientInterface {
 				message = new Envelope("CHUNK");
 				// read in from the file
 				int n = fis.read(buf); // can throw an IOException
-				//encrypt the chunk
-				byte [] enc_buf = c.aesGroupEncrypt(new String(buf), skey);
+				// encrypt the chunk
+				byte[] enc_buf = c.aesGroupEncrypt(new String(buf), skey);
 				if (n > 0) {
 					System.out.printf(".");
 				} else if (n < 0) {

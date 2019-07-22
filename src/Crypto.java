@@ -3,25 +3,15 @@ import java.io.File;
 import java.util.*;
 import java.util.Base64;
 import java.security.*;
+import java.security.spec.*;
+
 import javax.crypto.*;
-import javax.crypto.Mac;
-import java.security.Signature;
 import javax.crypto.spec.*;
-import java.security.Key;
-import java.security.Security;
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import java.security.spec.KeySpec;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
 import java.math.BigInteger;
 import java.nio.file.Files;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.Base64;
 
 class Crypto {
 
@@ -33,6 +23,8 @@ class Crypto {
     int AES_LENGTH = 128;
     byte[] iv = new BigInteger("2766407063173738325154464814828650299").toByteArray();
     ArrayList<byte[]> usedNonces = new ArrayList<byte[]>();
+    byte[] randomKey; // shared key gen
+    String sysRandomKey;
 
     // constructor
     Crypto() {
@@ -42,7 +34,34 @@ class Crypto {
         priv = null;
         aes = null;
         random = new SecureRandom();
-        //random.nextBytes(iv);
+        // random.nextBytes(iv);
+        randomKey = new byte[128];
+        sysRandomKey = "";
+    }
+
+    /*
+     *
+     * ******** One Time Key Generation ********
+     *
+     */
+    void setRandom() {
+        random.nextBytes(randomKey);
+    }
+
+    byte[] getRandom() {
+        return randomKey;
+    }
+
+    void setSysRandom(String s) {
+        sysRandomKey = s;
+    }
+
+    String getSysRandom() {
+        return sysRandomKey;
+    }
+
+    String byteToString(byte[] b) {
+        return Base64.getEncoder().encodeToString(b);
     }
 
     /*
@@ -50,16 +69,16 @@ class Crypto {
      * ******** Sequence Number Checking ********
      *
      */
-     void checkSequence(int seq, int expseq){
-       //System.out.println("SEQ="+seq);
-       //System.out.println("EXPSEQ="+expseq);
-       if(seq != expseq){
-         System.out.println("SEQUENCE NUMBER MISMATCH!!");
-         System.out.println("REORDER ATTACK DETECTED!!");
-         System.out.println("Shutting down...");
-         System.exit(0);
-       }
-     }
+    void checkSequence(int seq, int expseq) {
+        // System.out.println("SEQ="+seq);
+        // System.out.println("EXPSEQ="+expseq);
+        if (seq != expseq) {
+            System.out.println("SEQUENCE NUMBER MISMATCH!!");
+            System.out.println("REORDER ATTACK DETECTED!!");
+            System.out.println("Shutting down...");
+            System.exit(0);
+        }
+    }
 
     /*
      *
@@ -67,33 +86,32 @@ class Crypto {
      *
      */
 
-    byte[] createLamportSeed(){
-      System.out.println("Creating lamport key...");
-      SecretKey key = genAESKey();
-      byte[] seed = key.getEncoded();
-      System.out.println("Number of bytes is: " + seed.length);
-      return seed;
+    byte[] createLamportSeed() {
+        System.out.println("Creating lamport key...");
+        SecretKey key = genAESKey();
+        byte[] seed = key.getEncoded();
+        System.out.println("Number of bytes is: " + seed.length);
+        return seed;
     }
 
-    byte[] hashSecretKey(byte[] seed, int n){
-      //System.out.println("Hashing key: " + new String(seed) +  " " +n+ " times.");
-      byte[] hashedSecret = seed;
-      try{
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        for(int i = 0; i < n; i++){
-          md.update(hashedSecret);
-          hashedSecret = md.digest();
+    byte[] hashSecretKey(byte[] seed, int n) {
+        // System.out.println("Hashing key: " + new String(seed) + " " +n+ " times.");
+        byte[] hashedSecret = seed;
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            for (int i = 0; i < n; i++) {
+                md.update(hashedSecret);
+                hashedSecret = md.digest();
+            }
+        } catch (Exception e) {
+            System.out.println("Error creating Lamport-Like group key: " + e);
         }
-      }
-      catch(Exception e){
-        System.out.println("Error creating Lamport-Like group key: " + e);
-      }
-      return hashedSecret;
+        return hashedSecret;
     }
 
-    SecretKey makeAESKeyFromString(byte[] key){
-      //System.out.println("The number of bytes is: " + key.length);
-      return new SecretKeySpec(key, "AES");
+    SecretKey makeAESKeyFromString(byte[] key) {
+        // System.out.println("The number of bytes is: " + key.length);
+        return new SecretKeySpec(key, "AES");
     }
 
     /*
@@ -113,9 +131,25 @@ class Crypto {
             KeyFactory fact = KeyFactory.getInstance("RSA");
             RSAPublicKeySpec _pub = fact.getKeySpec(publicKey, RSAPublicKeySpec.class);
             RSAPrivateKeySpec _priv = fact.getKeySpec(privateKey, RSAPrivateKeySpec.class);
-            saveToFile(filename + "public.key", _pub.getModulus(), _pub.getPublicExponent());
-            saveToFile(filename + "private.key", _priv.getModulus(), _priv.getPrivateExponent());
+            saveToFile("./keys/" + filename + "public.key", _pub.getModulus(), _pub.getPublicExponent());
+            saveToFile("./keys/" + filename + "private.key", _priv.getModulus(), _priv.getPrivateExponent());
             System.out.println("keys saved in " + filename);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e2) {
+            e2.printStackTrace();
+        } catch (IOException e3) {
+            e3.printStackTrace();
+        } catch (InvalidKeySpecException e4) {
+            e4.printStackTrace();
+        }
+    }
+
+    void saveGroupPK(String filename, PublicKey groupK) {
+        try {
+            KeyFactory fact = KeyFactory.getInstance("RSA");
+            RSAPublicKeySpec _pub = fact.getKeySpec(groupK, RSAPublicKeySpec.class);
+            saveToFile("./keys/" + filename + "public.key", _pub.getModulus(), _pub.getPublicExponent());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e2) {
@@ -130,7 +164,7 @@ class Crypto {
     // set host public key
     void setPublicKey(String name) {
         try {
-            this.pub = (PublicKey) readKeyFromFile(name + "public.key");
+            this.pub = (PublicKey) readKeyFromFile("./keys/" + name + "public.key");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -139,7 +173,7 @@ class Crypto {
     // set host private key
     void setPrivateKey(String name) {
         try {
-            this.priv = (PrivateKey) readKeyFromFile(name + "private.key");
+            this.priv = (PrivateKey) readKeyFromFile("./keys/" + name + "private.key");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -289,13 +323,12 @@ class Crypto {
         return decryptedValue;
     }
 
-
     byte[] decode(String key) {
         return Base64.getDecoder().decode(key);
     }
 
     String aesDecrypt(final byte[] encrypted) {
-        //iv = readBytesFromFile("./iv.txt");
+        // iv = readBytesFromFile("./iv.txt");
         String decryptedValue = null;
         try {
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
@@ -455,18 +488,18 @@ class Crypto {
         return new Token(issuer, subject, groups, creationTime, expirationTime, fsIP, fsPORT);
     }
 
-    void verifyFServer(UserToken token, String ip, int port){
+    void verifyFServer(UserToken token, String ip, int port) {
         String tIP = token.getfsIP();
         int tPORT = token.getfsPORT();
         System.out.println("TIP is: " + tIP);
         System.out.println("TPORT is: " + tPORT);
         System.out.println("IP is: " + ip);
         System.out.println("Port is: " + port);
-        if (!tIP.equals(ip)){
+        if (!tIP.equals(ip)) {
             System.out.println("Stolen token detected; shutting down");
             System.exit(0);
         }
-        if (tPORT != port){
+        if (tPORT != port) {
             System.out.println("Stolen token detected; shutting down");
             System.exit(0);
         }
@@ -540,15 +573,6 @@ class Crypto {
         return keyPair;
     }
 
-    // check to make sure BC is provider
-    private void checkProvider() {
-        if (Security.getProvider("BC") == null) {
-            System.out.println("Error: BC provider not set");
-        } else {
-            System.out.println("Bouncy Castle provider is set");
-        }
-    }
-
     // Return the saved key from file
     private Key readKeyFromFile(String filename) throws IOException {
         InputStream in = new FileInputStream(filename);
@@ -570,40 +594,4 @@ class Crypto {
         return key;
     }
 
-    private void writeBytesToFile(byte[] bFile, String fileDest) {
-
-        try (FileOutputStream fileOuputStream = new FileOutputStream(fileDest, false)) {
-            fileOuputStream.write(bFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private byte[] readBytesFromFile(String filePath) {
-
-        FileInputStream fileInputStream = null;
-        byte[] bytesArray = null;
-
-        try {
-
-            File file = new File(filePath);
-            bytesArray = new byte[(int) file.length()];
-
-            // read file into bytes[]
-            fileInputStream = new FileInputStream("./iv.txt");
-            fileInputStream.read(bytesArray);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (fileInputStream != null) {
-                try {
-                    fileInputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return bytesArray;
-    }
 }

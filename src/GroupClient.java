@@ -17,7 +17,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	public UserToken getToken(String username, String fip, int fport) {
 		try {
-			UserToken token = null;
 			Envelope message = null, response = null;
 			ArrayList<String> params = new ArrayList<String>();
 			params.add(username);
@@ -38,7 +37,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// Get the response from the server
 			response = (Envelope) input.readObject();
 
-			if (response.getMessage().equals("LOCKED")){
+			if (response.getMessage().equals("LOCKED")) {
 				System.out.println("The user is locked!");
 				System.out.println("Please contact your administrator to unlock.");
 				return null;
@@ -89,7 +88,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	}
 
-	public String getKeys(String group, UserToken token){
+	public String getKeys(String group, UserToken token) {
 		try {
 			Envelope message = null, response = null;
 			message = new Envelope("GETGKEY");
@@ -122,7 +121,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			return null;
 		}
 	}
-	public boolean lockUser(String username){
+
+	public boolean lockUser(String username) {
 		try {
 			Envelope message = null, response = null;
 			message = new Envelope("LOCK");
@@ -146,7 +146,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-	public boolean unlockUser(String username){
+	public boolean unlockUser(String username) {
 		try {
 			Envelope message = null, response = null;
 			message = new Envelope("UNLOCK");
@@ -210,10 +210,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			message.addObject(++expseq);
-			//System.out.println(expseq);
+			// System.out.println(expseq);
 			output.writeObject(message);
 			++expseq;
-		//	System.out.println(expseq);
+			// System.out.println(expseq);
 
 			response = (Envelope) input.readObject();
 
@@ -243,7 +243,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			// Add HMAC(Username||password, sharedKey) signed with private key so we know it
 			// hasn't been tampered with!
-		//	byte[] verify = (username + password).getBytes();
+			// byte[] verify = (username + password).getBytes();
 			Mac mac = Mac.getInstance("HmacSHA256", "BC");
 			mac.init(sharedKey);
 			mac.update(upwd);
@@ -543,7 +543,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		// String subject = tokenComps[1];
 		// List<String> groups = new ArrayList<>();
 		// for (int i = 2; i < tokenComps.length; i++) {
-		// 	groups.add(tokenComps[i]);
+		// groups.add(tokenComps[i]);
 		// }
 		// return new Token(issuer, subject, groups,);
 		return c.makeTokenFromString(tokenString);

@@ -17,7 +17,6 @@ import java.lang.String;
 // security packages
 import java.security.*;
 import javax.crypto.*;
-import java.security.Signature;
 
 public class FileThread extends Thread {
 
@@ -34,7 +33,7 @@ public class FileThread extends Thread {
 	int expseq = 1;
 
 	public FileThread(Socket _socket, String _ip, int _port) {
-		if (_ip.equals("0.0.0.0") || _ip.equals("localhost")){
+		if (_ip.equals("0.0.0.0") || _ip.equals("localhost")) {
 			_ip = "127.0.0.1";
 		}
 		socket = _socket;
@@ -47,13 +46,14 @@ public class FileThread extends Thread {
 		boolean proceed = true;
 		try {
 
-//####################### HAND SHAKE PROTOCOL #######################//
+			// ####################### HAND SHAKE PROTOCOL #######################//
 
 			System.out.println("\n*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
 			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 			Envelope response;
 
+			// sets fileserver keys
 			pub = FileServer.pub;
 			priv = FileServer.priv;
 
@@ -91,7 +91,7 @@ public class FileThread extends Thread {
 				response = null;
 				System.out.println("Request received: " + e.getMessage());
 
-//####################### LIST FILES #######################//
+				// ####################### LIST FILES #######################//
 
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals("LFILES")) {
@@ -151,7 +151,7 @@ public class FileThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### UPLOAD FILES #######################//
+					// ####################### UPLOAD FILES #######################//
 
 				} else if (e.getMessage().equals("UPLOADF")) {
 					if (e.getObjContents().size() < 2) {
@@ -212,10 +212,10 @@ public class FileThread extends Thread {
 										e = (Envelope) input.readObject();
 										while (e.getMessage().compareTo("CHUNK") == 0) {
 											// Store the file that has been ENCRYPTED WITH THE GROUP KEY
-											seq = (Integer)e.getObjContents().get(2);
+											seq = (Integer) e.getObjContents().get(2);
 											fc.checkSequence(seq, expseq);
 											byte[] b = (byte[]) e.getObjContents().get(1);
-											shared_n = (Integer)e.getObjContents().get(0);
+											shared_n = (Integer) e.getObjContents().get(0);
 
 											// write data to the file.
 											fos.write(b);
@@ -231,7 +231,8 @@ public class FileThread extends Thread {
 											seq = (Integer) e.getObjContents().get(0);
 											fc.checkSequence(seq, expseq);
 											System.out.printf("Transfer successful file %s\n", remotePath);
-											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath, shared_n);
+											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath,
+													shared_n);
 											response = new Envelope("OK"); // Success
 										} else {
 											System.out.printf("Error reading file %s from client\n", remotePath);
@@ -247,8 +248,7 @@ public class FileThread extends Thread {
 					++expseq;
 					output.writeObject(response);
 
-//####################### DOWNLOAD FILES #######################//
-
+					// ####################### DOWNLOAD FILES #######################//
 
 				} else if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 
@@ -341,7 +341,7 @@ public class FileThread extends Thread {
 												if (e.getMessage().compareTo("DOWNLOADF") == 0) {
 													e = new Envelope("EOF");
 													e.addObject(expseq);
-													//expseq;
+													// expseq;
 													output.writeObject(e);
 
 													e = (Envelope) input.readObject();
@@ -361,6 +361,7 @@ public class FileThread extends Thread {
 													System.out.printf("Download failed: %s\n", e.getMessage());
 
 												}
+												fis.close();
 											}
 										} catch (Exception e1) {
 											System.err.println("Error: " + e1.getMessage());
@@ -374,7 +375,7 @@ public class FileThread extends Thread {
 					}
 					output.writeObject(response);
 
-//####################### DELETE FILES #######################//
+					// ####################### DELETE FILES #######################//
 
 				} else if (e.getMessage().compareTo("DELETEF") == 0) {
 
