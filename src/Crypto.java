@@ -24,7 +24,7 @@ class Crypto {
     byte[] iv = new BigInteger("2766407063173738325154464814828650299").toByteArray();
     ArrayList<byte[]> usedNonces = new ArrayList<byte[]>();
     byte[] randomKey; // shared key gen
-    String sysRandomKey;
+    SecretKey sysRandomKey; // shared key for verification (Kb)
 
     // constructor
     Crypto() {
@@ -36,7 +36,6 @@ class Crypto {
         random = new SecureRandom();
         // random.nextBytes(iv);
         randomKey = new byte[128];
-        sysRandomKey = "";
     }
 
     /*
@@ -50,14 +49,6 @@ class Crypto {
 
     byte[] getRandom() {
         return randomKey;
-    }
-
-    void setSysRandom(String s) {
-        sysRandomKey = s;
-    }
-
-    String getSysRandom() {
-        return sysRandomKey;
     }
 
     String byteToString(byte[] b) {
@@ -334,7 +325,6 @@ class Crypto {
             System.out.println("The Exception is=" + e);
             e.printStackTrace(System.err);
         }
-        System.out.println("AES DECRYPTion DoNE");
         return decryptedValue;
     }
 

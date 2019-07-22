@@ -124,7 +124,6 @@ public class GroupThread extends Thread {
 
 			// read pseudo-random number from client
 			String clRand = gc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-			gc.setSysRandom(clRand);
 			System.out.println("\nCL Random -> GS:\n" + clRand);
 
 			// generate new pseudo-random number and send to CL
@@ -140,7 +139,8 @@ public class GroupThread extends Thread {
 			// send symmetric key encrypted with client's public key with padding
 			gc.setAESKey(gc.byteToString(ka));
 			_aesKey = gc.getAESKey();
-			System.out.println("\nShared Key Set: " + _aesKey);
+			System.out.println("\nCL Shared Key: " + _aesKey);
+			System.out.println("\nCL Shared Verification Key: " + gc.makeAESKeyFromString(kb));
 
 			System.out.println("\n########### GS CONNECTION W CLIENT SECURE ###########\n");
 
