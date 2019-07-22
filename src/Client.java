@@ -170,8 +170,7 @@ public abstract class Client {
 						tfsList.pubkeys.get(sock.getInetAddress().toString());
 						if (!storedFSKeys.contains(fsPub)) {
 							Scanner in = new Scanner(System.in);
-							System.out
-									.println("Warning: stored fingerprint do not match the incoming file server key!");
+							System.out.println("Warning: stored fingerprint do not match the incoming file server key!");
 							System.out.println("Continue connecting to file server? (y/n)");
 							if (in.next().charAt(0) == 'y') {
 								System.out.println("Adding file server's public key to trusted file servers list...");
@@ -189,8 +188,16 @@ public abstract class Client {
 					// IP does not yet exist in trusted client list. Add it.
 					else {
 						System.out.println("This is your first time connecting this client to the file server.");
-						System.out.println("Adding server's public key to trusted file server list...");
-						tfsList.addServer(sock.getInetAddress().toString(), fsPub);
+						Scanner in = new Scanner(System.in);
+						System.out.println("Warning: stored fingerprint do not match the incoming file server key!");
+						System.out.println("Continue connecting to file server? (y/n)");
+						if (in.next().charAt(0) == 'y') {
+							System.out.println("Adding file server's public key to trusted file servers list...");
+							tfsList.addServer(sock.getInetAddress().toString(), fsPub);
+						} else {
+							System.out.println("Terminating connection...");
+							sock.close(); // Close the socket
+						}
 					}
 				}
 

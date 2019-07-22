@@ -117,8 +117,16 @@ public class GroupThread extends Thread {
 				// IP does not yet exist in trusted client list. Add it.
 				else {
 					System.out.println("This is your first time connecting this client to the group server.");
-					System.out.println("Adding client's public key to trusted clients list...");
-					my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
+					Scanner in = new Scanner(System.in);
+					String matchInput = in.nextLine();
+					if (matchInput.toLowerCase().charAt(0) == 'y') {
+						System.out.println("Adding client's public key to trusted clients list...");
+						my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
+					} else {
+						System.out.println("Terminating connection...");
+						socket.close(); // Close the socket
+						proceed = false; // End this communication loop
+					}
 				}
 			}
 
