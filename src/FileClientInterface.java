@@ -2,26 +2,26 @@
 import java.util.List;
 
 /**
- * Interface describing the operations that must be supported by the
- * client application used to talk with the file servers.  All methods
- * must be implemented!
+ * Interface describing the operations that must be supported by the client
+ * application used to talk with the file servers. All methods must be
+ * implemented!
  *
  */
-public interface FileClientInterface
-{
+public interface FileClientInterface {
     /**
-     * Connect to the specified file server.  No other methods should
-     * work until the client is connected to a file server.
+     * Connect to the specified file server. No other methods should work until the
+     * client is connected to a file server.
      *
      * @param server The IP address or hostname of the file server
-     * @param port The port that the file server is listening on
-     * @param type A string indicating if this is the "group" or "file" server connection.
+     * @param port   The port that the file server is listening on
+     * @param type   A string indicating if this is the "group" or "file" server
+     *               connection.
      *
      * @return true if the connection succeeds, false otherwise
      *
      */
-    public boolean connect(final String server, final int port, final String type, final String clientNum);
-
+    public boolean connect(final String server, final int port, final String type, final String clientNum,
+            final String gskeypath);
 
     /**
      * Close down the connection to the file server.
@@ -29,24 +29,22 @@ public interface FileClientInterface
      */
     public void disconnect();
 
-
     /**
-     * Retrieves a list of files that are allowed to be displayed
-     * members of the groups encoded in the supplied user token.
+     * Retrieves a list of files that are allowed to be displayed members of the
+     * groups encoded in the supplied user token.
      *
-     * @param token The UserToken object assigned to the user invoking this operation
+     * @param token The UserToken object assigned to the user invoking this
+     *              operation
      *
      * @return A list of filenames
      *
      */
     public List<String> listFiles(final UserToken token);
 
-
     /**
-     * Uploads a file to the server to be shared with members of the
-     * specified group.  This method should only succeed if the
-     * uploader is a member of the group that the file will be shared
-     * with.
+     * Uploads a file to the server to be shared with members of the specified
+     * group. This method should only succeed if the uploader is a member of the
+     * group that the file will be shared with.
      *
      * @param sourceFile Path to the local file to upload
      * @param destFile   The filename to use on the server
@@ -56,12 +54,12 @@ public interface FileClientInterface
      * @return true on success, false on failure
      *
      */
-    public boolean upload(final String sourceFile, final String destFile, final String group, final UserToken token, int shared_n, byte[] key);
-
+    public boolean upload(final String sourceFile, final String destFile, final String group, final UserToken token,
+            int shared_n, byte[] key);
 
     /**
-     * Downloads a file from the server.  The user must be a member of
-     * the group with which this file is shared.
+     * Downloads a file from the server. The user must be a member of the group with
+     * which this file is shared.
      *
      * @param sourceFile The filename used on the server
      * @param destFile   The filename to use locally
@@ -72,12 +70,12 @@ public interface FileClientInterface
      * @return true on success, false on failure
      *
      */
-    public boolean download(final String sourceFile, final String destFile, final UserToken token, int shared_n, byte[] keys);
-
+    public boolean download(final String sourceFile, final String destFile, final UserToken token, int shared_n,
+            byte[] keys);
 
     /**
-     * Deletes a file from the server.  The user must be a member of
-     * the group with which this file is shared.
+     * Deletes a file from the server. The user must be a member of the group with
+     * which this file is shared.
      *
      * @param filename The file to delete
      * @param token    The token of the user requesting the delete
@@ -87,5 +85,4 @@ public interface FileClientInterface
      */
     public boolean delete(final String filename, final UserToken token);
 
-
-}  //-- end interface FileClientInterface
+} // -- end interface FileClientInterface

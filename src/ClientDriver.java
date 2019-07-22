@@ -9,9 +9,9 @@ public class ClientDriver {
   public static String FIP = "127.0.0.1";
   public static int GPORT = 8765;
   public static int FPORT = 4321;
+  public static String GSKEYPATH = "GS"; // default GSKey path
   private static String clientNum;
   private static int loginFails = 0;
-  protected static Crypto c;
 
   public static void main(String args[]) {
     kb = new Scanner(System.in);
@@ -21,6 +21,8 @@ public class ClientDriver {
     boolean def = kb.nextLine().toLowerCase().equals("y");
 
     if (!def) {
+      System.out.print("Please enter Group Server Key Path: ");
+      GSKEYPATH = kb.nextLine();
       System.out.print("Please enter the ip for the group server: ");
       GIP = kb.nextLine();
       System.out.print("Please enter the port for the group server: ");
@@ -41,8 +43,8 @@ public class ClientDriver {
         .println("Connecting to group client at " + GIP + ":" + GPORT + " and file client at " + FIP + ":" + FPORT);
 
     // connect to servers
-    boolean gconn = gcli.connect(GIP, GPORT, "group", clientNum);
-    boolean fconn = fcli.connect(FIP, FPORT, "file", clientNum);
+    boolean gconn = gcli.connect(GIP, GPORT, "group", clientNum, GSKEYPATH);
+    boolean fconn = fcli.connect(FIP, FPORT, "file", clientNum, GSKEYPATH);
 
     if (!(gconn)) {
       System.out.println("Error connecting to group server. Exiting...");
@@ -529,10 +531,10 @@ public class ClientDriver {
     gcli.expseq = 0;
     fcli.expseq = 0;
     gcli.disconnect();
-    gcli.connect(GIP, GPORT, "group", clientNum);
+    gcli.connect(GIP, GPORT, "group", clientNum, GSKEYPATH);
     // gcli.expseq = gexp;
     fcli.disconnect();
-    fcli.connect(FIP, FPORT, "file", clientNum);
+    fcli.connect(FIP, FPORT, "file", clientNum, GSKEYPATH);
     // fcli.expseq = fexp;
     if (utkn == null) {
       return null;

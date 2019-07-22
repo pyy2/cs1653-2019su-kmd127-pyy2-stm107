@@ -38,7 +38,7 @@ clear:
 	rm -r ./build/shared_files/
 
 reset:
-	rm -r ./build/keys/
+	rm -r ./build/keys/*.key
 	rm -r ./build/*.bin
 
 test:

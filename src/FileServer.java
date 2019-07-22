@@ -3,13 +3,6 @@
 
 import java.io.*;
 import java.util.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -59,18 +52,17 @@ public class FileServer extends Server {
 			String key = kb.nextLine();
 			fc.saveGroupPK(fileConfig + "GS", fc.stringToPK(key));
 		} else {
-			fc.setPublicKey(fileConfig + "GS");
+			fc.setPublicKey(fileConfig + "GS"); // set GS PubK
 			gsKey = fc.getPublic();
 			System.out.println("GS Public Key:\n" + fc.RSAtoString(gsKey));
 		}
 
-		// if keys files don't exist, create new ones
+		// if keys files don't exist, create new ones else set the keys
 		if (!f1.exists() && !f2.exists()) {
 			System.out.println("FS key NOT found!\n Generating FS Keys");
 			fc.setSystemKP(fileConfig);
 		}
 
-		// set keys
 		if (f1.exists() && f2.exists()) {
 			System.out.println("Setting FS public/private keys\n");
 			fc.setPublicKey(fileConfig);

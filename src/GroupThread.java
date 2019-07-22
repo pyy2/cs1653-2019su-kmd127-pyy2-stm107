@@ -29,7 +29,8 @@ public class GroupThread extends Thread {
 	SecretKey _aesKey; // AES symmetric key
 	PublicKey clientK; // client's public key
 	Crypto gc;
-	Scanner in = new Scanner(System.in);
+	private static Scanner in;
+	String response;
 
 	// local sequence # tracker
 	int expseq = 1;
@@ -42,6 +43,8 @@ public class GroupThread extends Thread {
 		priv = null;
 		_aesKey = null;
 		clientK = null;
+		in = new Scanner(System.in);
+		response = "";
 	}
 
 	public void run() {
@@ -58,8 +61,8 @@ public class GroupThread extends Thread {
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 
 			// set gs key file paths
-			final String path = "./keys/public.key";
-			final String path2 = "./keys/private.key";
+			final String path = "./keys/GSpublic.key";
+			final String path2 = "./keys/GSprivate.key";
 			File f = new File(path);
 			File f2 = new File(path2);
 
@@ -67,7 +70,9 @@ public class GroupThread extends Thread {
 			if (!f.exists() && !f2.exists()) {
 				System.out.println("FATAL ERROR: GS key NOT found!\nSystem Exiting");
 				System.exit(1);
-			} else if ((pub == null) && (priv == null)) {
+			}
+
+			if ((pub == null) && (priv == null)) {
 				System.out.println("Setting GS public/private keys");
 				gc.setPublicKey("GS");
 				gc.setPrivateKey("GS");
@@ -79,7 +84,7 @@ public class GroupThread extends Thread {
 
 			System.out.println("\n########### ATTEMPT TO SECURE CL CONNECTION ###########");
 			gc.setSysK(input.readObject()); // read client public key (not encoded)
-			clientK = gc.getSysK();
+			clientK = gc.getSysK(); // set client's public key
 			System.out.println("Received client's public key: \n" + gc.RSAtoString(clientK));
 
 			if (my_gs.tcList.pubkeys != null) {
@@ -91,7 +96,6 @@ public class GroupThread extends Thread {
 						// prompt group client to see if they want to add ip:pubkey pair
 						// modified to let multiple clients connect if gs allows the connection
 						// or else it blocks because the keypairs generated for each client is different
-						Scanner in = new Scanner(System.in);
 						System.out.println("Warning: stored fingerprint do not match the incoming client key!");
 						System.out.println("Continue letting client connect? (y/n)");
 						if (in.next().charAt(0) == 'y') {
@@ -102,7 +106,6 @@ public class GroupThread extends Thread {
 							socket.close(); // Close the socket
 							proceed = false; // End this communication loop
 						}
-						in.close();
 					}
 					// The keys match, it's safe to proceed
 					else {

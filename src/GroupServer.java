@@ -142,8 +142,11 @@ public class GroupServer extends Server {
 			crypto.setSystemKP(groupConfig);
 		}
 
-		crypto.setPublicKey("GS");
-		pk = crypto.getPublic();
+		if (f.exists()) {
+			crypto.setPublicKey("GS");
+			pk = crypto.getPublic();
+		}
+
 		System.out.println("\n\nPublic Key:\n" + crypto.RSAtoString(pk));
 
 		// Autosave Daemon. Saves lists every 5 minutes

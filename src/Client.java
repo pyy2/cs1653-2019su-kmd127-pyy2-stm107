@@ -30,15 +30,26 @@ public abstract class Client {
 	PublicKey fsPub; // fileserver public key
 
 	// accessible in FileClient thread
-	static PublicKey groupK;
+	static PublicKey groupK = null;
 	static byte[] fsMac;
 
 	// expseq_g = 0;
 	// expseq_f = 0;
 
-	public boolean connect(final String server, final int port, final String type, final String clientNum) {
+	public boolean connect(final String server, final int port, final String type, final String clientNum,
+			String gsPath) {
 		fsMac = null;
 		c = new Crypto();
+		String clientConfig = "CL" + clientNum;
+
+		System.out.println("\n\n########### INITIALIZATION ###########\n");
+
+		// set groupkey
+		if (groupK == null) {
+			c.setPublicKey(gsPath);
+			groupK = c.getPublic();
+			System.out.println("Group Server Public Key Set: \n" + c.RSAtoString(groupK));
+		}
 
 		// set client key file paths
 		final String path = "./keys/CL" + clientNum + "public.key";
@@ -46,13 +57,12 @@ public abstract class Client {
 		File f = new File(path);
 		File f2 = new File(path2);
 
-		// if key files don't exist, create new ones
+		// if client key files don't exist, create new ones
 		if (!f.exists() && !f2.exists()) {
 			System.out.println("CL key NOT found!");
 			c.setSystemKP("CL" + clientNum);
 		}
 
-		// now they should exist, set public/private key
 		if (f.exists() && f2.exists()) {
 			System.out.println("CL keys found!\nSetting public/private key");
 			c.setPublicKey("CL" + clientNum);
@@ -75,7 +85,7 @@ public abstract class Client {
 			System.out.println("Unable to load list of trusted file servers.");
 			System.out.println("Exception: " + e);
 		}
-		System.out.println("###########################################");
+		System.out.println("\n########### INITIALIZATION COMPLETE ###########\n");
 
 		// Try to create new socket connection
 		try {
@@ -86,7 +96,7 @@ public abstract class Client {
 
 			// Group Server connection
 			if (!type.equals("file")) {
-				System.out.println("\n\n########### ATTEMPT TO SECURE GS CONNECTION ###########");
+				System.out.println("\n\n########### ATTEMPT TO SECURE GS CONNECTION ###########\n");
 				System.out.println("CL public key -> GS\n");
 				output.writeObject(pub); // write public key to channel (not encoded)
 				output.flush();
