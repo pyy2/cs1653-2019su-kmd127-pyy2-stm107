@@ -243,9 +243,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			// Add HMAC(Username||password, sharedKey) signed with private key so we know it
 			// hasn't been tampered with!
-			// byte[] verify = (username + password).getBytes();
 			Mac mac = Mac.getInstance("HmacSHA256", "BC");
-			mac.init(sharedKey);
+			mac.init(veriK);
 			mac.update(upwd);
 			byte[] out = mac.doFinal();
 			byte[] signed_data = c.signChecksum(out);

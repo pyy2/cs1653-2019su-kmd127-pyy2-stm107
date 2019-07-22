@@ -28,6 +28,7 @@ public class FileThread extends Thread {
 	SecretKey _aesKey; // shared symmetric key b/w client-fs
 	PublicKey clientK; // client publickey
 	Crypto fc; // filecrypto class
+	SecretKey veriK;
 
 	// local sequence # tracker
 	int expseq = 1;
@@ -40,6 +41,7 @@ public class FileThread extends Thread {
 		ip = _ip;
 		port = _port;
 		fc = new Crypto();
+		veriK = null;
 	}
 
 	public void run() {
@@ -61,28 +63,55 @@ public class FileThread extends Thread {
 
 			System.out.println("\n########### SECURING CLIENT CONNECTION ###########");
 
-			// System.out.println("FS public key -> Client:\n" + fc.RSAtoString(pub));
+			// send FS public key to client
+			System.out.println("FS public key -> Client: Sent");
 			output.writeObject(pub); // send file public key
 			output.flush();
 
+			// get CL public key
 			fc.setSysK(input.readObject()); // set client's public key (encoded)
 			clientK = fc.getSysK();
 
-			// get aes key + challenge
-			String s = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
-			String aesKey = s.substring(0, s.lastIndexOf("-"));
-			String challenge = s.substring(aesKey.length(), s.length());
-			fc.setAESKey(aesKey); // set aes key
+			// get pseudo-random number + challenge from client
+			String temp = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
+			System.out.println(temp);
+			String init[] = temp.split("\\|\\|");
+			String clRand = init[0];
+			String challenge = init[1];
+			System.out.println("\nCL Random -> FS:\n" + clRand);
+			System.out.println("\nCL Challenge -> FS:\n" + challenge);
+
+			// generate FS random #
+			fc.setRandom();
+			String random = fc.byteToString(fc.getRandom());
+			System.out.println("\nFS Random # -> CL: " + random);
+			output.writeObject(fc.encrypt("RSA/ECB/PKCS1Padding", random, clientK));
+			output.flush();
+
+			byte[] ka = fc.createChecksum(clRand + random); // SHA256(Ra||Rb)
+			byte[] kb = fc.createChecksum(random + clRand); // SHA256(Rb||Ra)
+			veriK = fc.makeAESKeyFromString(kb);
+			fc.setVeriK(veriK); // set verification key
+
+			fc.setAESKey(fc.byteToString(ka));
 			_aesKey = fc.getAESKey();
+			System.out.println("\nCL Shared Key Set: " + _aesKey);
+			System.out.println("\nCL Shared Verification Key: " + fc.makeAESKeyFromString(kb));
 
-			// verify checksum
+			// verify checksum & signature
 			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
+			if (fc.isEqual(_checkSum, fc.createChecksum(temp)))
+				System.out.println("Checksum Verified");
+			else
+				socket.close(); // terminate connection
 
-			// verify signature
 			byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
+			if (!fc.verifySignature(_checkSum, signedChecksum))
+				socket.close();
 
 			// respond with challenge
 			output.writeObject(challenge);
+			output.flush();
 
 			System.out.println("\n########### FS CONNECTION W CLIENT SECURE ###########\n");
 

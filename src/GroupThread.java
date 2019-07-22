@@ -28,9 +28,8 @@ public class GroupThread extends Thread {
 	PrivateKey priv; // group's private key
 	SecretKey _aesKey; // AES symmetric key
 	PublicKey clientK; // client's public key
+	SecretKey veriK;
 	Crypto gc;
-	private static Scanner in;
-	String response;
 
 	// local sequence # tracker
 	int expseq = 1;
@@ -40,11 +39,10 @@ public class GroupThread extends Thread {
 		my_gs = _gs;
 		gc = new Crypto();
 		pub = null;
+		veriK = null;
 		priv = null;
 		_aesKey = null;
 		clientK = null;
-		in = new Scanner(System.in);
-		response = "";
 	}
 
 	public void run() {
@@ -97,7 +95,8 @@ public class GroupThread extends Thread {
 					if (!storedCliKeys.contains(clientK)) {
 						// prompt group client to see if they want to add ip:pubkey pair
 						// modified to let multiple clients connect if gs allows the connection
-						// or else it blocks because the keypairs generated for each client is different
+						// or else it blocks because the keypairs generated for each client is differen
+						Scanner in = new Scanner(System.in);
 						System.out.println("Warning: stored fingerprint do not match the incoming client key!");
 						System.out.println("Continue letting client connect? (y/n)");
 						if (in.next().charAt(0) == 'y') {
@@ -127,7 +126,6 @@ public class GroupThread extends Thread {
 
 			// read pseudo-random number from client
 			String clRand = gc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-			gc.setSysRandom(clRand);
 			System.out.println("\nCL Random -> GS:\n" + clRand);
 
 			// generate new pseudo-random number and send to CL
@@ -139,11 +137,14 @@ public class GroupThread extends Thread {
 
 			byte[] ka = gc.createChecksum(clRand + random); // SHA256(Ra||Rb)
 			byte[] kb = gc.createChecksum(random + clRand); // SHA256(Rb||Ra)
+			veriK = gc.makeAESKeyFromString(kb);
+			gc.setVeriK(veriK); // set verification key
 
 			// send symmetric key encrypted with client's public key with padding
 			gc.setAESKey(gc.byteToString(ka));
 			_aesKey = gc.getAESKey();
-			System.out.println("\nShared Key Set: " + _aesKey);
+			System.out.println("\nCL Shared Key: " + _aesKey);
+			System.out.println("\nCL Shared Verification Key: " + gc.makeAESKeyFromString(kb));
 
 			System.out.println("\n########### GS CONNECTION W CLIENT SECURE ###########\n");
 
