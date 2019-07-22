@@ -125,9 +125,10 @@ public class GroupServer extends Server {
 		} catch (ClassNotFoundException e2) {
 			System.out.println("Error reading from UserList file");
 			System.exit(-1);
-		} finally {
-			console.close();
 		}
+		// } finally {
+		// 	//console.close();
+		// }
 
 		// check if groupserver keys exist
 		final String path = "./keys/GSpublic.key";

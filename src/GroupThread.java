@@ -96,10 +96,11 @@ public class GroupThread extends Thread {
 						// prompt group client to see if they want to add ip:pubkey pair
 						// modified to let multiple clients connect if gs allows the connection
 						// or else it blocks because the keypairs generated for each client is differen
-						Scanner in = new Scanner(System.in);
 						System.out.println("Warning: stored fingerprint do not match the incoming client key!");
-						System.out.println("Continue letting client connect? (y/n)");
-						if (in.next().charAt(0) == 'y') {
+						System.out.print("Continue letting client connect? (y/n): ");
+						Scanner in = new Scanner(System.in);
+						String matchInput = in.nextLine();
+						if (matchInput.toLowerCase().charAt(0) == 'y') {
 							System.out.println("Adding client's public key to trusted clients list...");
 							my_gs.tcList.addClient(socket.getInetAddress().toString(), clientK);
 						} else {
