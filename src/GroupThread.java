@@ -137,22 +137,13 @@ public class GroupThread extends Thread {
 			output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", random, clientK)); // encrypt w gs private key
 			output.flush();
 
-			byte[] ka = gc.createChecksum(random + clRand + "a");
-			byte[] kb = gc.createChecksum(random + clRand + "b");
+			byte[] ka = gc.createChecksum(clRand + random); // SHA256(Ra||Rb)
+			byte[] kb = gc.createChecksum(random + clRand); // SHA256(Rb||Ra)
 
 			// send symmetric key encrypted with client's public key with padding
-			gc.genAESKey(); // create AES key
+			gc.setAESKey(gc.byteToString(ka));
 			_aesKey = gc.getAESKey();
-			output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", gc.toString(_aesKey), clientK));
-
-			// send SHA256 checksum of symmetric key for verification
-			byte[] checksum = gc.createChecksum(gc.toString(_aesKey)); // create checksum w aes key
-			output.writeObject(checksum); // send checksum
-
-			// send signed checksum
-			byte[] signedChecksum = gc.signChecksum(checksum);
-			output.writeObject(signedChecksum);
-			output.flush();
+			System.out.println("\nShared Key Set: " + _aesKey);
 
 			System.out.println("\n########### GS CONNECTION W CLIENT SECURE ###########\n");
 

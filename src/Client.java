@@ -136,23 +136,14 @@ public abstract class Client {
 				c.setSysRandom(clRand);
 				System.out.println("\nGS Random -> CL:\n" + clRand);
 
-				byte[] ka = c.createChecksum(random + clRand + "a");
-				byte[] kb = c.createChecksum(random + clRand + "b");
+				byte[] ka = c.createChecksum(random + clRand); // SHA256(Ra||Rb)
+				byte[] kb = c.createChecksum(clRand + random); // SHA256(Rb||Ra)
 
 				// decrypt with private key to get aes key
-				String aesKey = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
-				c.setAESKey(aesKey);
+				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
-				System.out.println("Received AES key!");
+				System.out.println("\n Shared Key Set: " + sharedKey);
 
-				// verify checksum
-				byte[] _checkSum = (byte[]) input.readObject(); // read checksum
-				// System.out.println("Checksum:\n" + c.toString(_checkSum)); // print
-				System.out.println("Checksum verified -> " + c.isEqual(_checkSum, c.createChecksum(aesKey)));
-
-				// verify signature
-				byte[] signedChecksum = (byte[]) input.readObject(); // signed checksum
-				// System.out.println("Signed Checksum: " + c.toString(signedChecksum));
 				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
 			} else {
