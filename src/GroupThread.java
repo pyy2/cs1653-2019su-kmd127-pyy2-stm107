@@ -82,10 +82,12 @@ public class GroupThread extends Thread {
 				System.out.println("GS Keys already set!");
 			}
 
-			System.out.println("\n########### ATTEMPT TO SECURE CL CONNECTION ###########");
+			System.out.println("\n\n########### ATTEMPT TO SECURE CL CONNECTION ###########\n");
+
+			// get client's public key
 			gc.setSysK(input.readObject()); // read client public key (not encoded)
 			clientK = gc.getSysK(); // set client's public key
-			System.out.println("Received client's public key: \n" + gc.RSAtoString(clientK));
+			System.out.println("CL Public Key -> GS: \n" + gc.RSAtoString(clientK));
 
 			if (my_gs.tcList.pubkeys != null) {
 				// Check to see if ip:pubkey pair exists yet.
@@ -122,6 +124,24 @@ public class GroupThread extends Thread {
 
 			// send group server public key to client
 			output.writeObject(pub);
+
+			// read pseudo-random number from client
+			String clRand = gc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
+			gc.setSysRandom(clRand);
+			System.out.println("\nCL Random -> GS:\n" + clRand);
+
+			// generate new pseudo-random number and send to CL
+			gc.setRandom(); // generate new secure random (32 byte)
+			String random = gc.byteToString(gc.getRandom());
+			System.out.println("\nGS Random -> CL:\n" + random);
+			output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", random, clientK)); // encrypt w gs private key
+			output.flush();
+
+			String data = clRand + random;
+			byte[] Ka = gc.createChecksum(data + "a");
+			byte[] Kb = gc.createChecksum(data + "b");
+			System.out.println("\nGenerated Ka:\n" + gc.byteToString(Ka));
+			System.out.println("\nGenerated Kb:\n" + gc.byteToString(Ka));
 
 			// send symmetric key encrypted with client's public key with padding
 			gc.genAESKey(); // create AES key

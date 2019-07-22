@@ -32,45 +32,46 @@ public abstract class Client {
 	// accessible in FileClient thread
 	static PublicKey groupK = null;
 	static byte[] fsMac;
-
 	// expseq_g = 0;
 	// expseq_f = 0;
 
 	public boolean connect(final String server, final int port, final String type, final String clientNum,
 			String gsPath) {
+
+		// init variables
+		String clientConfig = "CL" + clientNum;
 		fsMac = null;
 		c = new Crypto();
-		String clientConfig = "CL" + clientNum;
 
-		System.out.println("\n\n########### INITIALIZATION ###########\n");
+		System.out.println("\n########### 1. INITIALIZATION ###########\n");
 
 		// set groupkey
 		if (groupK == null) {
 			c.setPublicKey(gsPath);
 			groupK = c.getPublic();
-			System.out.println("Group Server Public Key Set: \n" + c.RSAtoString(groupK));
+			System.out.println("GS Public Key Set: \n" + c.RSAtoString(groupK));
 		}
 
 		// set client key file paths
-		final String path = "./keys/CL" + clientNum + "public.key";
-		final String path2 = "./keys/CL" + clientNum + "private.key";
+		final String path = "./keys/" + clientConfig + "public.key";
+		final String path2 = "./keys/" + clientConfig + "private.key";
 		File f = new File(path);
 		File f2 = new File(path2);
 
 		// if client key files don't exist, create new ones
 		if (!f.exists() && !f2.exists()) {
 			System.out.println("CL key NOT found!");
-			c.setSystemKP("CL" + clientNum);
+			c.setSystemKP(clientConfig);
 		}
 
 		if (f.exists() && f2.exists()) {
-			System.out.println("CL keys found!\nSetting public/private key");
-			c.setPublicKey("CL" + clientNum);
-			c.setPrivateKey("CL" + clientNum);
+			System.out.println("CL public/private key: Set");
+			c.setPublicKey(clientConfig);
+			c.setPrivateKey(clientConfig);
 			pub = c.getPublic();
 			priv = c.getPrivate();
 		}
-		System.out.println(c.RSAtoString(pub)); // print out public key base64
+		// System.out.println(c.RSAtoString(pub)); // print out public key base64
 
 		// Open the trusted file servers list
 		try {
@@ -90,21 +91,43 @@ public abstract class Client {
 		// Try to create new socket connection
 		try {
 			sock = new Socket(server, port); // create Stream socket then connect to named host @ port #
-			System.out.println("\nConnected to " + server + " on port " + port);
+			System.out.println("Connected to " + server + " on port " + port);
 			output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket
 			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
 
 			// Group Server connection
 			if (!type.equals("file")) {
-				System.out.println("\n\n########### ATTEMPT TO SECURE GS CONNECTION ###########\n");
-				System.out.println("CL public key -> GS\n");
+				System.out.println("\n########### 2. ATTEMPT TO SECURE GS CONNECTION ###########\n");
+				System.out.println("CL public key -> GS: Sent");
 				output.writeObject(pub); // write public key to channel (not encoded)
 				output.flush();
 
-				// get gs publickey
-				c.setSysK(input.readObject()); // read gs public key (encoded)
-				groupK = c.getSysK();
-				System.out.println("Received GS's public key: \n" + c.RSAtoString(groupK));
+				// verify gs public key with one on file if not exit program
+				PublicKey gsKeyCheck = (PublicKey) input.readObject();
+				if (c.isEqual(groupK.getEncoded(), gsKeyCheck.getEncoded())) {
+					System.out.println("GS Public Key -> CL: Verified");
+				} else {
+					System.out.println("INVALID GS KEY RECEIVED!");
+					System.exit(3);
+				}
+
+				// generate new pseudo-random number and send to GS
+				c.setRandom(); // generate new secure random (32 byte)
+				String random = c.byteToString(c.getRandom());
+				System.out.println("\nRandom # -> GS:\n" + random);
+				output.writeObject(c.encrypt("RSA/ECB/PKCS1Padding", random, groupK)); // encrypt w gs private key
+				output.flush();
+
+				// read pseudo-random number from GS
+				String clRand = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
+				c.setSysRandom(clRand);
+				System.out.println("\nGS Random -> CL:\n" + clRand);
+
+				String data = random + clRand;
+				byte[] Ka = c.createChecksum(data + "a");
+				byte[] Kb = c.createChecksum(data + "b");
+				System.out.println("\nGenerated Ka:\n" + c.byteToString(Ka));
+				System.out.println("\nGenerated Kb:\n" + c.byteToString(Ka));
 
 				// decrypt with private key to get aes key
 				String aesKey = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES
@@ -123,8 +146,7 @@ public abstract class Client {
 				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
 			} else {
-				System.out.println("Received GS's public key: \n" + c.RSAtoString(groupK));
-				System.out.println("\n\n########### ATTEMPT TO SECURE FS CONNECTION ###########");
+				System.out.println("\n########### 3. ATTEMPT TO SECURE FS CONNECTION ###########\n");
 
 				c.setSysK(input.readObject()); // read fs public key not encoded
 				fsPub = c.getSysK(); // set FS pub key

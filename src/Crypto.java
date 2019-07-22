@@ -23,6 +23,8 @@ class Crypto {
     int AES_LENGTH = 128;
     byte[] iv = new BigInteger("2766407063173738325154464814828650299").toByteArray();
     ArrayList<byte[]> usedNonces = new ArrayList<byte[]>();
+    byte[] randomKey; // shared key gen
+    String sysRandomKey;
 
     // constructor
     Crypto() {
@@ -33,6 +35,33 @@ class Crypto {
         aes = null;
         random = new SecureRandom();
         // random.nextBytes(iv);
+        randomKey = new byte[128];
+        sysRandomKey = "";
+    }
+
+    /*
+     *
+     * ******** One Time Key Generation ********
+     *
+     */
+    void setRandom() {
+        random.nextBytes(randomKey);
+    }
+
+    byte[] getRandom() {
+        return randomKey;
+    }
+
+    void setSysRandom(String s) {
+        sysRandomKey = s;
+    }
+
+    String getSysRandom() {
+        return sysRandomKey;
+    }
+
+    String byteToString(byte[] b) {
+        return Base64.getEncoder().encodeToString(b);
     }
 
     /*
