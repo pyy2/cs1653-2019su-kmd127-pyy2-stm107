@@ -32,12 +32,13 @@ public abstract class Client {
 	// accessible in FileClient thread
 	static PublicKey groupK = null;
 	static byte[] fsMac;
+	Scanner kb;
 	// expseq_g = 0;
 	// expseq_f = 0;
 
-	public boolean connect(final String server, final int port, final String type, final String clientNum,
-			String gsPath) {
+	public boolean connect(final String server, final int port, final String type, final String clientNum) {
 
+		kb = new Scanner(System.in);
 		// init variables
 		String clientConfig = "CL" + clientNum;
 		fsMac = null;
@@ -45,9 +46,21 @@ public abstract class Client {
 
 		System.out.println("\n########### 1. INITIALIZATION ###########\n");
 
-		// set groupkey
+		// configure group public key
+		final String gsPath = "./keys/" + clientConfig + "GS" + "public.key";
+		File gs = new File(gsPath);
+
+		// get group key
+		if (!gs.exists()) {
+			System.out.println("Enter Group Server Key: ");
+			String key = kb.nextLine();
+			c.saveGroupPK(clientConfig + "GS", c.stringToPK(key));
+			c.setPublicKey(clientConfig + "GS"); // set GS PubK
+			groupK = c.getPublic();
+		}
+
 		if (groupK == null) {
-			c.setPublicKey(gsPath);
+			c.setPublicKey(clientConfig + "GS"); // set GS PubK
 			groupK = c.getPublic();
 			System.out.println("GS Public Key Set: \n" + c.RSAtoString(groupK));
 		}

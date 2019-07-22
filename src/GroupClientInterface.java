@@ -19,8 +19,7 @@ public interface GroupClientInterface {
      * @return true if the connection succeeds, false otherwise
      *
      */
-    public boolean connect(final String server, final int port, final String type, final String clientNum,
-            final String gskeypath);
+    public boolean connect(final String server, final int port, final String type, final String clientNum);
 
     /**
      * Close down the connection to the group server.
