@@ -290,7 +290,6 @@ class Crypto {
         } catch (Exception e) {
             System.out.println("The Exception is=" + e);
         }
-        System.out.println("AES ENCRYPTion DoNE");
 
         return encrypted;
     }
@@ -304,8 +303,6 @@ class Crypto {
         } catch (Exception e) {
             System.out.println("The Exception is=" + e);
         }
-        System.out.println("GROUP ENCRYPTION DONE");
-
         return encrypted;
     }
 
@@ -319,7 +316,6 @@ class Crypto {
             System.out.println("The Exception is=" + e);
             e.printStackTrace(System.err);
         }
-        System.out.println("AES DECRYPTion DoNE");
         return decryptedValue;
     }
 
