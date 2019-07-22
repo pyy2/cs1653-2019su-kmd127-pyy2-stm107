@@ -118,11 +118,13 @@ public class FileClient extends Client implements FileClientInterface {
 					if (env.getMessage().compareTo("EOF") == 0) {
 						seq = (Integer) env.getObjContents().get(0);
 						expseq++;
+						System.out.println(Integer.toString(expseq));
+						System.out.println(Integer.toString(seq));
 						fc.checkSequence(seq, expseq);
 						fos.close();
 						System.out.printf("\nTransfer successful file %s\n", sourceFile);
 						env = new Envelope("OK"); // Success
-						env.addObject(++expseq);
+						env.addObject(expseq);
 						++expseq;
 						output.writeObject(env);
 					} else {
