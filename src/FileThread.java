@@ -3,18 +3,9 @@
 
 import java.lang.Thread;
 import java.net.Socket;
-import java.util.List;
-import java.util.ArrayList;
 import java.io.*;
 import java.util.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.String;
-
-// security packages
 import java.security.*;
 import javax.crypto.*;
 
@@ -377,6 +368,9 @@ public class FileThread extends Thread {
 
 													if (e.getMessage().compareTo("OK") == 0) {
 														seq = (Integer) e.getObjContents().get(0);
+														// System.out.println(Integer.toString(expseq));
+														// System.out.println(Integer.toString(seq));
+
 														fc.checkSequence(seq, expseq);
 														System.out.printf("File data download successful\n");
 													} else {
