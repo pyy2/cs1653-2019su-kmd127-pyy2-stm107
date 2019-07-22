@@ -123,11 +123,8 @@ public abstract class Client {
 				c.setSysRandom(clRand);
 				System.out.println("\nGS Random -> CL:\n" + clRand);
 
-				String data = random + clRand;
-				byte[] Ka = c.createChecksum(data + "a");
-				byte[] Kb = c.createChecksum(data + "b");
-				System.out.println("\nGenerated Ka:\n" + c.byteToString(Ka));
-				System.out.println("\nGenerated Kb:\n" + c.byteToString(Ka));
+				byte[] ka = c.createChecksum(random + clRand + "a");
+				byte[] kb = c.createChecksum(random + clRand + "b");
 
 				// decrypt with private key to get aes key
 				String aesKey = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv); // AES

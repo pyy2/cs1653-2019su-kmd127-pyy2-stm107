@@ -137,11 +137,8 @@ public class GroupThread extends Thread {
 			output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", random, clientK)); // encrypt w gs private key
 			output.flush();
 
-			String data = clRand + random;
-			byte[] Ka = gc.createChecksum(data + "a");
-			byte[] Kb = gc.createChecksum(data + "b");
-			System.out.println("\nGenerated Ka:\n" + gc.byteToString(Ka));
-			System.out.println("\nGenerated Kb:\n" + gc.byteToString(Ka));
+			byte[] ka = gc.createChecksum(random + clRand + "a");
+			byte[] kb = gc.createChecksum(random + clRand + "b");
 
 			// send symmetric key encrypted with client's public key with padding
 			gc.genAESKey(); // create AES key
