@@ -50,7 +50,7 @@ public class FileThread extends Thread {
 			pub = FileServer.pub;
 			priv = FileServer.priv;
 
-			System.out.println(fc.RSAtoString(pub));
+			//System.out.println(fc.RSAtoString(pub));
 
 			System.out.println("\n########### SECURING CLIENT CONNECTION ###########");
 
@@ -65,17 +65,17 @@ public class FileThread extends Thread {
 
 			// get pseudo-random number + challenge from client
 			String temp = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-			System.out.println(temp);
+		//	System.out.println(temp);
 			String init[] = temp.split("\\|\\|");
 			String clRand = init[0];
 			String challenge = init[1];
-			System.out.println("\nCL Random -> FS:\n" + clRand);
-			System.out.println("\nCL Challenge -> FS:\n" + challenge);
+			System.out.println("\nCL Random -> FS: Received");
+			System.out.println("\nCL Challenge -> FS: Received");
 
 			// generate FS random #
 			fc.setRandom();
 			String random = fc.byteToString(fc.getRandom());
-			System.out.println("\nFS Random # -> CL: " + random);
+			System.out.println("\nFS Random # -> CL: Sent" );
 			output.writeObject(fc.encrypt("RSA/ECB/PKCS1Padding", random, clientK));
 			output.flush();
 
@@ -86,8 +86,8 @@ public class FileThread extends Thread {
 
 			fc.setAESKey(fc.byteToString(ka));
 			_aesKey = fc.getAESKey();
-			System.out.println("\nCL Shared Key Set: " + _aesKey);
-			System.out.println("\nCL Shared Verification Key: " + fc.makeAESKeyFromString(kb));
+			System.out.println("\nCL Shared Key Set: Created");
+			System.out.println("\nCL Shared Verification Key: Created");
 
 			// verify checksum & signature
 			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
@@ -146,7 +146,7 @@ public class FileThread extends Thread {
 				// Handler to list files that this user is allowed to see
 				if (e.getMessage().equals(encLFILES)) {
 
-					int seq = (Integer) e.getObjContents().get(2);
+					byte[] seq = (byte[]) e.getObjContents().get(2);
 					fc.checkSequence(seq, expseq);
 
 					if (e.getObjContents().size() < 2) {
@@ -197,7 +197,7 @@ public class FileThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -212,7 +212,7 @@ public class FileThread extends Thread {
 						} else if (e.getObjContents().get(1) == null) {
 							response = new Envelope(encFAILBADGROUP);
 						} else {
-							int seq = (Integer) e.getObjContents().get(2);
+							byte[] seq = (byte[]) e.getObjContents().get(2);
 							fc.checkSequence(seq, expseq);
 							byte[] req = (byte[]) e.getObjContents().get(0);
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
@@ -255,14 +255,14 @@ public class FileThread extends Thread {
 												remotePath.replace('/', '_'));
 
 										response = new Envelope(encREADY); // Success
-										response.addObject(++expseq);
+										response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 										++expseq;
 										output.writeObject(response);
 
 										e = (Envelope) input.readObject();
 										while (e.getMessage().compareTo(encCHUNK) == 0) {
 											// Store the file that has been ENCRYPTED WITH THE GROUP KEY
-											seq = (Integer) e.getObjContents().get(2);
+											seq = (byte[]) e.getObjContents().get(2);
 											fc.checkSequence(seq, expseq);
 											byte[] b = (byte[]) e.getObjContents().get(1);
 											shared_n = (Integer) e.getObjContents().get(0);
@@ -270,7 +270,7 @@ public class FileThread extends Thread {
 											// write data to the file.
 											fos.write(b);
 											response = new Envelope(encREADY); // Success
-											response.addObject(++expseq);
+											response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 											++expseq;
 											output.writeObject(response);
 											e = (Envelope) input.readObject();
@@ -278,16 +278,14 @@ public class FileThread extends Thread {
 
 										// add shared_n as ShareFile metadata
 										if (e.getMessage().compareTo(encEOF) == 0) {
-											seq = (Integer) e.getObjContents().get(0);
+											seq = (byte[]) e.getObjContents().get(0);
 											fc.checkSequence(seq, expseq);
 											System.out.printf("Transfer successful file %s\n", remotePath);
 											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath,
 													shared_n);
 											response = new Envelope(encOK); // Success
 										} else {
-											System.out.println("Error getting EOF");
-											System.out.println("Here is the message: " + fc.decrypt("AES", e.getMessage().getBytes(), _aesKey));
-											//System.out.printf("Error reading file %s from client\n", remotePath);
+											System.out.printf("Error reading file %s from client\n", remotePath);
 											response = new Envelope(encERRORTRANSFER); // Success
 										}
 										fos.close();
@@ -296,7 +294,7 @@ public class FileThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -313,7 +311,7 @@ public class FileThread extends Thread {
 						if (e.getObjContents().get(1) == null) {
 							response = new Envelope(encFAILBADHMAC);
 						} else {
-							int seq = (Integer) e.getObjContents().get(2);
+							byte[] seq = (byte[]) e.getObjContents().get(2);
 							fc.checkSequence(seq, expseq);
 							byte[] req = (byte[]) e.getObjContents().get(0);
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
@@ -362,7 +360,7 @@ public class FileThread extends Thread {
 												response = new Envelope(encREADY); // Success
 												// Send shared n over to client for key generation.
 												response.addObject(shared_n);
-												response.addObject(++expseq);
+												response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 												output.writeObject(response);
 												++expseq;
 
@@ -398,9 +396,7 @@ public class FileThread extends Thread {
 													e = (Envelope) input.readObject();
 
 													if (e.getMessage().compareTo(encOK) == 0) {
-														seq = (Integer) e.getObjContents().get(0);
-														// System.out.println(Integer.toString(expseq));
-														// System.out.println(Integer.toString(seq));
+														seq = (byte[]) e.getObjContents().get(0);
 
 														fc.checkSequence(seq, expseq);
 														System.out.printf("File data download successful\n");
@@ -435,7 +431,7 @@ public class FileThread extends Thread {
 
 					byte[] tokKey = (byte[]) e.getObjContents().get(0);
 					byte[] sigHmac = (byte[]) e.getObjContents().get(1);
-					int seq = (Integer) e.getObjContents().get(2);
+					byte[] seq = (byte[]) e.getObjContents().get(2);
 					fc.checkSequence(seq, expseq);
 
 					// decrypt to get token/key
@@ -488,7 +484,7 @@ public class FileThread extends Thread {
 							e = new Envelope(e1.getMessage());
 						}
 					}
-					e.addObject(++expseq);
+					e.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(e);
 

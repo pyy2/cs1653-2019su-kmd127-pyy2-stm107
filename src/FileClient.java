@@ -28,13 +28,13 @@ public class FileClient extends Client implements FileClientInterface {
 
 		env.addObject(encryptedToken); // Add encrypted token/key
 		env.addObject(fsMac); // add signed data
-		env.addObject(++expseq);
+		env.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
 		++expseq;
 
 		try {
 			output.writeObject(env);
 			env = (Envelope) input.readObject();
-			int seq = (Integer) env.getObjContents().get(0);
+			byte[] seq = (byte[]) env.getObjContents().get(0);
 			c.checkSequence(seq, expseq);
 			if (env.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				System.out.printf("File %s deleted successfully\n", filename);
@@ -73,7 +73,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 				env.addObject(encryptedToken); // Add encrypted token/key
 				env.addObject(fsMac); // add signed data
-				env.addObject(++expseq);
+				env.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
 				++expseq;
 				output.writeObject(env);
 
@@ -83,7 +83,7 @@ public class FileClient extends Client implements FileClientInterface {
 				if (env.getMessage().equals(new String(c.encrypt("AES", "READY", sharedKey)))) {
 					// get file's n for lamport
 					int file_n = (Integer) env.getObjContents().get(0);
-					int seq = (Integer) env.getObjContents().get(1);
+					byte[] seq = (byte[]) env.getObjContents().get(1);
 					c.checkSequence(seq, expseq);
 
 					// with n extracted, get the key
@@ -116,15 +116,13 @@ public class FileClient extends Client implements FileClientInterface {
 					fos.close();
 
 					if (env.getMessage().compareTo(new String(c.encrypt("AES", "EOF", sharedKey))) == 0) {
-						seq = (Integer) env.getObjContents().get(0);
+						seq = (byte[]) env.getObjContents().get(0);
 						expseq++;
-						System.out.println(Integer.toString(expseq));
-						System.out.println(Integer.toString(seq));
 						c.checkSequence(seq, expseq);
 						fos.close();
 						System.out.printf("\nTransfer successful file %s\n", sourceFile);
 						env = new Envelope(new String(c.encrypt("AES", "OK", sharedKey))); // Success
-						env.addObject(expseq);
+						env.addObject(c.encrypt("AES", Integer.toString(expseq), sharedKey));
 						++expseq;
 						output.writeObject(env);
 					} else {
@@ -167,7 +165,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
-			message.addObject(++expseq);
+			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
@@ -175,7 +173,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 			// If server indicates success, return the files list
 			if (e.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
-				int seq = (Integer) e.getObjContents().get(1);
+				byte[] seq = (byte[]) e.getObjContents().get(1);
 				c.checkSequence(seq, expseq);
 				byte[] flist = (byte[]) e.getObjContents().get(0);
 
@@ -211,7 +209,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
-			message.addObject(++expseq);
+			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
@@ -220,7 +218,7 @@ public class FileClient extends Client implements FileClientInterface {
 			env = (Envelope) input.readObject();
 
 			if (env.getMessage().equals(new String(c.encrypt("AES", "READY", sharedKey)))) {
-				int seq = (Integer) env.getObjContents().get(0);
+				byte[] seq = (byte[]) env.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				System.out.printf("Meta data upload successful\n");
 			} else {
@@ -250,7 +248,7 @@ public class FileClient extends Client implements FileClientInterface {
 				// add shared n and encrypted chunk (no need to encrypt further)
 				message.addObject(shared_n);
 				message.addObject(enc_buf);
-				message.addObject(++expseq);
+				message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
 				++expseq;
 				message.addObject(enc_buf.length);
 
@@ -262,17 +260,17 @@ public class FileClient extends Client implements FileClientInterface {
 
 			// If server indicates success, return the member list
 			if (env.getMessage().compareTo(new String(c.encrypt("AES", "READY", sharedKey))) == 0) {
-				int seq = (Integer) env.getObjContents().get(0);
+				byte[] seq = (byte[]) env.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 
 				message = new Envelope(new String(c.encrypt("AES", "EOF", sharedKey)));
-				message.addObject(++expseq);
+				message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
 				++expseq;
 				output.writeObject(message);
 
 				env = (Envelope) input.readObject();
 				if (env.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
-					seq = (Integer) env.getObjContents().get(0);
+					seq = (byte[]) env.getObjContents().get(0);
 					c.checkSequence(seq, expseq);
 					System.out.printf("\nFile data upload successful\n");
 				} else {

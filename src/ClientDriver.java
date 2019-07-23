@@ -165,6 +165,7 @@ public class ClientDriver {
     if (!gcli.userExists(username, FIP, FPORT)) {
       // intentionally non-specific error message.
       System.out.println("Error logging in.\n\n");
+      gcli.expseq = 0;
       return false;
     }
     // Check for password match
