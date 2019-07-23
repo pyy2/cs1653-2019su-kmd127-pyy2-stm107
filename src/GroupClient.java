@@ -26,7 +26,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			message = new Envelope(new String(c.encrypt("AES", "GET", sharedKey)));
 			message.addObject(enc_params); // Add user name string
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 
 			++expseq;
@@ -94,7 +94,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			byte[] reqBytes = c.createEncryptedString(reqParams);
 
 			message.addObject(reqBytes);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 			++expseq;
 
@@ -123,7 +123,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope(new String(c.encrypt("AES", "LOCK", sharedKey)));
 			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 
 			++expseq;
@@ -147,7 +147,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope(new String(c.encrypt("AES", "UNLOCK", sharedKey)));
 			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 			++expseq;
 
@@ -177,7 +177,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			byte[] upwd = c.encrypt("AES", upwd_str, sharedKey);
 			message.addObject(upwd); // Add user name string
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 			expseq++;
 
@@ -204,7 +204,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope(new String(c.encrypt("AES", "FLOGIN", sharedKey)));
 			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 			++expseq;
 
@@ -244,7 +244,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(upwd);
 			message.addObject(out);
 			message.addObject(signed_data);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;
 
 			output.writeObject(message);
@@ -282,7 +282,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(reqBytes);
 			message.addObject(out);
 			message.addObject(signed_data);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
@@ -318,7 +318,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(reqBytes);
 			message.addObject(out);
 			message.addObject(signed_data);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
@@ -354,7 +354,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(reqBytes);
 			message.addObject(out);
 			message.addObject(signed_data);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 			++expseq;
 
@@ -363,6 +363,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// If server indicates success, return true
 			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				byte[] seq = (byte[]) response.getObjContents().get(0);
+				System.out.println("Checking again seq#: "+expseq);
 				c.checkSequence(seq, expseq);
 				return true;
 			}
@@ -390,7 +391,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(reqBytes);
 			message.addObject(out);
 			message.addObject(signed_data);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 			++expseq;
 
@@ -426,7 +427,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(reqBytes);
 			message.addObject(out);
 			message.addObject(signed_data);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
@@ -471,7 +472,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(reqBytes);
 			message.addObject(out);
 			message.addObject(signed_data);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			output.writeObject(message);
 			++expseq;
 
@@ -507,7 +508,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(reqBytes);
 			message.addObject(out);
 			message.addObject(signed_data);
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
+			System.out.println(expseq);
 			output.writeObject(message);
 			++expseq;
 

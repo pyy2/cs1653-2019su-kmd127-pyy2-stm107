@@ -242,7 +242,7 @@ public class GroupThread extends Thread {
 							response.addObject(signed_data);
 						}
 
-						response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+						response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 						++expseq;
 						output.writeObject(response);
 
@@ -288,7 +288,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -314,7 +314,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -337,7 +337,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -379,7 +379,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -473,7 +473,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -515,7 +515,9 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					//System.out.println("Gettin here...");
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
+					//System.out.println("Sending seq#: "+expseq);
 					++expseq;
 					output.writeObject(response);
 
@@ -526,9 +528,9 @@ public class GroupThread extends Thread {
 					if (message.getObjContents().size() < 4) {
 						response = new Envelope(encFAIL);
 					} else {
+						System.out.println("Do we get here!?");
 						response = new Envelope(encFAIL);
 						byte[] seq = (byte[]) message.getObjContents().get(3);
-						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
@@ -564,7 +566,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -612,7 +614,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -655,7 +657,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -698,7 +700,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 				}
@@ -730,7 +732,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(gc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 				} else if (message.getMessage().equals(encDISCONNECT)) // Client wants to disconnect
@@ -897,26 +899,27 @@ public class GroupThread extends Thread {
 			// using a set no need to check for dupes, false if contains dupes
 			// user who creates group owns group but creator is not added to group by
 			// default
-			boolean success = my_gs.userList.createGroup(groupName);
-			my_gs.userList.addOwnership(requester, groupName);
+			if(my_gs.userList.createGroup(groupName)){
+				my_gs.userList.addOwnership(requester, groupName);
 
-			// create a per-group key.
-			byte[] seed = gc.createLamportSeed();
-			// System.out.println("The number of bytes is: " + seed.length);
-			if (my_gs.gsList.getSeed(groupName) != null) {
-				System.out.println("WARNING: This group seed already exists. That's unexpected.");
-			}
-			my_gs.gsList.addSeed(groupName, seed);
+				// create a per-group key.
+				byte[] seed = gc.createLamportSeed();
+				// System.out.println("The number of bytes is: " + seed.length);
+				if (my_gs.gsList.getSeed(groupName) != null) {
+					System.out.println("WARNING: This group seed already exists. That's unexpected.");
+				}
+				my_gs.gsList.addSeed(groupName, seed);
 
-			// Hash it 1000 times (because it was just created and we're starting at 1000)
-			byte[] hashedKey = gc.hashSecretKey(seed, 1000);
+				// Hash it 1000 times (because it was just created and we're starting at 1000)
+				byte[] hashedKey = gc.hashSecretKey(seed, 1000);
 
-			// Store H^1000(seed) and 1000
-			my_gs.ghkList.addGroupKey(groupName, 1000, hashedKey);
-			System.out.println("The hashed group key has been stored.\n\n");
-			return success;
-		} else
-			return false;
+				// Store H^1000(seed) and 1000
+				my_gs.ghkList.addGroupKey(groupName, 1000, hashedKey);
+				System.out.println("The hashed group key has been stored.\n\n");
+				return true;
+			} else return false;
+
+		} else return false;
 	}
 
 	private boolean deleteGroup(String groupName, UserToken token) {

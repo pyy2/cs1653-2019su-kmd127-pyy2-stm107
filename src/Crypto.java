@@ -66,12 +66,9 @@ class Crypto {
      *
      */
     void checkSequence(byte[] seqByte, int expseq) {
-        // System.out.println("SEQ="+seq);
-        // System.out.println("EXPSEQ="+expseq);
+
         String seq = new String(seqByte);
-        String expStr = new String(encrypt("AES", Integer.toString(expseq), aes));
-        // System.out.println("SEQ="+seq);
-        // System.out.println("EXPSEQ="+expStr);
+        String expStr = new String(aesGroupEncrypt(Integer.toString(expseq), aes));
         if (!seq.equals(expStr)) {
             System.out.println("SEQUENCE NUMBER MISMATCH!!");
             System.out.println("REORDER ATTACK DETECTED!!");

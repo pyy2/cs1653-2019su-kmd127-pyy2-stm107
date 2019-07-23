@@ -197,7 +197,7 @@ public class FileThread extends Thread {
 							}
 						}
 					}
-					response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -255,7 +255,7 @@ public class FileThread extends Thread {
 												remotePath.replace('/', '_'));
 
 										response = new Envelope(encREADY); // Success
-										response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+										response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 										++expseq;
 										output.writeObject(response);
 
@@ -270,7 +270,7 @@ public class FileThread extends Thread {
 											// write data to the file.
 											fos.write(b);
 											response = new Envelope(encREADY); // Success
-											response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+											response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 											++expseq;
 											output.writeObject(response);
 											e = (Envelope) input.readObject();
@@ -294,7 +294,7 @@ public class FileThread extends Thread {
 							}
 						}
 					}
-					response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -360,7 +360,7 @@ public class FileThread extends Thread {
 												response = new Envelope(encREADY); // Success
 												// Send shared n over to client for key generation.
 												response.addObject(shared_n);
-												response.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+												response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 												output.writeObject(response);
 												++expseq;
 
@@ -484,7 +484,7 @@ public class FileThread extends Thread {
 							e = new Envelope(e1.getMessage());
 						}
 					}
-					e.addObject(fc.encrypt("AES", Integer.toString(++expseq), _aesKey));
+					e.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(e);
 

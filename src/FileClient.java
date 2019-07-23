@@ -28,7 +28,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 		env.addObject(encryptedToken); // Add encrypted token/key
 		env.addObject(fsMac); // add signed data
-		env.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+		env.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 		++expseq;
 
 		try {
@@ -73,7 +73,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 				env.addObject(encryptedToken); // Add encrypted token/key
 				env.addObject(fsMac); // add signed data
-				env.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+				env.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 				++expseq;
 				output.writeObject(env);
 
@@ -165,7 +165,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
@@ -209,7 +209,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
-			message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
@@ -248,7 +248,7 @@ public class FileClient extends Client implements FileClientInterface {
 				// add shared n and encrypted chunk (no need to encrypt further)
 				message.addObject(shared_n);
 				message.addObject(enc_buf);
-				message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+				message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 				++expseq;
 				message.addObject(enc_buf.length);
 
@@ -264,7 +264,7 @@ public class FileClient extends Client implements FileClientInterface {
 				c.checkSequence(seq, expseq);
 
 				message = new Envelope(new String(c.encrypt("AES", "EOF", sharedKey)));
-				message.addObject(c.encrypt("AES", Integer.toString(++expseq), sharedKey));
+				message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 				++expseq;
 				output.writeObject(message);
 
