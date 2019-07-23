@@ -8,7 +8,7 @@ import javax.crypto.spec.*;
 
 public class FileClient extends Client implements FileClientInterface {
 
-	Crypto fc = new Crypto();
+	//Crypto fc = new Crypto();
 	int expseq = 0;
 
 	public boolean delete(String filename, UserToken token) {
@@ -18,7 +18,7 @@ public class FileClient extends Client implements FileClientInterface {
 		} else {
 			remotePath = filename;
 		}
-		Envelope env = new Envelope("DELETEF"); // Success
+		Envelope env = new Envelope(new String(c.encrypt("AES", "DELETEF", sharedKey))); // Success
 
 		// TODO: Don't send the group key
 		String pubKey = c.toString(groupK);
@@ -28,15 +28,15 @@ public class FileClient extends Client implements FileClientInterface {
 
 		env.addObject(encryptedToken); // Add encrypted token/key
 		env.addObject(fsMac); // add signed data
-		env.addObject(++expseq);
+		env.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 		++expseq;
 
 		try {
 			output.writeObject(env);
 			env = (Envelope) input.readObject();
-			int seq = (Integer) env.getObjContents().get(0);
-			fc.checkSequence(seq, expseq);
-			if (env.getMessage().compareTo("OK") == 0) {
+			byte[] seq = (byte[]) env.getObjContents().get(0);
+			c.checkSequence(seq, expseq);
+			if (env.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				System.out.printf("File %s deleted successfully\n", filename);
 			} else {
 				System.out.printf("Error deleting file %s (%s)\n", filename, env.getMessage());
@@ -63,7 +63,7 @@ public class FileClient extends Client implements FileClientInterface {
 				file.createNewFile();
 				FileOutputStream fos = new FileOutputStream(file);
 
-				Envelope env = new Envelope("DOWNLOADF"); // Success
+				Envelope env = new Envelope(new String(c.encrypt("AES", "DOWNLOADF", sharedKey))); // Success
 
 				// prepare metadata request
 				// TODO: Don't send group public key.
@@ -73,18 +73,18 @@ public class FileClient extends Client implements FileClientInterface {
 
 				env.addObject(encryptedToken); // Add encrypted token/key
 				env.addObject(fsMac); // add signed data
-				env.addObject(++expseq);
+				env.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 				++expseq;
 				output.writeObject(env);
 
 				byte[] curr_key = null;
 
 				env = (Envelope) input.readObject();
-				if (env.getMessage().equals("READY")) {
+				if (env.getMessage().equals(new String(c.encrypt("AES", "READY", sharedKey)))) {
 					// get file's n for lamport
 					int file_n = (Integer) env.getObjContents().get(0);
-					int seq = (Integer) env.getObjContents().get(1);
-					fc.checkSequence(seq, expseq);
+					byte[] seq = (byte[]) env.getObjContents().get(1);
+					c.checkSequence(seq, expseq);
 
 					// with n extracted, get the key
 					// subtract my n from the gserver from this n
@@ -94,37 +94,35 @@ public class FileClient extends Client implements FileClientInterface {
 						return false;
 					} else {
 						System.out.println("Updating group key...");
-						curr_key = fc.hashSecretKey(key, hash_n);
+						curr_key = c.hashSecretKey(key, hash_n);
 					}
 
 					// make the secret key
-					SecretKey skey = fc.makeAESKeyFromString(curr_key);
+					SecretKey skey = c.makeAESKeyFromString(curr_key);
 					// System.out.println("This is the key..." +
 					// Base64.getEncoder().encodeToString(skey.getEncoded()));
 
 					// Now get the file chunks
 					env = (Envelope) input.readObject();
-					while (env.getMessage().compareTo("CHUNK") == 0) {
+					while (env.getMessage().compareTo(new String(c.encrypt("AES", "CHUNK", sharedKey))) == 0) {
 						// decrypt abnd write
 						byte[] decrypted_file = c.aesGroupDecrypt((byte[]) env.getObjContents().get(0), skey);
 						fos.write(decrypted_file, 0, (Integer) env.getObjContents().get(1));
 						System.out.printf(".");
-						env = new Envelope("DOWNLOADF"); // Success
+						env = new Envelope(new String(c.encrypt("AES", "DOWNLOADF", sharedKey))); // Success
 						output.writeObject(env);
 						env = (Envelope) input.readObject();
 					}
 					fos.close();
 
-					if (env.getMessage().compareTo("EOF") == 0) {
-						seq = (Integer) env.getObjContents().get(0);
+					if (env.getMessage().compareTo(new String(c.encrypt("AES", "EOF", sharedKey))) == 0) {
+						seq = (byte[]) env.getObjContents().get(0);
 						expseq++;
-						System.out.println(Integer.toString(expseq));
-						System.out.println(Integer.toString(seq));
-						fc.checkSequence(seq, expseq);
+						c.checkSequence(seq, expseq);
 						fos.close();
 						System.out.printf("\nTransfer successful file %s\n", sourceFile);
-						env = new Envelope("OK"); // Success
-						env.addObject(expseq);
+						env = new Envelope(new String(c.encrypt("AES", "OK", sharedKey))); // Success
+						env.addObject(c.encrypt("AES", Integer.toString(expseq), sharedKey));
 						++expseq;
 						output.writeObject(env);
 					} else {
@@ -153,10 +151,11 @@ public class FileClient extends Client implements FileClientInterface {
 
 	public List<String> listFiles(UserToken token) {
 		try {
-			Envelope message = null, e = null;
+			//Envelope message = null, e = null;
 
-			message = new Envelope("LFILES"); // Success
+			Envelope message = new Envelope(new String(c.encrypt("AES", "LFILES", sharedKey))); // Success
 
+			// TODO: Remove public key
 			// prepare request
 			String pubKey = c.toString(groupK);
 			String concatted = pubKey + token;
@@ -166,16 +165,16 @@ public class FileClient extends Client implements FileClientInterface {
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
-			message.addObject(++expseq);
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
-			e = (Envelope) input.readObject();
+			Envelope e = (Envelope) input.readObject();
 
 			// If server indicates success, return the files list
-			if (e.getMessage().equals("OK")) {
-				int seq = (Integer) e.getObjContents().get(1);
-				fc.checkSequence(seq, expseq);
+			if (e.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
+				byte[] seq = (byte[]) e.getObjContents().get(1);
+				c.checkSequence(seq, expseq);
 				byte[] flist = (byte[]) e.getObjContents().get(0);
 
 				if (flist != null) {
@@ -200,7 +199,7 @@ public class FileClient extends Client implements FileClientInterface {
 		try {
 			Envelope message = null, env = null;
 			// Tell the server to return the member list
-			message = new Envelope("UPLOADF"); // Success
+			message = new Envelope(new String(c.encrypt("AES", "UPLOADF", sharedKey))); // Success
 
 			// TODO: Don't send group key. It is assumed it is already here.
 			// prepare metadata request
@@ -210,7 +209,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
-			message.addObject(++expseq);
+			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;
 			output.writeObject(message);
 
@@ -218,24 +217,23 @@ public class FileClient extends Client implements FileClientInterface {
 
 			env = (Envelope) input.readObject();
 
-			// If server indicates success, return the member list
-			if (env.getMessage().equals("READY")) {
-				int seq = (Integer) env.getObjContents().get(0);
-				fc.checkSequence(seq, expseq);
+			if (env.getMessage().equals(new String(c.encrypt("AES", "READY", sharedKey)))) {
+				byte[] seq = (byte[]) env.getObjContents().get(0);
+				c.checkSequence(seq, expseq);
 				System.out.printf("Meta data upload successful\n");
 			} else {
 				System.out.printf("Upload failed: %s\n", env.getMessage());
 				return false;
 			}
 			// establish the shared group key for encryption
-			SecretKey skey = fc.makeAESKeyFromString(key);
+			SecretKey skey = c.makeAESKeyFromString(key);
 			do {
 				byte[] buf = new byte[4096];
-				if (env.getMessage().compareTo("READY") != 0) {
+				if (env.getMessage().compareTo(new String(c.encrypt("AES", "READY", sharedKey))) != 0) {
 					System.out.printf("Server error: %s\n", env.getMessage());
 					return false;
 				}
-				message = new Envelope("CHUNK");
+				message = new Envelope(new String(c.encrypt("AES", "CHUNK", sharedKey)));
 				// read in from the file
 				int n = fis.read(buf); // can throw an IOException
 				// encrypt the chunk
@@ -250,7 +248,7 @@ public class FileClient extends Client implements FileClientInterface {
 				// add shared n and encrypted chunk (no need to encrypt further)
 				message.addObject(shared_n);
 				message.addObject(enc_buf);
-				message.addObject(++expseq);
+				message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 				++expseq;
 				message.addObject(enc_buf.length);
 
@@ -261,19 +259,19 @@ public class FileClient extends Client implements FileClientInterface {
 			} while (fis.available() > 0);
 
 			// If server indicates success, return the member list
-			if (env.getMessage().compareTo("READY") == 0) {
-				int seq = (Integer) env.getObjContents().get(0);
-				fc.checkSequence(seq, expseq);
+			if (env.getMessage().compareTo(new String(c.encrypt("AES", "READY", sharedKey))) == 0) {
+				byte[] seq = (byte[]) env.getObjContents().get(0);
+				c.checkSequence(seq, expseq);
 
-				message = new Envelope("EOF");
-				message.addObject(++expseq);
+				message = new Envelope(new String(c.encrypt("AES", "EOF", sharedKey)));
+				message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 				++expseq;
 				output.writeObject(message);
 
 				env = (Envelope) input.readObject();
-				if (env.getMessage().compareTo("OK") == 0) {
-					seq = (Integer) env.getObjContents().get(0);
-					fc.checkSequence(seq, expseq);
+				if (env.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
+					seq = (byte[]) env.getObjContents().get(0);
+					c.checkSequence(seq, expseq);
 					System.out.printf("\nFile data upload successful\n");
 				} else {
 

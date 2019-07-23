@@ -40,8 +40,8 @@ public class ClientDriver {
         .println("Connecting to group client at " + GIP + ":" + GPORT + " and file client at " + FIP + ":" + FPORT);
 
     // connect to servers
-    boolean gconn = gcli.connect(GIP, GPORT, "group", clientNum);
-    boolean fconn = fcli.connect(FIP, FPORT, "file", clientNum);
+    boolean gconn = gcli.connect(GIP, GPORT, "group", clientNum, false);
+    boolean fconn = fcli.connect(FIP, FPORT, "file", clientNum, false);
 
     if (!(gconn)) {
       System.out.println("Error connecting to group server. Exiting...");
@@ -165,6 +165,7 @@ public class ClientDriver {
     if (!gcli.userExists(username, FIP, FPORT)) {
       // intentionally non-specific error message.
       System.out.println("Error logging in.\n\n");
+      gcli.expseq = 0;
       return false;
     }
     // Check for password match
@@ -304,6 +305,7 @@ public class ClientDriver {
 
   private static void createGroup() {
     checkExpiration();
+    utkn = bounceToken();
     System.out.println("\nCreate a group\n");
     if (!checkLogInStatus())
       return;
@@ -314,6 +316,7 @@ public class ClientDriver {
       System.out.println("An error occurred creating group " + newGName + "\n");
     else
       System.out.println("Group " + newGName + " created successfully!\n");
+    utkn = bounceToken();
   }
 
   private static void deleteGroup() {
@@ -328,6 +331,7 @@ public class ClientDriver {
       System.out.println("An error occurred deleting group " + delGName + "\n");
     else
       System.out.println("Group " + delGName + " deleted successfully!\n");
+    utkn = bounceToken();
   }
 
   private static void addUserToGroup() {
@@ -399,6 +403,7 @@ public class ClientDriver {
     if (!checkLogInStatus())
       return;
     // FileThread should check the user's groups from the token
+  //  System.out.println(utkn.toString());
     List<String> files = fcli.listFiles(utkn);
     System.out.println("The files that user " + utkn.getSubject() + " can access are: ");
     for (String f : files) {
@@ -522,16 +527,14 @@ public class ClientDriver {
 
   private static UserToken bounceToken() {
     // Bounce the server connections and re-login
-    // int gexp = gcli.expseq;
-    // int fexp = fcli.expseq;
-    // System.out.println("this is the seq: "+gexp);
     gcli.expseq = 0;
     fcli.expseq = 0;
     gcli.disconnect();
-    gcli.connect(GIP, GPORT, "group", clientNum);
+    // make bouncing token invisible
+    gcli.connect(GIP, GPORT, "group", clientNum, true);
     // gcli.expseq = gexp;
     fcli.disconnect();
-    fcli.connect(FIP, FPORT, "file", clientNum);
+    fcli.connect(FIP, FPORT, "file", clientNum, true);
     // fcli.expseq = fexp;
     if (utkn == null) {
       return null;

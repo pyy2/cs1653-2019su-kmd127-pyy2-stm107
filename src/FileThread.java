@@ -50,7 +50,7 @@ public class FileThread extends Thread {
 			pub = FileServer.pub;
 			priv = FileServer.priv;
 
-			System.out.println(fc.RSAtoString(pub));
+			//System.out.println(fc.RSAtoString(pub));
 
 			System.out.println("\n########### SECURING CLIENT CONNECTION ###########");
 
@@ -65,17 +65,17 @@ public class FileThread extends Thread {
 
 			// get pseudo-random number + challenge from client
 			String temp = fc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-			System.out.println(temp);
+		//	System.out.println(temp);
 			String init[] = temp.split("\\|\\|");
 			String clRand = init[0];
 			String challenge = init[1];
-			System.out.println("\nCL Random -> FS:\n" + clRand);
-			System.out.println("\nCL Challenge -> FS:\n" + challenge);
+			System.out.println("\nCL Random -> FS: Received");
+			System.out.println("\nCL Challenge -> FS: Received");
 
 			// generate FS random #
 			fc.setRandom();
 			String random = fc.byteToString(fc.getRandom());
-			System.out.println("\nFS Random # -> CL: " + random);
+			System.out.println("\nFS Random # -> CL: Sent" );
 			output.writeObject(fc.encrypt("RSA/ECB/PKCS1Padding", random, clientK));
 			output.flush();
 
@@ -86,8 +86,8 @@ public class FileThread extends Thread {
 
 			fc.setAESKey(fc.byteToString(ka));
 			_aesKey = fc.getAESKey();
-			System.out.println("\nCL Shared Key Set: " + _aesKey);
-			System.out.println("\nCL Shared Verification Key: " + fc.makeAESKeyFromString(kb));
+			System.out.println("\nCL Shared Key Set: Created");
+			System.out.println("\nCL Shared Verification Key: Created");
 
 			// verify checksum & signature
 			byte[] _checkSum = (byte[]) input.readObject(); // read checksum
@@ -106,6 +106,36 @@ public class FileThread extends Thread {
 
 			System.out.println("\n########### FS CONNECTION W CLIENT SECURE ###########\n");
 
+			// Globals for encrypted envelope messages
+			String encOK = new String(fc.encrypt("AES", "OK", _aesKey));
+			String encFAIL = new String(fc.encrypt("AES", "FAIL", _aesKey));
+			String encDISCONNECT = new String(fc.encrypt("AES", "DISCONNECT", _aesKey));
+			String encREADY = new String(fc.encrypt("AES", "READY", _aesKey));
+			String encCHUNK = new String(fc.encrypt("AES", "CHUNK", _aesKey));
+			String encEOF = new String(fc.encrypt("AES", "EOF", _aesKey));
+			String encLFILES = new String(fc.encrypt("AES", "LFILES", _aesKey));
+			String encFAILBADCONTENTS = new String(fc.encrypt("AES", "FAIL-BADCONTENTS", _aesKey));
+			String encFAILBADPATH = new String(fc.encrypt("AES", "FAIL-BADPATH", _aesKey));
+			String encFAILBADFILE = new String(fc.encrypt("AES", "FAIL-BADFILE", _aesKey));
+			String encFAILBADGROUP = new String(fc.encrypt("AES", "FAIL-BADGROUP", _aesKey));
+			String encFAILBADHMAC = new String(fc.encrypt("AES", "FAIL-BADHMAC", _aesKey));
+			String encFAILBADREQUEST = new String(fc.encrypt("AES", "FAIL-BADREQUEST", _aesKey));
+			String encFAILBADFIELDS= new String(fc.encrypt("AES", "FAIL-BADFIELDS", _aesKey));
+			String encFAILBADGSIG = new String(fc.encrypt("AES", "FAIL-BADGSSIG", _aesKey));
+			String encFAILFILEEXISTS = new String(fc.encrypt("AES", "FAIL-FILEEXISTS", _aesKey));
+			String encFAILUNAUTHORIZED = new String(fc.encrypt("AES", "FAIL-UNAUTHORIZED", _aesKey));
+			String encERRORTRANSFER = new String(fc.encrypt("AES", "ERROR_TRANSFER", _aesKey));
+			String encFILEMISSING = new String(fc.encrypt("AES", "ERROR_FILEMISSING", _aesKey));
+			String encPERMISSION = new String(fc.encrypt("AES", "ERROR_PERMISSION", _aesKey));
+			String encNOTONDISK = new String(fc.encrypt("AES", "ERROR_NOTONDISK", _aesKey));
+			String encDOWNLOADF = new String(fc.encrypt("AES", "DOWNLOADF", _aesKey));
+			String encUPLOADF = new String(fc.encrypt("AES", "UPLOADF", _aesKey));
+			String encDELETEF = new String(fc.encrypt("AES", "DELETEF", _aesKey));
+			String encDOESNTEXIST = new String(fc.encrypt("AES", "ERROR_DOESNTEXIST", _aesKey));
+			String encDELETE = new String(fc.encrypt("AES", "ERROR_DELETE", _aesKey));
+
+
+
 			do {
 				Envelope e = (Envelope) input.readObject();
 				response = null;
@@ -114,22 +144,22 @@ public class FileThread extends Thread {
 				// ####################### LIST FILES #######################//
 
 				// Handler to list files that this user is allowed to see
-				if (e.getMessage().equals("LFILES")) {
+				if (e.getMessage().equals(encLFILES)) {
 
-					int seq = (Integer) e.getObjContents().get(2);
+					byte[] seq = (byte[]) e.getObjContents().get(2);
 					fc.checkSequence(seq, expseq);
 
 					if (e.getObjContents().size() < 2) {
-						response = new Envelope("FAIL-BADCONTENTS");
+						response = new Envelope(encFAILBADCONTENTS);
 					} else {
 						if (e.getObjContents().get(0) == null) {
-							response = new Envelope("FAIL-BADPATH");
+							response = new Envelope(encFAILBADPATH);
 						}
 						if (e.getObjContents().get(1) == null) {
-							response = new Envelope("FAIL-BADGROUP");
+							response = new Envelope(encFAILBADGROUP);
 						} else {
 							// base case
-							response = new Envelope("FAIL-BADHMAC");
+							response = new Envelope(encFAILBADHMAC);
 							// get user token||key and signed hmac by gs
 							byte[] tokKey = (byte[]) e.getObjContents().get(0);
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
@@ -147,7 +177,7 @@ public class FileThread extends Thread {
 
 							// verify groupkey signature
 							if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-								response = new Envelope("FAIL-BADHMAC");
+								response = new Envelope(encFAILBADHMAC);
 							} else {
 								UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
@@ -162,27 +192,27 @@ public class FileThread extends Thread {
 								}
 
 								// return encrypted arraylist
-								response = new Envelope("OK");
+								response = new Envelope(encOK);
 								response.addObject(fc.createEncryptedString(fileList));
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
 					// ####################### UPLOAD FILES #######################//
 
-				} else if (e.getMessage().equals("UPLOADF")) {
+				} else if (e.getMessage().equals(encUPLOADF)) {
 					if (e.getObjContents().size() < 2) {
-						response = new Envelope("FAIL-BADCONTENTS");
+						response = new Envelope(encFAILBADCONTENTS);
 					} else {
 						if (e.getObjContents().get(0) == null) {
-							response = new Envelope("FAIL-BADREQUEST");
+							response = new Envelope(encFAILBADREQUEST);
 						} else if (e.getObjContents().get(1) == null) {
-							response = new Envelope("FAIL-BADGROUP");
+							response = new Envelope(encFAILBADGROUP);
 						} else {
-							int seq = (Integer) e.getObjContents().get(2);
+							byte[] seq = (byte[]) e.getObjContents().get(2);
 							fc.checkSequence(seq, expseq);
 							byte[] req = (byte[]) e.getObjContents().get(0);
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
@@ -193,7 +223,7 @@ public class FileThread extends Thread {
 
 							// if length doesn't match
 							if (st.length != 4) {
-								response = new Envelope("FAIL-BADFIELDS");
+								response = new Envelope(encFAILBADFIELDS);
 							} else {
 								String groupK = st[0];
 								String token = st[1];
@@ -207,16 +237,16 @@ public class FileThread extends Thread {
 								int shared_n = 0;
 								// verify signature is from gs
 								if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-									response = new Envelope("FAIL-BADGSSIG");
+									response = new Envelope(encFAILBADGSIG);
 								} else {
 									UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
 									if (FileServer.fileList.checkFile(remotePath)) {
 										System.out.printf("Error: file already exists at %s\n", remotePath);
-										response = new Envelope("FAIL-FILEEXISTS"); // Success
+										response = new Envelope(encFAILFILEEXISTS); // Success
 									} else if (!yourToken.getGroups().contains(group)) {
 										System.out.printf("Error: user missing valid token for group %s\n", group);
-										response = new Envelope("FAIL-UNAUTHORIZED"); // Success
+										response = new Envelope(encFAILUNAUTHORIZED); // Success
 									} else {
 										File file = new File("shared_files/" + remotePath.replace('/', '_'));
 										file.createNewFile();
@@ -224,39 +254,39 @@ public class FileThread extends Thread {
 										System.out.printf("Successfully created file %s\n",
 												remotePath.replace('/', '_'));
 
-										response = new Envelope("READY"); // Success
-										response.addObject(++expseq);
+										response = new Envelope(encREADY); // Success
+										response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 										++expseq;
 										output.writeObject(response);
 
 										e = (Envelope) input.readObject();
-										while (e.getMessage().compareTo("CHUNK") == 0) {
+										while (e.getMessage().compareTo(encCHUNK) == 0) {
 											// Store the file that has been ENCRYPTED WITH THE GROUP KEY
-											seq = (Integer) e.getObjContents().get(2);
+											seq = (byte[]) e.getObjContents().get(2);
 											fc.checkSequence(seq, expseq);
 											byte[] b = (byte[]) e.getObjContents().get(1);
 											shared_n = (Integer) e.getObjContents().get(0);
 
 											// write data to the file.
 											fos.write(b);
-											response = new Envelope("READY"); // Success
-											response.addObject(++expseq);
+											response = new Envelope(encREADY); // Success
+											response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 											++expseq;
 											output.writeObject(response);
 											e = (Envelope) input.readObject();
 										}
 
 										// add shared_n as ShareFile metadata
-										if (e.getMessage().compareTo("EOF") == 0) {
-											seq = (Integer) e.getObjContents().get(0);
+										if (e.getMessage().compareTo(encEOF) == 0) {
+											seq = (byte[]) e.getObjContents().get(0);
 											fc.checkSequence(seq, expseq);
 											System.out.printf("Transfer successful file %s\n", remotePath);
 											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath,
 													shared_n);
-											response = new Envelope("OK"); // Success
+											response = new Envelope(encOK); // Success
 										} else {
 											System.out.printf("Error reading file %s from client\n", remotePath);
-											response = new Envelope("ERROR-TRANSFER"); // Success
+											response = new Envelope(encERRORTRANSFER); // Success
 										}
 										fos.close();
 									}
@@ -264,24 +294,24 @@ public class FileThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
 					// ####################### DOWNLOAD FILES #######################//
 
-				} else if (e.getMessage().compareTo("DOWNLOADF") == 0) {
+				} else if (e.getMessage().compareTo(encDOWNLOADF) == 0) {
 
 					if (e.getObjContents().size() < 2) {
-						response = new Envelope("FAIL-BADCONTENTS");
+						response = new Envelope(encFAILBADCONTENTS);
 					} else {
 						if (e.getObjContents().get(0) == null) {
-							response = new Envelope("FAIL-BADREQUEST");
+							response = new Envelope(encFAILBADREQUEST);
 						}
 						if (e.getObjContents().get(1) == null) {
-							response = new Envelope("FAIL-BADHMAC");
+							response = new Envelope(encFAILBADHMAC);
 						} else {
-							int seq = (Integer) e.getObjContents().get(2);
+							byte[] seq = (byte[]) e.getObjContents().get(2);
 							fc.checkSequence(seq, expseq);
 							byte[] req = (byte[]) e.getObjContents().get(0);
 							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
@@ -291,7 +321,7 @@ public class FileThread extends Thread {
 							String[] st = decrypted.split("\\|\\|");
 
 							if (st.length != 3) {
-								response = new Envelope("FAIL-BADFIELDS");
+								response = new Envelope(encFAILBADFIELDS);
 							} else {
 								String groupK = st[0];
 								String token = st[1];
@@ -304,7 +334,7 @@ public class FileThread extends Thread {
 
 								// verify signature is from gs
 								if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-									response = new Envelope("FAIL-BADGSSIG");
+									response = new Envelope(encFAILBADGSIG);
 								} else {
 
 									UserToken t = (UserToken) fc.makeTokenFromString(token);
@@ -312,10 +342,10 @@ public class FileThread extends Thread {
 
 									if (sf == null) {
 										System.out.printf("Error: File %s doesn't exist\n", remotePath);
-										response = new Envelope("ERROR_FILEMISSING");
+										response = new Envelope(encFILEMISSING);
 									} else if (!t.getGroups().contains(sf.getGroup())) {
 										System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
-										response = new Envelope("ERROR_PERMISSION");
+										response = new Envelope(encPERMISSION);
 									} else {
 										int shared_n = sf.getN();
 										try {
@@ -323,24 +353,24 @@ public class FileThread extends Thread {
 											if (!f.exists()) {
 												System.out.printf("Error file %s missing from disk\n",
 														"_" + remotePath.replace('/', '_'));
-												response = new Envelope("ERROR_NOTONDISK");
+												response = new Envelope(encNOTONDISK);
 											} else {
 												FileInputStream fis = new FileInputStream(f);
 
-												response = new Envelope("READY"); // Success
+												response = new Envelope(encREADY); // Success
 												// Send shared n over to client for key generation.
 												response.addObject(shared_n);
-												response.addObject(++expseq);
+												response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 												output.writeObject(response);
 												++expseq;
 
 												do {
 													byte[] buf = new byte[4096];
-													if (e.getMessage().compareTo("DOWNLOADF") != 0) {
+													if (e.getMessage().compareTo(encDOWNLOADF) != 0) {
 														System.out.printf("Server error: %s\n", e.getMessage());
 														break;
 													}
-													e = new Envelope("CHUNK");
+													e = new Envelope(encCHUNK);
 													int n = fis.read(buf); // can throw an IOException
 													if (n > 0) {
 														System.out.printf(".");
@@ -358,18 +388,15 @@ public class FileThread extends Thread {
 
 												} while (fis.available() > 0);
 
-												if (e.getMessage().compareTo("DOWNLOADF") == 0) {
-													e = new Envelope("EOF");
+												if (e.getMessage().compareTo(encDOWNLOADF) == 0) {
+													e = new Envelope(encEOF);
 													e.addObject(expseq);
-													// expseq;
 													output.writeObject(e);
 
 													e = (Envelope) input.readObject();
 
-													if (e.getMessage().compareTo("OK") == 0) {
-														seq = (Integer) e.getObjContents().get(0);
-														// System.out.println(Integer.toString(expseq));
-														// System.out.println(Integer.toString(seq));
+													if (e.getMessage().compareTo(encOK) == 0) {
+														seq = (byte[]) e.getObjContents().get(0);
 
 														fc.checkSequence(seq, expseq);
 														System.out.printf("File data download successful\n");
@@ -388,7 +415,7 @@ public class FileThread extends Thread {
 											}
 										} catch (Exception e1) {
 											System.err.println("Error: " + e1.getMessage());
-											response = new Envelope("FAIL-BADFILE");
+											response = new Envelope(encFAILBADFILE);
 											// e1.printStackTrace(System.err);
 										}
 									}
@@ -400,11 +427,11 @@ public class FileThread extends Thread {
 
 					// ####################### DELETE FILES #######################//
 
-				} else if (e.getMessage().compareTo("DELETEF") == 0) {
+				} else if (e.getMessage().compareTo(encDELETEF) == 0) {
 
 					byte[] tokKey = (byte[]) e.getObjContents().get(0);
 					byte[] sigHmac = (byte[]) e.getObjContents().get(1);
-					int seq = (Integer) e.getObjContents().get(2);
+					byte[] seq = (byte[]) e.getObjContents().get(2);
 					fc.checkSequence(seq, expseq);
 
 					// decrypt to get token/key
@@ -427,10 +454,10 @@ public class FileThread extends Thread {
 					ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
 					if (sf == null) {
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
-						e = new Envelope("ERROR_DOESNTEXIST");
+						e = new Envelope(encDOESNTEXIST);
 					} else if (!t.getGroups().contains(sf.getGroup())) {
 						System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
-						e = new Envelope("ERROR_PERMISSION");
+						e = new Envelope(encPERMISSION);
 					} else {
 
 						try {
@@ -440,15 +467,15 @@ public class FileThread extends Thread {
 							if (!f.exists()) {
 								System.out.printf("Error file %s missing from disk\n",
 										"_" + remotePath.replace('/', '_'));
-								e = new Envelope("ERROR_FILEMISSING");
+								e = new Envelope(encFILEMISSING);
 							} else if (f.delete()) {
 								System.out.printf("File %s deleted from disk\n", "_" + remotePath.replace('/', '_'));
 								FileServer.fileList.removeFile("/" + remotePath);
-								e = new Envelope("OK");
+								e = new Envelope(encOK);
 							} else {
 								System.out.printf("Error deleting file %s from disk\n",
 										"_" + remotePath.replace('/', '_'));
-								e = new Envelope("ERROR_DELETE");
+								e = new Envelope(encDELETE);
 							}
 
 						} catch (Exception e1) {
@@ -457,11 +484,11 @@ public class FileThread extends Thread {
 							e = new Envelope(e1.getMessage());
 						}
 					}
-					e.addObject(++expseq);
+					e.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(e);
 
-				} else if (e.getMessage().equals("DISCONNECT-")) {
+				} else if (e.getMessage().equals(encDISCONNECT)) {
 					socket.close();
 					proceed = false;
 				}

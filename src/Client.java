@@ -35,7 +35,7 @@ public abstract class Client {
 	// expseq_g = 0;
 	// expseq_f = 0;
 
-	public boolean connect(final String server, final int port, final String type, final String clientNum) {
+	public boolean connect(final String server, final int port, final String type, final String clientNum, boolean bounce) {
 
 		kb = new Scanner(System.in);
 		// init variables
@@ -43,7 +43,7 @@ public abstract class Client {
 		fsMac = null;
 		c = new Crypto();
 
-		System.out.println("\n########### 1. INITIALIZATION ###########\n");
+		if(!bounce) System.out.println("\n########### 1. INITIALIZATION ###########\n");
 
 		// configure group public key
 		final String gsPath = "./keys/" + clientConfig + "GS" + "public.key";
@@ -77,7 +77,7 @@ public abstract class Client {
 		}
 
 		if (f.exists() && f2.exists()) {
-			System.out.println("CL public/private key: Set");
+			if(!bounce) System.out.println("CL public/private key: Set");
 			c.setPublicKey(clientConfig);
 			c.setPrivateKey(clientConfig);
 			pub = c.getPublic();
@@ -98,41 +98,41 @@ public abstract class Client {
 			System.out.println("Unable to load list of trusted file servers.");
 			System.out.println("Exception: " + e);
 		}
-		System.out.println("\n########### INITIALIZATION COMPLETE ###########\n");
+		if(!bounce) System.out.println("\n########### INITIALIZATION COMPLETE ###########\n");
 
 		// Try to create new socket connection
 		try {
 			sock = new Socket(server, port); // create Stream socket then connect to named host @ port #
-			System.out.println("Connected to " + server + " on port " + port);
+			if(!bounce) System.out.println("Connected to " + server + " on port " + port);
 			output = new ObjectOutputStream(sock.getOutputStream()); // send output to socket
 			input = new ObjectInputStream(sock.getInputStream()); // get input from socket
 
 			// Group Server connection
 			if (!type.equals("file")) {
-				System.out.println("\n########### 2. ATTEMPT TO SECURE GS CONNECTION ###########\n");
-				System.out.println("CL public key -> GS: Sent");
+				if(!bounce) System.out.println("\n########### 2. ATTEMPT TO SECURE GS CONNECTION ###########\n");
+				if(!bounce) System.out.println("CL public key -> GS: Sent");
 				output.writeObject(pub); // write public key to channel (not encoded)
 				output.flush();
 
 				// verify gs public key with one on file if not exit program
 				PublicKey gsKeyCheck = (PublicKey) input.readObject();
 				if (c.isEqual(groupK.getEncoded(), gsKeyCheck.getEncoded())) {
-					System.out.println("GS Public Key -> CL: Verified");
+					if(!bounce) System.out.println("GS Public Key -> CL: Verified");
 				} else {
-					System.out.println("INVALID GS KEY RECEIVED!");
+					if(!bounce) System.out.println("INVALID GS KEY RECEIVED!");
 					System.exit(3);
 				}
 
 				// generate new pseudo-random number and send to GS
 				c.setRandom(); // generate new secure random (32 byte)
 				String random = c.byteToString(c.getRandom());
-				System.out.println("\nCL Random -> GS:\n" + random);
+				if(!bounce) System.out.println("\nCL Random -> GS: Sent" );
 				output.writeObject(c.encrypt("RSA/ECB/PKCS1Padding", random, groupK)); // encrypt w gs private key
 				output.flush();
 
 				// read pseudo-random number from GS
 				String clRand = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-				System.out.println("\nGS Random -> CL:\n" + clRand);
+				if(!bounce) System.out.println("\nGS Random -> CL: Sent");
 
 				byte[] ka = c.createChecksum(random + clRand); // SHA256(Ra||Rb)
 				byte[] kb = c.createChecksum(clRand + random); // SHA256(Rb||Ra)
@@ -142,22 +142,22 @@ public abstract class Client {
 				// decrypt with private key to get aes key
 				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
-				System.out.println("\nGS Shared Key: " + sharedKey);
-				System.out.println("\nGS Shared Verification Key: " + veriK);
+				if(!bounce) System.out.println("\nGS Shared Key: Created");
+				if(!bounce) System.out.println("\nGS Shared Verification Key: Created ");
 
-				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
+				if(!bounce) System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
 			} else {
-				System.out.println("\n########### 3. ATTEMPT TO SECURE FS CONNECTION ###########\n");
+				if(!bounce) System.out.println("\n########### 3. ATTEMPT TO SECURE FS CONNECTION ###########\n");
 
 				c.setSysK(input.readObject()); // read fs public key not encoded
 				fsPub = c.getSysK(); // set FS pub key
-				System.out.println("FS Public Key -> CL: \n" + c.RSAtoString(fsPub));
+				if(!bounce) System.out.println("FS Public Key -> CL: Received");
 
 				// send client's public key to client
 				output.writeObject(pub);
 				output.flush();
-				System.out.println("\nClient public key -> FS: Sent");
+				if(!bounce) System.out.println("\nClient public key -> FS: Sent");
 
 				if (tfsList == null) {
 					tfsList = new TrustedFServer();
@@ -200,6 +200,7 @@ public abstract class Client {
 					}
 				}
 
+
 				// Save the Trusted File Server List
 				ObjectOutputStream outStream;
 				try {
@@ -218,13 +219,13 @@ public abstract class Client {
 
 				// send encrypted random # + challenge with fs public key
 				String s = random + "||" + challenge;
-				System.out.println("\nCL Random + Challenge -> FS:\n" + s);
+				if(!bounce) System.out.println("\nCL Random + Challenge -> FS: Sent");
 				output.writeObject(c.encrypt("RSA/ECB/PKCS1Padding", s, fsPub));
 				output.flush();
 
 				// read pseudo-random number from FS
 				String clRand = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-				System.out.println("\nGS Random -> CL:\n" + clRand);
+				if(!bounce) System.out.println("\nGS Random -> CL: Received ");
 
 				byte[] ka = c.createChecksum(random + clRand); // SHA256(Ra||Rb)
 				byte[] kb = c.createChecksum(clRand + random); // SHA256(Rb||Ra)
@@ -234,14 +235,14 @@ public abstract class Client {
 				// decrypt with private key to get aes key
 				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
-				System.out.println("\nFS Shared Key: " + sharedKey);
-				System.out.println("\nFS Shared Verification Key: " + veriK);
+				if(!bounce) System.out.println("\nFS Shared Key: Created ");
+			  if(!bounce) System.out.println("\nFS Shared Verification Key: Created");
 
 				// send SHA256 checksum of symmetric key for verification
 				byte[] checksum = c.createChecksum(s); // create checksum
-				System.out.println(s);
+				if(!bounce) System.out.println(s);
 				output.writeObject(checksum); // send checksum
-				System.out.println("Checksum -> FS:\n" + c.toString(checksum)); // print
+				if(!bounce) System.out.println("Checksum -> FS:\n" + c.toString(checksum)); // print
 				output.flush();
 
 				// send signed checksum
@@ -255,8 +256,8 @@ public abstract class Client {
 					System.out.println("Terminating connection!!");
 					System.exit(0);
 				}
-				System.out.println("CHALLENGE VALIDATED: " + c.isEqual(challenge.getBytes(), Rchallenge));
-				System.out.println("\n############# CONNETION TO FILESERVER SECURE ############\n");
+				if(!bounce) System.out.println("CHALLENGE VALIDATED: " + c.isEqual(challenge.getBytes(), Rchallenge));
+				if(!bounce) System.out.println("\n############# CONNETION TO FILESERVER SECURE ############\n");
 			}
 
 		} catch (UnknownHostException e) {
@@ -270,7 +271,7 @@ public abstract class Client {
 			e3.printStackTrace();
 		}
 
-		System.out.println("Connection Status: " + isConnected());
+		if(!bounce) System.out.println("Connection Status: " + isConnected());
 		return isConnected();
 	}
 
@@ -284,8 +285,9 @@ public abstract class Client {
 
 	public void disconnect() {
 		if (isConnected()) {
+			//System.out.println("Disconnecting...");
 			try {
-				Envelope message = new Envelope("DISCONNECT");
+				Envelope message = new Envelope(new String(c.encrypt("AES", "DISCONNECT", sharedKey)));
 				output.writeObject(message);
 				output.flush();
 			} catch (Exception e) {
