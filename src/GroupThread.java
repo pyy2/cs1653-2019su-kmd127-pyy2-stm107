@@ -136,12 +136,12 @@ public class GroupThread extends Thread {
 
 			// read pseudo-random number from client
 			String clRand = gc.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-			System.out.println("\nCL Random -> GS:\n" + clRand);
+			//System.out.println("\nCL Random -> GS:\n" + clRand);
 
 			// generate new pseudo-random number and send to CL
 			gc.setRandom(); // generate new secure random (32 byte)
 			String random = gc.byteToString(gc.getRandom());
-			System.out.println("\nGS Random -> CL:\n" + random);
+			System.out.println("\nGS Random -> CL:\n");
 			output.writeObject(gc.encrypt("RSA/ECB/PKCS1Padding", random, clientK)); // encrypt w gs private key
 			output.flush();
 
@@ -153,8 +153,8 @@ public class GroupThread extends Thread {
 			// send symmetric key encrypted with client's public key with padding
 			gc.setAESKey(gc.byteToString(ka));
 			_aesKey = gc.getAESKey();
-			System.out.println("\nCL Shared Key: " + _aesKey);
-			System.out.println("\nCL Shared Verification Key: " + gc.makeAESKeyFromString(kb));
+			System.out.println("\nCL Shared Key Created.");
+			System.out.println("\nCL Shared Verification Key Created.");
 
 			System.out.println("\n########### GS CONNECTION W CLIENT SECURE ###########\n");
 
@@ -180,7 +180,7 @@ public class GroupThread extends Thread {
 
 			do {
 				Envelope message = (Envelope) input.readObject();
-				System.out.println("Request received: " + message.getMessage());
+				//System.out.println("Request received: " + message.getMessage());
 				Envelope response = null;
 				clientK = gc.getSysK();
 
@@ -190,7 +190,7 @@ public class GroupThread extends Thread {
 				{
 					byte[] enc_params = (byte[]) message.getObjContents().get(0);
 
-					int seq = (Integer) message.getObjContents().get(1);
+					byte[] seq = (byte[]) message.getObjContents().get(1);
 					gc.checkSequence(seq, expseq);
 
 					String params = gc.decrypt("AES", enc_params, _aesKey);
@@ -242,7 +242,7 @@ public class GroupThread extends Thread {
 							response.addObject(signed_data);
 						}
 
-						response.addObject(++expseq);
+						response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 						++expseq;
 						output.writeObject(response);
 
@@ -252,12 +252,12 @@ public class GroupThread extends Thread {
 
 				} else if (message.getMessage().equals(encCUSER)) // Client wants to create a user
 				{
-					System.out.println("CUSER");
+					//System.out.println("CUSER");
 					if (message.getObjContents().size() < 4) {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(3);
+						byte[] seq = (byte[]) message.getObjContents().get(3);
 						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
@@ -282,15 +282,13 @@ public class GroupThread extends Thread {
 										return;
 									}
 									if (createUser(username, password, yourToken)) {
-										// we're just sending back "OK", so we probably don't need to worry about
-										// encrypting.
 										response = new Envelope(encOK); // Success
 									}
 								}
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -298,12 +296,12 @@ public class GroupThread extends Thread {
 
 				} else if (message.getMessage().equals(encCPWD)) // Client wants to for password match
 				{
-					System.out.println("CPWD");
+					//System.out.println("CPWD");
 					if (message.getObjContents().size() < 2) {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(1);
+						byte[] seq = (byte[]) message.getObjContents().get(1);
 						gc.checkSequence(seq, expseq);
 
 						if (message.getObjContents().get(0) != null) {
@@ -316,19 +314,19 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
 					// ####################### CHECK IF FIRST LOGIN #######################//
 
 				} else if (message.getMessage().equals(encFLOGIN)) {
-					System.out.println("FLOGIN");
+					// System.out.println("FLOGIN");
 					if (message.getObjContents().size() < 2) {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(1);
+						byte[] seq = (byte[]) message.getObjContents().get(1);
 						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							byte[] uname = (byte[]) message.getObjContents().get(0);
@@ -339,7 +337,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -347,12 +345,12 @@ public class GroupThread extends Thread {
 
 				} else if (message.getMessage().equals(encRPASS)) // Client wants to reset password
 				{
-					System.out.println("RPASS");
+				//	seq = (byte[])("RPASS");
 					if (message.getObjContents().size() < 4) {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(3);
+						byte[] seq = (byte[]) message.getObjContents().get(3);
 						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
@@ -381,7 +379,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -389,7 +387,7 @@ public class GroupThread extends Thread {
 
 				} else if (message.getMessage().equals(encUNLOCK)) // Client wants to delete a user
 				{
-					System.out.println("UNLOCK");
+					// System.out.println("UNLOCK");
 					if (message.getObjContents().size() < 2) {
 						response = new Envelope(encFAIL);
 					} else {
@@ -397,7 +395,7 @@ public class GroupThread extends Thread {
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								int seq = (Integer) message.getObjContents().get(1);
+								byte[] seq = (byte[]) message.getObjContents().get(1);
 								gc.checkSequence(seq, expseq);
 
 								String uname = gc.decrypt("AES", (byte[]) message.getObjContents().get(0), _aesKey);
@@ -414,7 +412,7 @@ public class GroupThread extends Thread {
 
 				} else if (message.getMessage().equals(encLOCK)) // Client wants to delete a user
 				{
-					System.out.println("LOCK");
+					// System.out.println("LOCK");
 					if (message.getObjContents().size() < 2) {
 						response = new Envelope(encFAIL);
 					} else {
@@ -422,7 +420,7 @@ public class GroupThread extends Thread {
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								int seq = (Integer) message.getObjContents().get(1);
+								byte[] seq = (byte[]) message.getObjContents().get(1);
 								gc.checkSequence(seq, expseq);
 								String uname = gc.decrypt("AES", (byte[]) message.getObjContents().get(0), _aesKey);
 
@@ -446,7 +444,7 @@ public class GroupThread extends Thread {
 
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
-								int seq = (Integer) message.getObjContents().get(3);
+								byte[] seq = (byte[]) message.getObjContents().get(3);
 								gc.checkSequence(seq, expseq);
 								if (message.getObjContents().get(2) != null) {
 									byte[] enc_params = (byte[]) message.getObjContents().get(0);
@@ -475,7 +473,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -487,7 +485,7 @@ public class GroupThread extends Thread {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(3);
+						byte[] seq = (byte[]) message.getObjContents().get(3);
 						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
@@ -517,7 +515,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -529,7 +527,7 @@ public class GroupThread extends Thread {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(3);
+						byte[] seq = (byte[]) message.getObjContents().get(3);
 						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
@@ -566,7 +564,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -578,7 +576,7 @@ public class GroupThread extends Thread {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(3);
+						byte[] seq = (byte[]) message.getObjContents().get(3);
 						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
@@ -614,7 +612,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -626,7 +624,7 @@ public class GroupThread extends Thread {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(3);
+						byte[] seq = (byte[]) message.getObjContents().get(3);
 						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
@@ -657,7 +655,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 
@@ -669,7 +667,7 @@ public class GroupThread extends Thread {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(3);
+						byte[] seq = (byte[]) message.getObjContents().get(3);
 						gc.checkSequence(seq, expseq);
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
@@ -700,7 +698,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 				}
@@ -712,7 +710,7 @@ public class GroupThread extends Thread {
 						response = new Envelope(encFAIL);
 					} else {
 						response = new Envelope(encFAIL);
-						int seq = (Integer) message.getObjContents().get(1);
+						byte[] seq = (byte[]) message.getObjContents().get(1);
 						gc.checkSequence(seq, expseq);
 
 						if (message.getObjContents().get(0) != null) {
@@ -732,7 +730,7 @@ public class GroupThread extends Thread {
 							}
 						}
 					}
-					response.addObject(++expseq);
+					response.addObject(gc.encrypt("AES", Integer.toString(++expseq), _aesKey));
 					++expseq;
 					output.writeObject(response);
 				} else if (message.getMessage().equals(encDISCONNECT)) // Client wants to disconnect

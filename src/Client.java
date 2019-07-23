@@ -126,13 +126,13 @@ public abstract class Client {
 				// generate new pseudo-random number and send to GS
 				c.setRandom(); // generate new secure random (32 byte)
 				String random = c.byteToString(c.getRandom());
-				System.out.println("\nCL Random -> GS:\n" + random);
+				System.out.println("\nCL Random -> GS: Sent" );
 				output.writeObject(c.encrypt("RSA/ECB/PKCS1Padding", random, groupK)); // encrypt w gs private key
 				output.flush();
 
 				// read pseudo-random number from GS
 				String clRand = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-				System.out.println("\nGS Random -> CL:\n" + clRand);
+				System.out.println("\nGS Random -> CL: Sent");
 
 				byte[] ka = c.createChecksum(random + clRand); // SHA256(Ra||Rb)
 				byte[] kb = c.createChecksum(clRand + random); // SHA256(Rb||Ra)
@@ -142,8 +142,8 @@ public abstract class Client {
 				// decrypt with private key to get aes key
 				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
-				//System.out.println("\nGS Shared Key: " + sharedKey);
-				//System.out.println("\nGS Shared Verification Key: " + veriK);
+				System.out.println("\nGS Shared Key: Created");
+				System.out.println("\nGS Shared Verification Key: Created ");
 
 				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
@@ -152,7 +152,7 @@ public abstract class Client {
 
 				c.setSysK(input.readObject()); // read fs public key not encoded
 				fsPub = c.getSysK(); // set FS pub key
-				System.out.println("FS Public Key -> CL: \n" + c.RSAtoString(fsPub));
+				System.out.println("FS Public Key -> CL: Received");
 
 				// send client's public key to client
 				output.writeObject(pub);
@@ -219,13 +219,13 @@ public abstract class Client {
 
 				// send encrypted random # + challenge with fs public key
 				String s = random + "||" + challenge;
-				System.out.println("\nCL Random + Challenge -> FS:\n" + s);
+				System.out.println("\nCL Random + Challenge -> FS: Sent");
 				output.writeObject(c.encrypt("RSA/ECB/PKCS1Padding", s, fsPub));
 				output.flush();
 
 				// read pseudo-random number from FS
 				String clRand = c.decrypt("RSA/ECB/PKCS1Padding", (byte[]) input.readObject(), priv);
-				System.out.println("\nGS Random -> CL:\n" + clRand);
+				System.out.println("\nGS Random -> CL: Received ");
 
 				byte[] ka = c.createChecksum(random + clRand); // SHA256(Ra||Rb)
 				byte[] kb = c.createChecksum(clRand + random); // SHA256(Rb||Ra)
@@ -235,8 +235,8 @@ public abstract class Client {
 				// decrypt with private key to get aes key
 				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
-			//	System.out.println("\nFS Shared Key: " + sharedKey);
-			//	System.out.println("\nFS Shared Verification Key: " + veriK);
+				System.out.println("\nFS Shared Key: Created ");
+			  System.out.println("\nFS Shared Verification Key: Created");
 
 				// send SHA256 checksum of symmetric key for verification
 				byte[] checksum = c.createChecksum(s); // create checksum
