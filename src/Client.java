@@ -142,8 +142,8 @@ public abstract class Client {
 				// decrypt with private key to get aes key
 				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
-				System.out.println("\nGS Shared Key: " + sharedKey);
-				System.out.println("\nGS Shared Verification Key: " + veriK);
+				//System.out.println("\nGS Shared Key: " + sharedKey);
+				//System.out.println("\nGS Shared Verification Key: " + veriK);
 
 				System.out.println("############## CONNECTION TO GS SECURE ##############\n");
 
@@ -200,6 +200,7 @@ public abstract class Client {
 					}
 				}
 
+
 				// Save the Trusted File Server List
 				ObjectOutputStream outStream;
 				try {
@@ -234,8 +235,8 @@ public abstract class Client {
 				// decrypt with private key to get aes key
 				c.setAESKey(c.byteToString(ka));
 				sharedKey = c.getAESKey();
-				System.out.println("\nFS Shared Key: " + sharedKey);
-				System.out.println("\nFS Shared Verification Key: " + veriK);
+			//	System.out.println("\nFS Shared Key: " + sharedKey);
+			//	System.out.println("\nFS Shared Verification Key: " + veriK);
 
 				// send SHA256 checksum of symmetric key for verification
 				byte[] checksum = c.createChecksum(s); // create checksum
@@ -284,8 +285,9 @@ public abstract class Client {
 
 	public void disconnect() {
 		if (isConnected()) {
+			System.out.println("Disconnecting...");
 			try {
-				Envelope message = new Envelope("DISCONNECT");
+				Envelope message = new Envelope(new String(c.encrypt("AES", "DISCONNECT", sharedKey)));
 				output.writeObject(message);
 				output.flush();
 			} catch (Exception e) {

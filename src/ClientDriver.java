@@ -399,6 +399,7 @@ public class ClientDriver {
     if (!checkLogInStatus())
       return;
     // FileThread should check the user's groups from the token
+  //  System.out.println(utkn.toString());
     List<String> files = fcli.listFiles(utkn);
     System.out.println("The files that user " + utkn.getSubject() + " can access are: ");
     for (String f : files) {
@@ -522,9 +523,6 @@ public class ClientDriver {
 
   private static UserToken bounceToken() {
     // Bounce the server connections and re-login
-    // int gexp = gcli.expseq;
-    // int fexp = fcli.expseq;
-    // System.out.println("this is the seq: "+gexp);
     gcli.expseq = 0;
     fcli.expseq = 0;
     gcli.disconnect();

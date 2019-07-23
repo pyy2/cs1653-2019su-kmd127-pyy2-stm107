@@ -17,17 +17,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	public UserToken getToken(String username, String fip, int fport) {
 		try {
+			//System.out.println("Client: GET");
 			Envelope message = null, response = null;
 			ArrayList<String> params = new ArrayList<String>();
 			params.add(username);
 			params.add(fip);
 			params.add(Integer.toString(fport));
 			byte[] enc_params = c.createEncryptedString(params);
-			// Tell the server to return a token.
-			message = new Envelope("GET");
-			// ecnrypt username with symmetric keys
-			// byte[] uname = c.encrypt("AES", username, sharedKey);
 
+			//message = new Envelope("GET");
+			message = new Envelope(new String(c.encrypt("AES", "GET", sharedKey)));
 			message.addObject(enc_params); // Add user name string
 			message.addObject(++expseq);
 			output.writeObject(message);
@@ -36,14 +35,14 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			// Get the response from the server
 			response = (Envelope) input.readObject();
-
-			if (response.getMessage().equals("LOCKED")) {
+			System.out.println("Response received: " + response.getMessage());
+			if (response.getMessage().equals(c.encrypt("AES", "LOCKED", sharedKey))) {
 				System.out.println("The user is locked!");
 				System.out.println("Please contact your administrator to unlock.");
 				return null;
 			}
 			// Successful response
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				// If there is a token in the Envelope, return it
 				ArrayList<Object> temp = null;
 				temp = response.getObjContents();
@@ -90,8 +89,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	public String getKeys(String group, UserToken token) {
 		try {
+			System.out.println("GETGKEY");
 			Envelope message = null, response = null;
-			message = new Envelope("GETGKEY");
+			message = new Envelope(new String(c.encrypt("AES", "GETGKEY", sharedKey)));
 
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(group);
@@ -106,7 +106,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return the member list
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(1);
 				c.checkSequence(seq, expseq);
 				byte[] enc_keys = (byte[]) response.getObjContents().get(0);
@@ -124,8 +124,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	public boolean lockUser(String username) {
 		try {
+			System.out.println("LOCK");
 			Envelope message = null, response = null;
-			message = new Envelope("LOCK");
+			message = new Envelope(new String(c.encrypt("AES", "LOCK", sharedKey)));
 			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			message.addObject(++expseq);
@@ -136,7 +137,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				return true;
 			}
 
@@ -148,8 +149,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	public boolean unlockUser(String username) {
 		try {
+			System.out.println("UNLOCK");
 			Envelope message = null, response = null;
-			message = new Envelope("UNLOCK");
+			message = new Envelope(new String(c.encrypt("AES", "UNLOCK", sharedKey)));
 			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			message.addObject(++expseq);
@@ -159,7 +161,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				return true;
 			}
 			return false;
@@ -174,8 +176,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	public boolean checkPassword(String username, String password) {
 		try {
+			System.out.println("CPWD");
 			Envelope message = null, response = null;
-			message = new Envelope("CPWD");
+			message = new Envelope(new String(c.encrypt("AES", "CPWD", sharedKey)));
 			// concat username and Password
 			String upwd_str = username + ";" + password;
 			// encrypt username and password with symmetric key
@@ -189,7 +192,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -205,8 +208,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	public boolean firstLogin(String username) {
 		try {
+			System.out.println("FLOGIN");
 			Envelope message = null, response = null;
-			message = new Envelope("FLOGIN");
+			message = new Envelope(new String(c.encrypt("AES", "FLOGIN", sharedKey)));
 			byte[] uname = c.encrypt("AES", username, sharedKey);
 			message.addObject(uname); // Add user name string
 			message.addObject(++expseq);
@@ -218,8 +222,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
-				System.out.println("CHECKING FLOGIN IN THE CLIENT");
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -234,9 +237,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 	public boolean resetPassword(String username, String password) {
 		try {
+			System.out.println("RPASS");
 			Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 			Envelope message = null, response = null;
-			message = new Envelope("RPASS");
+			message = new Envelope(new String(c.encrypt("AES", "RPASS", sharedKey)));
 			String upwd_str = username + ";" + password;
 			// encrypt username and password with symmetric key
 			byte[] upwd = c.encrypt("AES", upwd_str, sharedKey);
@@ -260,7 +264,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -278,7 +282,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			// Tell the server to create a user
-			message = new Envelope("CUSER");
+			message = new Envelope(new String(c.encrypt("AES", "CUSER", sharedKey)));
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(username);
 			reqParams.add(password);
@@ -297,7 +301,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -316,7 +320,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope message = null, response = null;
 
 			// Tell the server to delete a user
-			message = new Envelope("DUSER");
+			message = new Envelope(new String(c.encrypt("AES", "DUSER", sharedKey)));
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(username);
 			reqParams.add(token.toString());
@@ -334,7 +338,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -352,7 +356,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			// Tell the server to create a group
-			message = new Envelope("CGROUP");
+			message = new Envelope(new String(c.encrypt("AES", "CGROUP", sharedKey)));
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(groupname);
 			reqParams.add(token.toString());
@@ -370,7 +374,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -388,7 +392,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			// Tell the server to delete a group
-			message = new Envelope("DGROUP");
+			message = new Envelope(new String(c.encrypt("AES", "DGROUP", sharedKey)));
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(groupname);
 			reqParams.add(token.toString());
@@ -405,7 +409,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			response = (Envelope) input.readObject();
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -424,7 +428,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			// Tell the server to return the member list
-			message = new Envelope("LMEMBERS");
+			message = new Envelope(new String(c.encrypt("AES", "LMEMBERS", sharedKey)));
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(group);
 			reqParams.add(token.toString());
@@ -442,7 +446,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = (Envelope) input.readObject();
 
 			// If server indicates success, return the member list
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(1);
 				c.checkSequence(seq, expseq);
 				byte[] enc_memList = (byte[]) response.getObjContents().get(0);
@@ -468,7 +472,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			// Tell the server to add a user to the group
-			message = new Envelope("AUSERTOGROUP");
+			message = new Envelope(new String(c.encrypt("AES", "AUSERTOGROUP", sharedKey)));
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(username);
 			reqParams.add(groupname);
@@ -486,7 +490,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			response = (Envelope) input.readObject();
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -504,7 +508,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		try {
 			Envelope message = null, response = null;
 			// Tell the server to remove a user from the group
-			message = new Envelope("RUSERFROMGROUP");
+			message = new Envelope(new String(c.encrypt("AES", "RUSERFROMGROUP", sharedKey)));
 			ArrayList<String> reqParams = new ArrayList<>();
 			reqParams.add(username);
 			reqParams.add(groupname);
@@ -522,7 +526,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			response = (Envelope) input.readObject();
 			// If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
+			if (response.getMessage().equals(new String(c.encrypt("AES", "OK", sharedKey)))) {
 				int seq = (Integer) response.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 				return true;
@@ -537,14 +541,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 	private UserToken makeTokenFromString(String tokenString) {
-		// String[] tokenComps = tokenString.split(";");
-		// String issuer = tokenComps[0];
-		// String subject = tokenComps[1];
-		// List<String> groups = new ArrayList<>();
-		// for (int i = 2; i < tokenComps.length; i++) {
-		// groups.add(tokenComps[i]);
-		// }
-		// return new Token(issuer, subject, groups,);
 		return c.makeTokenFromString(tokenString);
 	}
 }
