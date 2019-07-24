@@ -155,13 +155,8 @@ public class FileClient extends Client implements FileClientInterface {
 
 			Envelope message = new Envelope(new String(c.encrypt("AES", "LFILES", sharedKey))); // Success
 
-			// TODO: Remove public key
-			// prepare request
-			String pubKey = c.toString(groupK);
-			String concatted = pubKey + token;
-
 			// Encrypt with shared key
-			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+			byte[] encryptedToken = c.encrypt("AES", token.toString(), sharedKey);
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
@@ -204,10 +199,12 @@ public class FileClient extends Client implements FileClientInterface {
 			// TODO: Don't send group key. It is assumed it is already here.
 			// prepare metadata request
 			String pubKey = c.toString(groupK);
-			String concatted = pubKey + token + "||" + destFile + "||" + group;
+			String concatted =  token + "||" + destFile + "||" + group;
 			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+			byte[] reqhmac = c.createHmac(encryptedToken);
 
 			message.addObject(encryptedToken); // Add encrypted token/key
+			message.addObject(reqhmac);
 			message.addObject(fsMac); // add signed data
 			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;

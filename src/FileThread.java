@@ -163,24 +163,36 @@ public class FileThread extends Thread {
 							// base case
 							response = new Envelope(encFAILBADHMAC);
 							// get user token||key and signed hmac by gs
-							byte[] tokKey = (byte[]) e.getObjContents().get(0);
-							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
+							byte[] tok = (byte[]) e.getObjContents().get(0);
+							byte[] fsMac = (byte[]) e.getObjContents().get(1);
 
 							// decrypt to get token/key
-							String decrypted = fc.decrypt("AES", tokKey, _aesKey);
-							String[] st = decrypted.split("\\|\\|");
-							String groupK = st[0];
-							String token = st[1];
+							String decrypted = fc.decrypt("AES", tok, _aesKey);
+							//String[] st = decrypted.split("\\|\\|");
+						//	String groupK = st[0];
+							String token = decrypted;
 
 							fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
 
-							// create hmac using client's publickey
-							byte[] out = fc.createClientHmac(decrypted.getBytes(), fc.getSysK());
+							// make unsigned fsmac for Checking
+							byte[] btoken = token.getBytes();
+							Mac mac = Mac.getInstance("HmacSHA256", "BC");
+							mac.init(clientK);
+							mac.update(btoken);
+							byte[] out = mac.doFinal();
+							//System.out.println("This is the thing from fserver: " + new String(out));
+							if (!fc.verifyfsMac(out, fsMac, gsKey)) {
+								System.out.println("Signature not consistent. Token tampering may have occurred.");
+							}
 
-							// verify groupkey signature
-							if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-								response = new Envelope(encFAILBADHMAC);
-							} else {
+							// // create hmac using client's publickey
+							// byte[] out = fc.createClientHmac(decrypted.getBytes(), fc.getSysK());
+							//
+							// // verify groupkey signature
+							// if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+							// 	response = new Envelope(encFAILBADHMAC);
+						//	}
+							else {
 								UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
 								List<String> groups = yourToken.getGroups(); // get associated groups
@@ -206,7 +218,7 @@ public class FileThread extends Thread {
 					// ####################### UPLOAD FILES #######################//
 
 				} else if (e.getMessage().equals(encUPLOADF)) {
-					if (e.getObjContents().size() < 2) {
+					if (e.getObjContents().size() < 4) {
 						response = new Envelope(encFAILBADCONTENTS);
 					} else {
 						if (e.getObjContents().get(0) == null) {
@@ -214,84 +226,102 @@ public class FileThread extends Thread {
 						} else if (e.getObjContents().get(1) == null) {
 							response = new Envelope(encFAILBADGROUP);
 						} else {
-							byte[] seq = (byte[]) e.getObjContents().get(2);
+							byte[] seq = (byte[]) e.getObjContents().get(3);
 							fc.checkSequence(seq, expseq);
+							byte[] reqhmac = (byte[]) e.getObjContents().get(1);
 							byte[] req = (byte[]) e.getObjContents().get(0);
-							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
+							byte[] fsMac = (byte[]) e.getObjContents().get(2);
 
 							// decrypt to get request (gsPK, token, destFile, group)
 							String decrypted = fc.decrypt("AES", req, _aesKey);
 							String[] st = decrypted.split("\\|\\|");
 
 							// if length doesn't match
-							if (st.length != 4) {
+							if (st.length != 3) {
+								System.out.println(st.length);
 								response = new Envelope(encFAILBADFIELDS);
 							} else {
-								String groupK = st[0];
-								String token = st[1];
-								String remotePath = st[2];
-								String group = st[3];
+								//String groupK = st[0];
+								String token = st[0];
+								String remotePath = st[1];
+								String group = st[2];
+
 
 								fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
+
+								// Verify the HMAC of the request data
+								if (!fc.verifyHmac(req, reqhmac)) {
+									System.out.println("HMAC not consistent.");
+								}
+
+								// make unsigned fsmac for Checking
+								byte[] btoken = token.getBytes();
+								Mac mac = Mac.getInstance("HmacSHA256", "BC");
+								mac.init(clientK);
+								mac.update(btoken);
+								byte[] out = mac.doFinal();
+								//System.out.println("This is the thing from fserver: " + new String(out));
+								if (!fc.verifyfsMac(out, fsMac, gsKey)) {
+									System.out.println("Signature not consistent. Token tampering may have occurred.");
+								}
 								// create hmac from clientk
-								byte[] concatted = (groupK + "||" + token).getBytes();
-								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
+								// byte[] concatted = (groupK + "||" + token).getBytes();
+								// byte[] out = fc.createClientHmac(concatted, fc.getSysK());
 								int shared_n = 0;
-								// verify signature is from gs
-								if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-									response = new Envelope(encFAILBADGSIG);
+								// // verify signature is from gs
+								// if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+								// 	System.out.println("Signature verification failed");
+								// }
+								UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
+
+								if (FileServer.fileList.checkFile(remotePath)) {
+									System.out.printf("Error: file already exists at %s\n", remotePath);
+									response = new Envelope(encFAILFILEEXISTS); // Success
+								} else if (!yourToken.getGroups().contains(group)) {
+									System.out.printf("Error: user missing valid token for group %s\n", group);
+									response = new Envelope(encFAILUNAUTHORIZED); // Success
 								} else {
-									UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
+									File file = new File("shared_files/" + remotePath.replace('/', '_'));
+									file.createNewFile();
+									FileOutputStream fos = new FileOutputStream(file);
+									System.out.printf("Successfully created file %s\n",
+											remotePath.replace('/', '_'));
 
-									if (FileServer.fileList.checkFile(remotePath)) {
-										System.out.printf("Error: file already exists at %s\n", remotePath);
-										response = new Envelope(encFAILFILEEXISTS); // Success
-									} else if (!yourToken.getGroups().contains(group)) {
-										System.out.printf("Error: user missing valid token for group %s\n", group);
-										response = new Envelope(encFAILUNAUTHORIZED); // Success
-									} else {
-										File file = new File("shared_files/" + remotePath.replace('/', '_'));
-										file.createNewFile();
-										FileOutputStream fos = new FileOutputStream(file);
-										System.out.printf("Successfully created file %s\n",
-												remotePath.replace('/', '_'));
+									response = new Envelope(encREADY); // Success
+									response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
+									++expseq;
+									output.writeObject(response);
 
+									e = (Envelope) input.readObject();
+									while (e.getMessage().compareTo(encCHUNK) == 0) {
+										// Store the file that has been ENCRYPTED WITH THE GROUP KEY
+										seq = (byte[]) e.getObjContents().get(2);
+										fc.checkSequence(seq, expseq);
+										byte[] b = (byte[]) e.getObjContents().get(1);
+										shared_n = (Integer) e.getObjContents().get(0);
+
+										// write data to the file.
+										fos.write(b);
 										response = new Envelope(encREADY); // Success
 										response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
 										++expseq;
 										output.writeObject(response);
-
 										e = (Envelope) input.readObject();
-										while (e.getMessage().compareTo(encCHUNK) == 0) {
-											// Store the file that has been ENCRYPTED WITH THE GROUP KEY
-											seq = (byte[]) e.getObjContents().get(2);
-											fc.checkSequence(seq, expseq);
-											byte[] b = (byte[]) e.getObjContents().get(1);
-											shared_n = (Integer) e.getObjContents().get(0);
-
-											// write data to the file.
-											fos.write(b);
-											response = new Envelope(encREADY); // Success
-											response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
-											++expseq;
-											output.writeObject(response);
-											e = (Envelope) input.readObject();
-										}
-
-										// add shared_n as ShareFile metadata
-										if (e.getMessage().compareTo(encEOF) == 0) {
-											seq = (byte[]) e.getObjContents().get(0);
-											fc.checkSequence(seq, expseq);
-											System.out.printf("Transfer successful file %s\n", remotePath);
-											FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath,
-													shared_n);
-											response = new Envelope(encOK); // Success
-										} else {
-											System.out.printf("Error reading file %s from client\n", remotePath);
-											response = new Envelope(encERRORTRANSFER); // Success
-										}
-										fos.close();
 									}
+
+									// add shared_n as ShareFile metadata
+									if (e.getMessage().compareTo(encEOF) == 0) {
+										seq = (byte[]) e.getObjContents().get(0);
+										fc.checkSequence(seq, expseq);
+										System.out.printf("Transfer successful file %s\n", remotePath);
+										FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath,
+												shared_n);
+										response = new Envelope(encOK); // Success
+									} else {
+										System.out.printf("Error reading file %s from client\n", remotePath);
+										response = new Envelope(encERRORTRANSFER); // Success
+									}
+									fos.close();
 								}
 							}
 						}
@@ -427,6 +457,7 @@ public class FileThread extends Thread {
 					}
 					output.writeObject(response);
 
+
 					// ####################### DELETE FILES #######################//
 
 				} else if (e.getMessage().compareTo(encDELETEF) == 0) {
@@ -457,6 +488,7 @@ public class FileThread extends Thread {
 					mac.init(clientK);
 					mac.update(btoken);
 					byte[] out = mac.doFinal();
+					//System.out.println("This is the thing from fserver: " + new String(out));
 					if (!fc.verifyfsMac(out, fsMac, gsKey)) {
 						System.out.println("Signature not consistent. Token tampering may have occurred.");
 					}
