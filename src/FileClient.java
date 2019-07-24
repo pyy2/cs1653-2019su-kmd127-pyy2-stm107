@@ -175,6 +175,7 @@ public class FileClient extends Client implements FileClientInterface {
 				byte[] flist = (byte[]) e.getObjContents().get(0);
 
 				if (flist != null) {
+					System.out.println("Are we here??");
 					String[] filenames = c.decrypt("AES", flist, sharedKey).split("\\|\\|");
 					return Arrays.asList(filenames);
 				}

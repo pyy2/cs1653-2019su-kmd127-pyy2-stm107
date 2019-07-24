@@ -36,6 +36,8 @@ public class FileThread extends Thread {
 		veriK = null;
 	}
 
+
+
 	public void run() {
 		boolean proceed = true;
 		try {
@@ -383,7 +385,6 @@ public class FileThread extends Thread {
 								//System.out.println("This is the thing from fserver: " + new String(out));
 								if (!fc.verifyfsMac(out, fsMac, gsKey)) {
 									System.out.println("Signature not consistent. Token tampering may have occurred.");
-									response = new Envelope(encFAILBADGSIG);
 								}
 								else {
 									UserToken t = (UserToken) fc.makeTokenFromString(token);

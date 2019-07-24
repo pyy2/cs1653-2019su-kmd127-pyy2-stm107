@@ -57,6 +57,8 @@ public class FileServer extends Server {
 			System.out.println("GS Public Key:\n" + fc.RSAtoString(gsKey));
 		}
 
+		gsKey = fc.getPublic();
+
 		// if keys files don't exist, create new ones else set the keys
 		if (!f1.exists() && !f2.exists()) {
 			System.out.println("FS key NOT found!\n Generating FS Keys");

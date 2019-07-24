@@ -405,9 +405,12 @@ public class ClientDriver {
   //  System.out.println(utkn.toString());
     List<String> files = fcli.listFiles(utkn);
     System.out.println("The files that user " + utkn.getSubject() + " can access are: ");
-    for (String f : files) {
-      System.out.println(f);
+    if(files != null){
+      for (String f : files) {
+        System.out.println(f);
+      }
     }
+
     System.out.println();
   }
 
