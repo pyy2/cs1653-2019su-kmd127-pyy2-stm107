@@ -223,21 +223,23 @@ public class GroupThread extends Thread {
 
 							// TODO: Don't send group public key.
 							// Concat token with pubkey and encrypt with shared key.
-							String concatted = pubKey + "||" + token;
-							byte[] bconcatted = concatted.getBytes();
+							// String concatted = pubKey + "||" + token;
+							// byte[] bconcatted = concatted.getBytes();
 
-							// Encrypt with shared key
-							byte[] encryptedToken = gc.encrypt("AES", concatted, _aesKey);
+							//System.out.println("Token: " + token);
+							byte[] btoken = token.getBytes();
+							byte[] encToken = gc.encrypt("AES", token, _aesKey);
 
 							// TODO: Don't send public key
-							// Then HMAC(pubkey || token, ClientKey) and sign
+							// Then HMAC(token, ClientKey) and sign with private key
 							Mac mac = Mac.getInstance("HmacSHA256", "BC");
 							mac.init(clientK);
-							mac.update(bconcatted);
+							mac.update(btoken);
 							byte[] out = mac.doFinal();
+							//System.out.println("This is the thing from gserver: " + new String(out));
 							byte[] signed_data = gc.signChecksum(out);
 
-							response.addObject(encryptedToken);
+							response.addObject(encToken);
 							response.addObject(out);
 							response.addObject(signed_data);
 						}
@@ -252,7 +254,6 @@ public class GroupThread extends Thread {
 
 				} else if (message.getMessage().equals(encCUSER)) // Client wants to create a user
 				{
-					//System.out.println("CUSER");
 					if (message.getObjContents().size() < 4) {
 						response = new Envelope(encFAIL);
 					} else {

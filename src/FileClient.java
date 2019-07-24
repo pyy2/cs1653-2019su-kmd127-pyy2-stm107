@@ -20,14 +20,14 @@ public class FileClient extends Client implements FileClientInterface {
 		}
 		Envelope env = new Envelope(new String(c.encrypt("AES", "DELETEF", sharedKey))); // Success
 
-		// TODO: Don't send the group key
-		String pubKey = c.toString(groupK);
-		String concatted = remotePath + "||" + pubKey + token;
+		String concatted = remotePath + "||" + token;
 
 		byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+		byte[] reqhmac = c.createHmac(encryptedToken);
 
 		env.addObject(encryptedToken); // Add encrypted token/key
-		env.addObject(fsMac); // add signed data
+		env.addObject(reqhmac); // add signed data
+		env.addObject(fsMac); // for token verification
 		env.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 		++expseq;
 
@@ -67,12 +67,14 @@ public class FileClient extends Client implements FileClientInterface {
 
 				// prepare metadata request
 				// TODO: Don't send group public key.
-				String pubKey = c.toString(groupK);
-				String concatted = pubKey + token + "||" + sourceFile;
+				//String pubKey = c.toString(groupK);
+				String concatted = token + "||" + sourceFile;
 				byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+				byte[] reqhmac = c.createHmac(encryptedToken);
 
 				env.addObject(encryptedToken); // Add encrypted token/key
 				env.addObject(fsMac); // add signed data
+				env.addObject(reqhmac);
 				env.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 				++expseq;
 				output.writeObject(env);
@@ -117,13 +119,13 @@ public class FileClient extends Client implements FileClientInterface {
 
 					if (env.getMessage().compareTo(new String(c.encrypt("AES", "EOF", sharedKey))) == 0) {
 						seq = (byte[]) env.getObjContents().get(0);
-						expseq++;
-						c.checkSequence(seq, expseq);
+						c.checkSequence(seq, ++expseq);
 						fos.close();
 						System.out.printf("\nTransfer successful file %s\n", sourceFile);
 						env = new Envelope(new String(c.encrypt("AES", "OK", sharedKey))); // Success
 						env.addObject(c.encrypt("AES", Integer.toString(expseq), sharedKey));
-						++expseq;
+						System.out.println("The seq in the client is: " + expseq);
+						//++expseq;
 						output.writeObject(env);
 					} else {
 						System.out.printf("Error reading file %(s (%s)\n", sourceFile, env.getMessage());
@@ -155,13 +157,8 @@ public class FileClient extends Client implements FileClientInterface {
 
 			Envelope message = new Envelope(new String(c.encrypt("AES", "LFILES", sharedKey))); // Success
 
-			// TODO: Remove public key
-			// prepare request
-			String pubKey = c.toString(groupK);
-			String concatted = pubKey + token;
-
 			// Encrypt with shared key
-			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+			byte[] encryptedToken = c.encrypt("AES", token.toString(), sharedKey);
 
 			message.addObject(encryptedToken); // Add encrypted token/key
 			message.addObject(fsMac); // add signed data
@@ -204,10 +201,12 @@ public class FileClient extends Client implements FileClientInterface {
 			// TODO: Don't send group key. It is assumed it is already here.
 			// prepare metadata request
 			String pubKey = c.toString(groupK);
-			String concatted = pubKey + token + "||" + destFile + "||" + group;
+			String concatted =  token + "||" + destFile + "||" + group;
 			byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+			byte[] reqhmac = c.createHmac(encryptedToken);
 
 			message.addObject(encryptedToken); // Add encrypted token/key
+			message.addObject(reqhmac);
 			message.addObject(fsMac); // add signed data
 			message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 			++expseq;

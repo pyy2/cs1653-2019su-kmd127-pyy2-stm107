@@ -18,6 +18,7 @@ class Crypto {
     PublicKey sysK; // public key of whoever it's talking to
     PublicKey pub;
     PrivateKey priv;
+    PublicKey gKey;
     SecretKey aes;
     SecureRandom random;
     int AES_LENGTH = 128;
@@ -69,6 +70,7 @@ class Crypto {
 
         String seq = new String(seqByte);
         String expStr = new String(aesGroupEncrypt(Integer.toString(expseq), aes));
+        System.out.println(expseq);
         if (!seq.equals(expStr)) {
             System.out.println("SEQUENCE NUMBER MISMATCH!!");
             System.out.println("REORDER ATTACK DETECTED!!");
@@ -157,6 +159,7 @@ class Crypto {
             e4.printStackTrace();
         }
     }
+
 
     // set host public key
     void setPublicKey(String name) {
@@ -386,6 +389,24 @@ class Crypto {
             verify = sig.verify(signChecksum);
         } catch (Exception e) {
             System.out.println("EXCEPTION VERIFYING SIGNATURE: " + e);
+        }
+        if (verify) {
+            System.out.printf("Signature verified!\n");
+        } else {
+            System.out.println("Signarture verification issue.\n");
+        }
+        return verify;
+    }
+
+    boolean verifyfsMac(byte[] checksum, byte[] signChecksum, PublicKey gs) {
+        boolean verify = false;
+        try {
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            sig.initVerify(gs);
+            sig.update(checksum);
+            verify = sig.verify(signChecksum);
+        } catch (Exception e) {
+            System.out.println("EXCEPTION VERIFYING FSMAC SIGNATURE: " + e);
         }
         if (verify) {
             System.out.printf("Signature verified!\n");
