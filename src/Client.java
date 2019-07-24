@@ -119,8 +119,8 @@ public abstract class Client {
 				if (c.isEqual(groupK.getEncoded(), gsKeyCheck.getEncoded())) {
 					if(!bounce) System.out.println("GS Public Key -> CL: Verified");
 				} else {
-					if(!bounce) System.out.println("INVALID GS KEY RECEIVED!");
-					System.exit(3);
+					if(!bounce) System.out.println("Check GS Key Validity");
+					//System.exit(3);
 				}
 
 				// generate new pseudo-random number and send to GS

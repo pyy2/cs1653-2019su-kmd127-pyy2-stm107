@@ -184,7 +184,7 @@ public class FileThread extends Thread {
 							byte[] out = mac.doFinal();
 							//System.out.println("This is the thing from fserver: " + new String(out));
 							if (!fc.verifyfsMac(out, fsMac, gsKey)) {
-								System.out.println("Signature not consistent. Token tampering may have occurred.");
+								System.out.println("Signature not consistent.");
 							}
 								UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
@@ -376,7 +376,7 @@ public class FileThread extends Thread {
 								if (!fc.verifyfsMac(out, fsMac, gsKey)) {
 									System.out.println("Signature not consistent. Token tampering may have occurred.");
 								}
-								else {
+
 									UserToken t = (UserToken) fc.makeTokenFromString(token);
 									ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
 
@@ -458,7 +458,7 @@ public class FileThread extends Thread {
 											// e1.printStackTrace(System.err);
 										}
 									}
-								}
+
 							}
 						}
 					}
