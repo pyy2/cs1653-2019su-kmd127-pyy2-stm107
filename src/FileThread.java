@@ -390,7 +390,7 @@ public class FileThread extends Thread {
 
 												if (e.getMessage().compareTo(encDOWNLOADF) == 0) {
 													e = new Envelope(encEOF);
-													e.addObject(expseq);
+													e.addObject(fc.aesGroupEncrypt(Integer.toString(expseq), _aesKey));
 													output.writeObject(e);
 
 													e = (Envelope) input.readObject();
