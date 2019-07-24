@@ -186,15 +186,6 @@ public class FileThread extends Thread {
 							if (!fc.verifyfsMac(out, fsMac, gsKey)) {
 								System.out.println("Signature not consistent. Token tampering may have occurred.");
 							}
-
-							// // create hmac using client's publickey
-							// byte[] out = fc.createClientHmac(decrypted.getBytes(), fc.getSysK());
-							//
-							// // verify groupkey signature
-							// if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-							// 	response = new Envelope(encFAILBADHMAC);
-						//	}
-							else {
 								UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
 								List<String> groups = yourToken.getGroups(); // get associated groups
@@ -210,7 +201,6 @@ public class FileThread extends Thread {
 								// return encrypted arraylist
 								response = new Envelope(encOK);
 								response.addObject(fc.createEncryptedString(fileList));
-							}
 						}
 					}
 					response.addObject(fc.aesGroupEncrypt(Integer.toString(++expseq), _aesKey));
