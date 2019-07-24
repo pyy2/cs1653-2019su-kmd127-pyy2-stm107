@@ -70,6 +70,7 @@ class Crypto {
 
         String seq = new String(seqByte);
         String expStr = new String(aesGroupEncrypt(Integer.toString(expseq), aes));
+        System.out.println(expseq);
         if (!seq.equals(expStr)) {
             System.out.println("SEQUENCE NUMBER MISMATCH!!");
             System.out.println("REORDER ATTACK DETECTED!!");

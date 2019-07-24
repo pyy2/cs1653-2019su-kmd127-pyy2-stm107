@@ -334,7 +334,7 @@ public class FileThread extends Thread {
 
 				} else if (e.getMessage().compareTo(encDOWNLOADF) == 0) {
 
-					if (e.getObjContents().size() < 2) {
+					if (e.getObjContents().size() < 4) {
 						response = new Envelope(encFAILBADCONTENTS);
 					} else {
 						if (e.getObjContents().get(0) == null) {
@@ -343,32 +343,49 @@ public class FileThread extends Thread {
 						if (e.getObjContents().get(1) == null) {
 							response = new Envelope(encFAILBADHMAC);
 						} else {
-							byte[] seq = (byte[]) e.getObjContents().get(2);
+							byte[] seq = (byte[]) e.getObjContents().get(3);
 							fc.checkSequence(seq, expseq);
 							byte[] req = (byte[]) e.getObjContents().get(0);
-							byte[] sigHmac = (byte[]) e.getObjContents().get(1);
+							byte[] fsMac = (byte[]) e.getObjContents().get(1);
+							byte[] sigHmac = (byte[]) e.getObjContents().get(2);
 
 							// decrypt to get request (gsPK, token, destFile, group)
 							String decrypted = fc.decrypt("AES", req, _aesKey);
 							String[] st = decrypted.split("\\|\\|");
 
-							if (st.length != 3) {
+							if (st.length != 2) {
 								response = new Envelope(encFAILBADFIELDS);
 							} else {
-								String groupK = st[0];
-								String token = st[1];
-								String remotePath = st[2];
+								//String groupK = st[0];
+								String token = st[0];
+								String remotePath = st[1];
 
 								fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
+
+								// Verify the HMAC of the request data
+								if (!fc.verifyHmac(req, sigHmac)) {
+									System.out.println("HMAC not consistent.");
+								}
 								// create hmac from clientk
-								byte[] concatted = (groupK + "||" + token).getBytes();
-								byte[] out = fc.createClientHmac(concatted, fc.getSysK());
+								// byte[] concatted = (groupK + "||" + token).getBytes();
+								// byte[] out = fc.createClientHmac(concatted, fc.getSysK());
+								//
+								// // verify signature is from gs
+								// if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+								// 	response = new Envelope(encFAILBADGSIG);
 
-								// verify signature is from gs
-								if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+								// make unsigned fsmac for Checking
+								byte[] btoken = token.getBytes();
+								Mac mac = Mac.getInstance("HmacSHA256", "BC");
+								mac.init(clientK);
+								mac.update(btoken);
+								byte[] out = mac.doFinal();
+								//System.out.println("This is the thing from fserver: " + new String(out));
+								if (!fc.verifyfsMac(out, fsMac, gsKey)) {
+									System.out.println("Signature not consistent. Token tampering may have occurred.");
 									response = new Envelope(encFAILBADGSIG);
-								} else {
-
+								}
+								else {
 									UserToken t = (UserToken) fc.makeTokenFromString(token);
 									ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
 
@@ -422,15 +439,14 @@ public class FileThread extends Thread {
 
 												if (e.getMessage().compareTo(encDOWNLOADF) == 0) {
 													e = new Envelope(encEOF);
-													e.addObject(expseq);
+													e.addObject(fc.aesGroupEncrypt(Integer.toString(expseq), _aesKey));
+													//++expseq;
 													output.writeObject(e);
 
 													e = (Envelope) input.readObject();
 
 													if (e.getMessage().compareTo(encOK) == 0) {
 														seq = (byte[]) e.getObjContents().get(0);
-
-														fc.checkSequence(seq, expseq);
 														System.out.printf("File data download successful\n");
 													} else {
 

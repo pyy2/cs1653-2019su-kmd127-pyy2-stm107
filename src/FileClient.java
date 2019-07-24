@@ -67,12 +67,14 @@ public class FileClient extends Client implements FileClientInterface {
 
 				// prepare metadata request
 				// TODO: Don't send group public key.
-				String pubKey = c.toString(groupK);
-				String concatted = pubKey + token + "||" + sourceFile;
+				//String pubKey = c.toString(groupK);
+				String concatted = token + "||" + sourceFile;
 				byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+				byte[] reqhmac = c.createHmac(encryptedToken);
 
 				env.addObject(encryptedToken); // Add encrypted token/key
 				env.addObject(fsMac); // add signed data
+				env.addObject(reqhmac);
 				env.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 				++expseq;
 				output.writeObject(env);
@@ -117,13 +119,13 @@ public class FileClient extends Client implements FileClientInterface {
 
 					if (env.getMessage().compareTo(new String(c.encrypt("AES", "EOF", sharedKey))) == 0) {
 						seq = (byte[]) env.getObjContents().get(0);
-						expseq++;
-						c.checkSequence(seq, expseq);
+						c.checkSequence(seq, ++expseq);
 						fos.close();
 						System.out.printf("\nTransfer successful file %s\n", sourceFile);
 						env = new Envelope(new String(c.encrypt("AES", "OK", sharedKey))); // Success
 						env.addObject(c.encrypt("AES", Integer.toString(expseq), sharedKey));
-						++expseq;
+						System.out.println("The seq in the client is: " + expseq);
+						//++expseq;
 						output.writeObject(env);
 					} else {
 						System.out.printf("Error reading file %(s (%s)\n", sourceFile, env.getMessage());
