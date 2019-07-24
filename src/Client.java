@@ -32,8 +32,6 @@ public abstract class Client {
 	static PublicKey groupK = null;
 	static byte[] fsMac;
 	Scanner kb;
-	// expseq_g = 0;
-	// expseq_f = 0;
 
 	public boolean connect(final String server, final int port, final String type, final String clientNum, boolean bounce) {
 
@@ -63,6 +61,8 @@ public abstract class Client {
 			groupK = c.getPublic();
 			System.out.println("GS Public Key Set: \n" + c.RSAtoString(groupK));
 		}
+
+		c.gKey = groupK;
 
 		// set client key file paths
 		final String path = "./keys/" + clientConfig + "public.key";

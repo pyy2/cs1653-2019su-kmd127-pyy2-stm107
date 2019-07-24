@@ -18,6 +18,7 @@ public class FileThread extends Thread {
 	PrivateKey priv; // fs private key
 	SecretKey _aesKey; // shared symmetric key b/w client-fs
 	PublicKey clientK; // client publickey
+	PublicKey gsKey;
 	Crypto fc; // filecrypto class
 	SecretKey veriK;
 
@@ -49,6 +50,7 @@ public class FileThread extends Thread {
 			// sets fileserver keys
 			pub = FileServer.pub;
 			priv = FileServer.priv;
+			gsKey = FileServer.gsKey;
 
 			//System.out.println(fc.RSAtoString(pub));
 
@@ -429,27 +431,37 @@ public class FileThread extends Thread {
 
 				} else if (e.getMessage().compareTo(encDELETEF) == 0) {
 
-					byte[] tokKey = (byte[]) e.getObjContents().get(0);
+					byte[] tok = (byte[]) e.getObjContents().get(0);
 					byte[] sigHmac = (byte[]) e.getObjContents().get(1);
-					byte[] seq = (byte[]) e.getObjContents().get(2);
+					byte[] fsMac = (byte []) e.getObjContents().get(2);
+					byte[] seq = (byte[]) e.getObjContents().get(3);
 					fc.checkSequence(seq, expseq);
 
 					// decrypt to get token/key
-					String decrypted = fc.decrypt("AES", tokKey, _aesKey);
+					String decrypted = fc.decrypt("AES", tok, _aesKey);
 					String[] st = decrypted.split("\\|\\|");
 					String remotePath = st[0];
-					String groupK = st[1];
-					String token = st[2];
+					String token = st[1];
+				  //System.out.println("This is the token: " + token);
 
 					fc.verifyFServer(fc.makeTokenFromString(token), ip, port);
-					// verify signed HMAC created from client's public key of token + key
-					// signed by group client
-					byte[] concatted = (remotePath + "||" + groupK + "||" + token).getBytes();
-					byte[] out = fc.createClientHmac(concatted, fc.getSysK());
-					if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
+
+					// Verify the HMAC of the request data
+					if (!fc.verifyHmac(tok, sigHmac)) {
 						System.out.println("HMAC not consistent.");
 					}
+
+					// make unsigned fsmac for Checking
+					byte[] btoken = token.getBytes();
+					Mac mac = Mac.getInstance("HmacSHA256", "BC");
+					mac.init(clientK);
+					mac.update(btoken);
+					byte[] out = mac.doFinal();
+					if (!fc.verifyfsMac(out, fsMac, gsKey)) {
+						System.out.println("Signature not consistent. Token tampering may have occurred.");
+					}
 					UserToken t = (UserToken) fc.makeTokenFromString(token);
+
 
 					ShareFile sf = FileServer.fileList.getFile("/" + remotePath);
 					if (sf == null) {

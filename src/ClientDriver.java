@@ -212,7 +212,6 @@ public class ClientDriver {
     login();
   }
 
-  // TODO: Implement account locking.
   private static void unlockUser() {
     checkExpiration();
     System.out.println("\nLog in\n");

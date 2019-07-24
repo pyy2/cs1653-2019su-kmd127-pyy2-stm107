@@ -494,7 +494,6 @@
 // return;
 // }
 // ta.setText("\nLoggin in...\n");
-// // TODO: Add password to this when we introduce password hashing.
 // if (uname.equals("") || uname.equals(" ")) {
 // ta.setText("\nYou must enter a username.\n\nPlease try again.\n");
 // return;

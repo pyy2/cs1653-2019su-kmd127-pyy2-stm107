@@ -58,16 +58,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 					byte[] out = (byte[]) response.getObjContents().get(1);
 
 					// when requesting a "GET" request, create an HMAC instance in case client
-					// wants to send to FS [HMAC(Kc, Kg || Token)]Kg-1
+					// wants to send to FS [HMAC(Kc, Token)]Kg-1
 					fsMac = (byte[]) response.getObjContents().get(2);
 
 					// get the token concated with the public key
-					String tokenAndKey = c.decrypt("AES", encryptedToken, sharedKey);
+					String token = c.decrypt("AES", encryptedToken, sharedKey);
 
-					// Remove the public group key to get the token info
-					String gPubKey = Base64.getEncoder().encodeToString(groupK.getEncoded());
-					String tokenString = tokenAndKey.replace(gPubKey, "");
-					UserToken sessionToken = makeTokenFromString(tokenString);
+					UserToken sessionToken = makeTokenFromString(token);
 
 					return sessionToken;
 

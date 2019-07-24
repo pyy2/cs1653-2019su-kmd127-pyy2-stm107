@@ -20,14 +20,14 @@ public class FileClient extends Client implements FileClientInterface {
 		}
 		Envelope env = new Envelope(new String(c.encrypt("AES", "DELETEF", sharedKey))); // Success
 
-		// TODO: Don't send the group key
-		String pubKey = c.toString(groupK);
-		String concatted = remotePath + "||" + pubKey + token;
+		String concatted = remotePath + "||" + token;
 
 		byte[] encryptedToken = c.encrypt("AES", concatted, sharedKey);
+		byte[] reqhmac = c.createHmac(encryptedToken);
 
 		env.addObject(encryptedToken); // Add encrypted token/key
-		env.addObject(fsMac); // add signed data
+		env.addObject(reqhmac); // add signed data
+		env.addObject(fsMac); // for token verification
 		env.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
 		++expseq;
 
