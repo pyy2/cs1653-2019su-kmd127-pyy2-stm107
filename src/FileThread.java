@@ -397,8 +397,6 @@ public class FileThread extends Thread {
 
 													if (e.getMessage().compareTo(encOK) == 0) {
 														seq = (byte[]) e.getObjContents().get(0);
-
-														fc.checkSequence(seq, expseq);
 														System.out.printf("File data download successful\n");
 													} else {
 
