@@ -14,9 +14,9 @@ import java.util.*;
 		list = new ArrayList<ShareFile>();
 	}
 
-	public synchronized void addFile(String owner, String group, String path, int n)
+	public synchronized void addFile(String owner, String group, String path, int n, byte[] hash)
 	{
-		ShareFile newFile = new ShareFile(owner, group, path, n);
+		ShareFile newFile = new ShareFile(owner, group, path, n, hash);
 		list.add(newFile);
 	}
 

@@ -8,12 +8,14 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 	private String path;
 	private String owner;
 	private int n;
+	private byte[] hash;
 
-	public ShareFile(String _owner, String _group, String _path, int _n) {
+	public ShareFile(String _owner, String _group, String _path, int _n, byte[] _hash) {
 		group = _group;
 		owner = _owner;
 		path = _path;
 		n = _n;
+		hash = _hash;
 	}
 
 	public String getPath()
@@ -32,6 +34,10 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 
 	public int getN(){
 		return n;
+	}
+
+	public byte[] getHash(){
+		return hash;
 	}
 
 	public int compareTo(ShareFile rhs) {

@@ -466,8 +466,6 @@ public class ClientDriver {
     }
     int n = key_info.keys().nextElement();
     byte[] key = key_info.get(n);
-    // System.out.println("The key the clidriver is sending to download is: " + new
-    // String(key));
 
     if (!fcli.download(downSrc, downDest, utkn, n, key))
       System.out.println("Error downloading file.\n");

@@ -101,8 +101,6 @@ public class FileClient extends Client implements FileClientInterface {
 
 					// make the secret key
 					SecretKey skey = c.makeAESKeyFromString(curr_key);
-					// System.out.println("This is the key..." +
-					// Base64.getEncoder().encodeToString(skey.getEncoded()));
 
 					// Now get the file chunks
 					env = (Envelope) input.readObject();
@@ -120,18 +118,50 @@ public class FileClient extends Client implements FileClientInterface {
 					if (env.getMessage().compareTo(new String(c.encrypt("AES", "EOF", sharedKey))) == 0) {
 						seq = (byte[]) env.getObjContents().get(0);
 						c.checkSequence(seq, ++expseq);
+						// Verify the file hash to make sure it hasn't changed
+						byte[] storeHash = (byte[]) env.getObjContents().get(1);
+						// calculate hash of entire file.
+						File f = new File(".shared_files/_" + sourceFile.replace('/', '_'));
+						FileInputStream fis2 = new FileInputStream(f);
+						byte[] data = new byte[(int) f.length()];
+						fis2.read(data);
+						fis2.close();
+						byte[] fhash = c.createFileHmac(data, skey);
+
+
+						if(!Arrays.equals(storeHash, fhash)){
+							System.out.println("Issue verifying file hash.");
+							System.out.println("This file may have been corrupted.");
+							System.out.print("Would you like to continue download? (y/n): ");
+							Scanner in = new Scanner(System.in);
+							String input = in.nextLine();
+							if(input.equalsIgnoreCase("y")){
+								System.out.println("Resuming Download...");
+							}
+							else if(input.equalsIgnoreCase("n")){
+								System.out.println("Terminating Suspicious Download! Please see your system administrator for further guidance!");
+								return false;
+							}
+						}
+
+
 						fos.close();
 						System.out.printf("\nTransfer successful file %s\n", sourceFile);
 						env = new Envelope(new String(c.encrypt("AES", "OK", sharedKey))); // Success
 						env.addObject(c.encrypt("AES", Integer.toString(expseq), sharedKey));
-						System.out.println("The seq in the client is: " + expseq);
-						//++expseq;
+					//	System.out.println("The seq in the client is: " + expseq);
 						output.writeObject(env);
 					} else {
 						System.out.printf("Error reading file %(s (%s)\n", sourceFile, env.getMessage());
 						file.delete();
 						return false;
 					}
+				}
+				else if(env.getMessage().equals(new String(c.encrypt("AES", "ERROR_NOTONDISK", sharedKey)))){
+					System.out.println("The requested file has a file record but cannot be found on disk!");
+					System.out.println("Your system may be compromised!");
+					System.out.println("Please contact a system administrator immediately for assistance!");
+					return false;
 				}
 			}
 
@@ -263,9 +293,20 @@ public class FileClient extends Client implements FileClientInterface {
 				byte[] seq = (byte[]) env.getObjContents().get(0);
 				c.checkSequence(seq, expseq);
 
+				// calculate hash of entire file.
+				File f = new File(".shared_files/_" + sourceFile.replace('/', '_'));
+				FileInputStream fis2 = new FileInputStream(f);
+				byte[] data = new byte[(int) f.length()];
+				fis2.read(data);
+				fis2.close();
+				byte[] fhash = c.createFileHmac(data, skey);
+
 				message = new Envelope(new String(c.encrypt("AES", "EOF", sharedKey)));
 				message.addObject(c.aesGroupEncrypt(Integer.toString(++expseq), sharedKey));
+				message.addObject(fhash);
 				++expseq;
+
+
 				output.writeObject(message);
 
 				env = (Envelope) input.readObject();
