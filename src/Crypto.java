@@ -429,6 +429,19 @@ class Crypto {
         return out;
     }
 
+    byte[] createFileHmac(byte[] macBytes, SecretKey groupK) {
+        byte[] out = null;
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256", "BC");
+            mac.init(groupK);
+            mac.update(macBytes);
+            out = mac.doFinal();
+        } catch (Exception e) {
+            System.out.println("EXCEPTION CREATING HMAC: " + e);
+        }
+        return out;
+    }
+
     boolean verifyHmac(byte[] reverify, byte[] reOut) {
         byte[] out = null;
         try {

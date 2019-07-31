@@ -99,7 +99,7 @@ public class FileServer extends Server {
 			System.exit(-1);
 		}
 
-		File file = new File("shared_files");
+		File file = new File(".shared_files");
 		if (file.mkdir()) {
 			System.out.println("Created new shared_files directory");
 		} else if (file.exists()) {

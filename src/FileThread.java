@@ -252,18 +252,11 @@ public class FileThread extends Thread {
 								mac.init(clientK);
 								mac.update(btoken);
 								byte[] out = mac.doFinal();
-								//System.out.println("This is the thing from fserver: " + new String(out));
 								if (!fc.verifyfsMac(out, fsMac, gsKey)) {
 									System.out.println("Signature not consistent. Token tampering may have occurred.");
 								}
-								// create hmac from clientk
-								// byte[] concatted = (groupK + "||" + token).getBytes();
-								// byte[] out = fc.createClientHmac(concatted, fc.getSysK());
+
 								int shared_n = 0;
-								// // verify signature is from gs
-								// if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-								// 	System.out.println("Signature verification failed");
-								// }
 								UserToken yourToken = (UserToken) fc.makeTokenFromString(token);
 
 								if (FileServer.fileList.checkFile(remotePath)) {
@@ -273,7 +266,7 @@ public class FileThread extends Thread {
 									System.out.printf("Error: user missing valid token for group %s\n", group);
 									response = new Envelope(encFAILUNAUTHORIZED); // Success
 								} else {
-									File file = new File("shared_files/" + remotePath.replace('/', '_'));
+									File file = new File(".shared_files/" + remotePath.replace('/', '_'));
 									file.createNewFile();
 									FileOutputStream fos = new FileOutputStream(file);
 									System.out.printf("Successfully created file %s\n",
@@ -305,9 +298,13 @@ public class FileThread extends Thread {
 									if (e.getMessage().compareTo(encEOF) == 0) {
 										seq = (byte[]) e.getObjContents().get(0);
 										fc.checkSequence(seq, expseq);
+
+										byte[] fhash = (byte[]) e.getObjContents().get(1);
+
 										System.out.printf("Transfer successful file %s\n", remotePath);
+										//String str = new String(data, "UTF-8");
 										FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath,
-												shared_n);
+												shared_n, fhash);
 										response = new Envelope(encOK); // Success
 									} else {
 										System.out.printf("Error reading file %s from client\n", remotePath);
@@ -358,13 +355,6 @@ public class FileThread extends Thread {
 								if (!fc.verifyHmac(req, sigHmac)) {
 									System.out.println("HMAC not consistent.");
 								}
-								// create hmac from clientk
-								// byte[] concatted = (groupK + "||" + token).getBytes();
-								// byte[] out = fc.createClientHmac(concatted, fc.getSysK());
-								//
-								// // verify signature is from gs
-								// if (!fc.verifySignature(out, sigHmac, fc.stringToPK(groupK))) {
-								// 	response = new Envelope(encFAILBADGSIG);
 
 								// make unsigned fsmac for Checking
 								byte[] btoken = token.getBytes();
@@ -388,15 +378,15 @@ public class FileThread extends Thread {
 										response = new Envelope(encPERMISSION);
 									} else {
 										int shared_n = sf.getN();
+										byte[] fhash = sf.getHash();
 										try {
-											File f = new File("shared_files/_" + remotePath.replace('/', '_'));
+											File f = new File(".shared_files/_" + remotePath.replace('/', '_'));
 											if (!f.exists()) {
 												System.out.printf("Error file %s missing from disk\n",
 														"_" + remotePath.replace('/', '_'));
 												response = new Envelope(encNOTONDISK);
 											} else {
 												FileInputStream fis = new FileInputStream(f);
-
 												response = new Envelope(encREADY); // Success
 												// Send shared n over to client for key generation.
 												response.addObject(shared_n);
@@ -431,7 +421,8 @@ public class FileThread extends Thread {
 												if (e.getMessage().compareTo(encDOWNLOADF) == 0) {
 													e = new Envelope(encEOF);
 													e.addObject(fc.aesGroupEncrypt(Integer.toString(expseq), _aesKey));
-
+													// add file hash for verification.
+													e.addObject(sf.getHash());
 													output.writeObject(e);
 
 													e = (Envelope) input.readObject();
@@ -513,7 +504,7 @@ public class FileThread extends Thread {
 
 						try {
 
-							File f = new File("shared_files/" + "_" + remotePath.replace('/', '_'));
+							File f = new File(".shared_files/" + "_" + remotePath.replace('/', '_'));
 
 							if (!f.exists()) {
 								System.out.printf("Error file %s missing from disk\n",
