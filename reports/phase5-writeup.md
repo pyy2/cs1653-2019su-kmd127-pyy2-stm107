@@ -39,6 +39,9 @@ Paul to fill out.
 
  Assume an adversary gains access to a file server machine, either by way of physically accessing the machine or through some remote protocol like ssh. The attack can easily locate the shared files because the name of the file folder is "shared_files." After cd'ing into this directory, though the files are encrypted, the adversary could delete or modify the files. The adversary could easily run a shell script that could navigate to the shared_files folder and delete all files. She could also create a virus, and run a shell script that replaces all of the existing files in the folder with identically named files that actually contain their malicious code. The end user would have no way of knowing that this was not their original file and, in downloading it, would actually be downloading the adversary's virus.
 
+ To simulate this attack for deleting files, after uploading a file to the file server, from the src directory, run ./evil_delete.sh. All files in the .shared_files/ directory will be deleted. When the user them tries to download a file with an existing ShareFile record that is not found on disk, they will get a warning to contact their administrator immediately because their system is likely compromised!
+
+ To simulate this attack for modifying files, after uploading a file to the file server, from the src directory, run ./evil_modify.sh. All files in the .shared_files/ directory will be appended with "!!!VIRUSVIRUSVIRUS!!!". Then, when an end user tries to download that file, its metadata hmac will not match the calculated hmac. The user will be presented with a prompt to determine if they still want to download.
 
   **T9 Attack**
 
