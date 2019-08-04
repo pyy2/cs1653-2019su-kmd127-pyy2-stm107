@@ -29,7 +29,7 @@
 
  **T9 Token Timing Attacks**
 
-Paul to fill out.
+Timing attacks are a side channel attack focused on analyzing the time to run cryptographic algorithms. A key example of this is when the String.equals() method is used. Internal java implementations convert the String into a char array that returns false on the first discrepancy between the compared objects. This algorithms is not secure in a cryptographic environment. Brute force with runtime analysis would be lead to signficantly less time than a straight forward brute force approach against a constant algorithm. 
 
 ** **
 
@@ -45,7 +45,32 @@ Paul to fill out.
 
   **T9 Attack**
 
-  Paul to write
+As previously mentioned, the objects are converted to char arrays that return on the first inequality between the two arrays. Brute forcing the proposed algorithms will result in a longer return time as the guesses are correct. For example if the password was 'abc' and the guess was 'c' then the algorithm would immediately return. If the guess was 'a' it would take longer for the algorithm to return than 'c' and so forth until 'abc' was correctly guessed. 
+
+Java Internal equals() method:
+```
+public boolean equals(Object anObject) {
+    if (this == anObject) {
+        return true;
+    }
+    if (anObject instanceof String) {
+        String anotherString = (String)anObject;
+        int n = value.length;
+        if (n == anotherString.value.length) {
+            char v1[] = value;
+            char v2[] = anotherString.value;
+            int i = 0;
+            while (n-- != 0) {
+                if (v1[i] != v2[i])
+                    return false;
+                i++;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+```
 
 ### Countermeasure Descriptions
 
@@ -54,3 +79,34 @@ Paul to fill out.
 The first and simplest countermeasure for somewhat obscuring the location of the shared files on the file server machine is to hide the folder that contains them. The infrastructure of the system will be changed to have the shared_files folder name appended with a '.'. This will make the folder invisible to anyone snooping around without using the -a option when listing the contents of a directory.
 
 Secondly, we will focus our efforts on detecting that a compromise has happened and letting the end user know. When a file is uploaded, a separate data member will be created in the file metadata that contains a hash of the original uploaded file. When a file is then attempted to be downloaded, if it doesn't exist, the use will be notified that the file doesn't exist, and will be prompted to contact a system administrator if this is in error. If, when a file is prompted for download, the calculated hash of the uploaded/store file in shared_files does not match the file metadata hash, then the user will be warned that the file has been changed and will be asked if they wish to continue to download.
+
+ **T9 Countermeasure: Timing Attack**
+The solution is to use a constant time algorithm in place of the array comparison shown below.
+
+```
+    boolean isEqual(byte[] a, byte[] b) {
+        if (a.length != b.length) {
+            return false;
+        }
+        int result = 0;
+        for (int i = 0; i < a.length; i++) {
+            result |= a[i] ^ b[i];
+        }
+        return result == 0;
+    }
+```
+
+The algorithm would return immediately if the lengths did not match. Then use a bit-wise OR comparison on the remaining array iterating through the whole length. The algorithm does give some information away about the length of the object however if the length is sufficiently long such as using an AES-128 bit key there still needs to be 2^128 attempts. 
+
+When running a simulation attack on the methods the following times are reported:
+
+equals:
+46
+58
+70
+bitwise:
+128
+142
+148
+
+The method is not infalliable however as seen in the isequal() method, the runtime increases in relation to the correct number of characters present. In the bitwise comparison, the whole string is run through atleast once resulting in an average higher time. 
