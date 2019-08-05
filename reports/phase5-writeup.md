@@ -1,4 +1,4 @@
-## Phase 4 Write-Up
+## Phase 5 Write-Up
 
 ### Introduction
  The final phase of our project deals with two distinct threat models. The first threat model deals with the idea that the file server could delete or modify files, or that an adversary could delete or modify files given access to the file server machine. Our objective is to mitigate the ease at which an adversary could find these files somewhat by making the folder name invisible. The primary defense, however is detection. We we will be implementing ways of detecting that files were deleted and/or modified and letting the end user who is trying to access those files know.
@@ -29,7 +29,7 @@
 
  **T9 Token Timing Attacks**
 
-Timing attacks are a side channel attack focused on analyzing the time to run cryptographic algorithms. A key example of this is when the String.equals() method is used. Internal java implementations convert the String into a char array that returns false on the first discrepancy between the compared objects. This algorithms is not secure in a cryptographic environment. Brute force with runtime analysis would be lead to signficantly less time than a straight forward brute force approach against a constant algorithm. 
+Timing attacks are a side channel attack focused on analyzing the time to run cryptographic algorithms. A key example of this is when the String.equals() method is used. Internal java implementations convert the String into a char array that returns false on the first discrepancy between the compared objects. This algorithms is not secure in a cryptographic environment. Brute force with runtime analysis would be lead to signficantly less time than a straight forward brute force approach against a constant algorithm.
 
 ** **
 
@@ -45,7 +45,7 @@ Timing attacks are a side channel attack focused on analyzing the time to run cr
 
   **T9 Attack**
 
-As previously mentioned, the objects are converted to char arrays that return on the first inequality between the two arrays. Brute forcing the proposed algorithms will result in a longer return time as the guesses are correct. For example if the password was 'abc' and the guess was 'c' then the algorithm would immediately return. If the guess was 'a' it would take longer for the algorithm to return than 'c' and so forth until 'abc' was correctly guessed. 
+As previously mentioned, the objects are converted to char arrays that return on the first inequality between the two arrays. Brute forcing the proposed algorithms will result in a longer return time as the guesses are correct. For example if the password was 'abc' and the guess was 'c' then the algorithm would immediately return. If the guess was 'a' it would take longer for the algorithm to return than 'c' and so forth until 'abc' was correctly guessed.
 
 Java Internal equals() method:
 ```
@@ -96,7 +96,7 @@ The solution is to use a constant time algorithm in place of the array compariso
     }
 ```
 
-The algorithm would return immediately if the lengths did not match. Then use a bit-wise OR comparison on the remaining array iterating through the whole length. The algorithm does give some information away about the length of the object however if the length is sufficiently long such as using an AES-128 bit key there still needs to be 2^128 attempts. 
+The algorithm would return immediately if the lengths did not match. Then use a bit-wise OR comparison on the remaining array iterating through the whole length. The algorithm does give some information away about the length of the object however if the length is sufficiently long such as using an AES-128 bit key there still needs to be 2^128 attempts.
 
 When running a simulation attack on the methods the following times are reported:
 
@@ -109,4 +109,4 @@ bitwise:
 142
 148
 
-The method is not infalliable however as seen in the isequal() method, the runtime increases in relation to the correct number of characters present. In the bitwise comparison, the whole string is run through atleast once resulting in an average higher time. 
+The method is not infalliable however as seen in the isequal() method, the runtime increases in relation to the correct number of characters present. In the bitwise comparison, the whole string is run through atleast once resulting in an average higher time.
